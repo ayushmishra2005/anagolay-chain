@@ -1,7 +1,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use frame_support::{decl_error, decl_event, decl_module, decl_storage, ensure, StorageMap};
-use parity_scale_codec::{Codec, Decode, Encode};
+use parity_scale_codec::{Codec, Decode, Encode, EncodeLike};
 use sp_runtime::traits::Hash;
 use sp_std::{clone::Clone, default::Default, vec, vec::Vec};
 
@@ -11,8 +11,21 @@ use system::ensure_signed;
 pub trait Trait: system::Trait {
     /// The overarching event type.
     type Event: From<Event<Self>> + Into<<Self as system::Trait>::Event>;
-    /// Generic rule trait
-    type Rule: Codec + Default + Copy;
+    // /// Generic rule trait
+    // type Rule: Codec + Default + Copy + EncodeLike;
+}
+
+// This pallet's storage items.
+decl_storage! {
+    // It is important to update your storage name so that your pallet's
+    // storage items are isolated from other pallets.
+
+    trait Store for Module<T: Trait> as PoEModule
+    {
+        // https://github.com/paritytech/substrate/blob/c34e0641abe52249866b62fdb0c2aeed41903be4/frame/support/procedural/src/lib.rs#L132
+        Proofs: map hasher(blake2_128_concat) Vec<u8> => (T::AccountId, T::BlockNumber, T::Hash);
+        Rules get(rule): map hasher(blake2_128_concat) Vec<u8> => Rule;
+    }
 }
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq)]
@@ -46,18 +59,19 @@ pub struct Proof<AccountId, Hash, Rule> {
 // }
 
 /// List of equipment that needs rules generated
-#[derive(Encode, Decode, Clone, PartialEq, Eq, Debug)]
+#[derive(Encode, Decode, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "std", derive(Debug))]
 enum ForWhat {
     /// general hash of a payload
-    Generic = 0,
+    Generic,
     /// Any photo
-    Photo = 1,
+    Photo,
     /// Any camera, not a smartphone
-    Camera = 2,
+    Camera,
     /// Any Lens
-    Lens = 3,
+    Lens,
     /// Any Smartphone
-    SmartPhone = 4,
+    SmartPhone,
 }
 
 impl Default for ForWhat {
@@ -69,7 +83,8 @@ impl Default for ForWhat {
 /// Operations that will be performed
 /// Create defaults
 ///
-#[derive(Encode, Decode, Clone, Default)]
+#[derive(Encode, Decode, Clone, PartialEq)]
+#[cfg_attr(feature = "std", derive(Debug))]
 struct Operation {
     op: Vec<u8>,
     desc: Vec<u8>,
@@ -79,10 +94,24 @@ struct Operation {
     ops: Vec<Operation>, // you can  use the ops to build more complex operations
 }
 
+impl Default for Operation {
+    fn default() -> Self {
+        Operation {
+            op: b"".to_vec(),
+            desc: b"".to_vec(),
+            hash_algo: b"blake2-256".to_vec(),
+            encode_algo: b"hex".to_vec(),
+            prefix: b"0x".to_vec(),
+            ops: vec![],
+        }
+    }
+}
+
 /// Special Operation that builds the body of the payload
 /// Create defaults
 ///
-#[derive(Encode, Decode, Clone)]
+#[derive(Encode, Decode, Clone, PartialEq)]
+#[cfg_attr(feature = "std", derive(Debug))]
 struct FormatPayload {
     op: Vec<u8>,
     desc: Vec<u8>,
@@ -90,7 +119,6 @@ struct FormatPayload {
     encode_algo: Vec<u8>,
     prefix: Vec<u8>,
     ops: Vec<Operation>, // you can  use the ops to build more complex operations
-                         // defaults
 }
 
 impl Default for FormatPayload {
@@ -101,25 +129,45 @@ impl Default for FormatPayload {
             hash_algo: b"blake2-256".to_vec(),
             encode_algo: b"hex".to_vec(),
             prefix: b"0x".to_vec(),
-            ops: vec![Operation::default()],
+            ops: vec![],
         }
     }
 }
 
 /// Rule which must be applied to the PoE
-#[derive(Encode, Decode, Clone, Default)]
-struct Rule {
-    name: Vec<u8>,
-    for_what: ForWhat,
-    version: u32,
-    ops: Vec<Operation>,
+#[derive(Encode, Decode, Clone, PartialEq)]
+#[cfg_attr(feature = "std", derive(Debug))]
+pub struct Rule {
     description: Vec<u8>,
+    for_what: Vec<u8>,
+    version: Vec<u8>,
     created_at: Vec<u8>,
-    creator: Vec<u8>, // this can be did:foo:barID or accountID on the blockchain
-    format: FormatPayload,
-    parent: Vec<u8>,
+    // creator: Vec<u8, // this can be did:foo:barID or accountID on the blockchain
+    // format: FormatPayload,
+    // ops: Vec<Operation>,
+    // parent: Vec<u8>,
 }
 
+impl Default for Rule {
+    fn default() -> Self {
+        Rule {
+            version: b"0".to_vec(),
+            description: b"".to_vec(),
+            created_at: b"".to_vec(),
+            for_what: b"photo".to_vec(),
+            // ops: vec![Operation::default()],
+            // parent: b"".to_vec(),
+            // format: FormatPayload {
+            //     desc: b"Special func".to_vec(),
+            //     op: b"create_payload".to_vec(),
+            //     hash_algo: b"blake2-256".to_vec(),
+            //     encode_algo: b"hex".to_vec(),
+            //     prefix: b"0x".to_vec(),
+            //     ops: vec![Operation::default()],
+            // },
+        }
+    }
+}
 // The pallet's dispatchable functions.
 decl_module! {
     /// The module declaration.
@@ -149,6 +197,15 @@ decl_module! {
         // Initializing events
         // this is needed only if you are using events in your pallet
         fn deposit_event() = default;
+
+
+
+        fn create_rule ( origin, rule_cid: Vec<u8>, payload: Rule) {
+            let _sender = ensure_signed(origin)?;
+
+            ensure!(!Rules::contains_key(&rule_cid), Error::<T>::RuleAlreadyCreated);
+        }
+
 
          /// Allow a user to claim ownership of an unclaimed proof
         fn create_claim(origin, proof: Vec<u8>, _payload: Vec<u8>) {
@@ -210,20 +267,8 @@ decl_error! {
         NoSuchProof,
         /// The proof is claimed by another account, so caller can't revoke it
         NotProofOwner,
-    }
-}
-
-// This pallet's storage items.
-decl_storage! {
-    // It is important to update your storage name so that your pallet's
-    // storage items are isolated from other pallets.
-
-    trait Store for Module<T: Trait> as PoEModule
-    {
-        // https://github.com/paritytech/substrate/blob/c34e0641abe52249866b62fdb0c2aeed41903be4/frame/support/procedural/src/lib.rs#L132
-         Proofs: map hasher(blake2_128_concat) Vec<u8> => (T::AccountId, T::BlockNumber, T::Hash);
-Rules: map hasher(opaque_blake2_256) Vec<u8> => Rule;
-
+        /// Rule already exists
+        RuleAlreadyCreated,
     }
 }
 
@@ -237,6 +282,8 @@ decl_event!(
         ClaimCreated(AccountId, Vec<u8>),
         /// Event emitted when a claim is revoked by the owner.
         ClaimRevoked(AccountId, Vec<u8>),
+        /// Event emitted when a rule is created.
+        RuleCreated(AccountId, Vec<u8>),
     }
 );
 
