@@ -1,0 +1,60 @@
+[package]
+authors = ['Anonymous']
+description = 'Proof-Of-existence'
+edition = '2018'
+homepage = 'https://substrate.dev'
+license = 'Unlicense'
+name = 'pallet-poe'
+repository = 'https://github.com/paritytech/substrate/'
+version = '0.1.0'
+
+[dependencies.parity-scale-codec]
+default-features = false
+features = ['derive']
+version = '1.2.0'
+
+[dependencies.frame-support]
+default-features = false
+version = '2.0.0-alpha.5'
+
+[dependencies.safe-mix]
+default-features = false
+version = '1.0.0'
+
+[dependencies.system]
+default-features = false
+package="frame-system"
+version = '2.0.0-alpha.5'
+
+[dependencies.sp-core]
+default-features = false
+version = '2.0.0-alpha.5'
+
+[dependencies.sp-io]
+default-features = false
+version = '2.0.0-alpha.5'
+
+[dependencies.sp-runtime]
+default-features = false
+version = '2.0.0-alpha.5'
+
+[dependencies.sp-std]
+default-features = false
+version = '2.0.0-alpha.5'
+
+[dependencies.rand]
+optional = true
+version= '0.7.2'
+
+[features]
+default = ['std']
+std = [
+    'parity-scale-codec/std',
+    'frame-support/std',
+    'safe-mix/std',
+    'system/std',
+    'sp-std/std',
+    'sp-runtime/std',
+    'sp-core/std',
+    'rand',
+]

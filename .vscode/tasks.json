@@ -1,0 +1,26 @@
+{
+  // See https://go.microsoft.com/fwlink/?LinkId=733558
+  // for the documentation about the tasks.json format
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "cargo build debug",
+      "type": "shell",
+      "command": "./scripts/build.sh"
+    },
+    {
+      "label": "purge chain",
+      "type": "shell",
+      "command": "target/debug/sensio-network",
+      "args": ["purge-chain", "--dev"],
+      "problemMatcher": ["$rustc"]
+    },
+    {
+      "label": "start chain",
+      "type": "shell",
+      "command": "target/debug/sensio-network",
+      "args": ["--dev"],
+      "problemMatcher": ["$rustc"]
+    }
+  ]
+}
