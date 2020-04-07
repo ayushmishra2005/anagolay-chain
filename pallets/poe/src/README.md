@@ -7,15 +7,8 @@ Polkadot Js app
   "ForWhat": {
     "_enum": ["Generic", "Photo", "Camera", "Lens", "SmartPhone"]
   },
+
   "Operation": {
-    "op": "Vec<u8>",
-    "desc": "Vec<u8>",
-    "hash_algo": "Vec<u8>",
-    "encode_algo": "Vec<u8>",
-    "prefix": "Vec<u8>",
-    "ops": "Vec<Operation>"
-  },
-  "FormatPayload": {
     "op": "Vec<u8>",
     "desc": "Vec<u8>",
     "hash_algo": "Vec<u8>",
@@ -30,7 +23,7 @@ Polkadot Js app
     "version": "Vec<u8>",
     "for_what": "Vec<u8>",
     "ops": "Vec<Operation>",
-    "format": "FormatPayload",
+    "lastOp": "Operation",
     "parent": "Vec<u8>"
   }
 }
@@ -79,3 +72,10 @@ other JS app that is not polkadotjs
   }
 ]
 ```
+
+# NOTES
+
+the decoding works but it fails to parse the thing because the structure is in
+json form and i'm trying to decode the `Rule` struct. find a way, see how others are doing
+
+write the small script in `wiki` `code` part that automatically saves the poe.
