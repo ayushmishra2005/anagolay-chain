@@ -24,8 +24,12 @@ decl_storage! {
   {
     // https://github.com/paritytech/substrate/blob/c34e0641abe52249866b62fdb0c2aeed41903be4/frame/support/procedural/src/lib.rs#L132
     Proofs: map hasher(blake2_128_concat) Vec<u8> => (T::AccountId, T::BlockNumber, T::Hash);
-    Rules: map hasher(blake2_128_concat) Vec<u8> => Rule;
-    RulesSimple:  map hasher(blake2_128_concat) Vec<u8> => (T::AccountId, Vec<u8>);
+    // Rules: map hasher(blake2_128_concat) Vec<u8> => Rule;
+
+    // We removed the creator field in favor for the current structure
+    // Maybe later it will be useful
+    // creator: Vec<u8>, // this can be did:foo:barID or accountID on the blockchain
+    Rules:  map hasher(blake2_128_concat) Vec<u8> => (T::AccountId, T::BlockNumber, Vec<u8>);
   }
 }
 
@@ -64,15 +68,15 @@ pub struct Proof<AccountId, Hash, Rule> {
 #[cfg_attr(feature = "std", derive(Debug))]
 enum ForWhat {
   /// general hash of a payload
-  Generic,
+  Generic = 0,
   /// Any photo
-  Photo,
+  Photo = 1,
   /// Any camera, not a smartphone
-  Camera,
+  Camera = 2,
   /// Any Lens
-  Lens,
+  Lens = 3,
   /// Any Smartphone
-  SmartPhone,
+  SmartPhone = 4,
 }
 
 impl Default for ForWhat {
@@ -111,10 +115,9 @@ impl Default for Operation {
 // #[cfg_attr(feature = "std", derive(Debug))]
 pub struct Rule {
   description: Vec<u8>,
-  for_what: Vec<u8>,
+  for_what: ForWhat,
   version: u32,
-  created_at: Vec<u8>,
-  creator: Vec<u8>, // this can be did:foo:barID or accountID on the blockchain
+  creator: Vec<u8>,
   build_params: Operation,
   ops: Vec<Operation>,
   parent: Vec<u8>,
@@ -125,10 +128,9 @@ impl Default for Rule {
     Rule {
       version: 0,
       description: b"".to_vec(),
-      created_at: b"".to_vec(),
-      for_what: b"photo".to_vec(),
-      parent: b"".to_vec(),
       creator: b"".to_vec(),
+      for_what: ForWhat::default(),
+      parent: b"".to_vec(),
       ops: vec![],
       build_params: Operation {
         desc: b"Special func".to_vec(),
@@ -172,13 +174,16 @@ decl_module! {
         fn deposit_event() = default;
 
         /// create rule with decoding
-        fn create_rule_simple ( origin, rule_cid: Vec<u8>, payload: Vec<u8>) {
+        fn create_rule ( origin, rule_cid: Vec<u8>, payload: Vec<u8>) {
             let sender = ensure_signed(origin)?;
 
-            ensure!(!RulesSimple::<T>::contains_key(&rule_cid), Error::<T>::RuleAlreadyCreated);
-            native::info!("My payload struct: {:?}", payload);
+            ensure!(!Rules::<T>::contains_key(&rule_cid), Error::<T>::RuleAlreadyCreated);
+            native::info!("My payload struct: {:?}", payload.to_vec());
 
-            RulesSimple::<T>::insert(&rule_cid, (sender.clone(), payload));
+            // Call the `system` pallet to get the current block number
+            let current_block = <system::Module<T>>::block_number();
+
+            Rules::<T>::insert(&rule_cid, (sender.clone(),current_block,  payload));
 
 
             // let proof = Rule::decode(&mut &payload[..]);
@@ -188,15 +193,15 @@ decl_module! {
         }
 
         /// Create rule with type
-        fn create_rule ( origin, rule_cid: Vec<u8>, payload: Rule) {
-            let sender = ensure_signed(origin)?;
+        // fn create_rule ( origin, rule_cid: Vec<u8>, payload: Rule) {
+        //     let sender = ensure_signed(origin)?;
 
-            ensure!(!Rules::contains_key(&rule_cid), Error::<T>::RuleAlreadyCreated);
+        //     ensure!(!Rules::contains_key(&rule_cid), Error::<T>::RuleAlreadyCreated);
 
-            native::info!("My struct: {:?}", payload);
+        //     native::info!("My struct: {:?}", payload);
 
-            Self::deposit_event(RawEvent::RuleCreated(sender, rule_cid));
-        }
+        //     Self::deposit_event(RawEvent::RuleCreated(sender, rule_cid));
+        // }
 
 
          /// Allow a user to claim ownership of an unclaimed proof
