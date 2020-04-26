@@ -2,10 +2,10 @@
 
 A new Substrate node, ready for hacking. This node includes:
 
-* A FRAME-based runtime
-* A template pallet
-* Aura block authoring
-* Grandpa finality gadget
+- A FRAME-based runtime
+- A template pallet
+- Aura block authoring
+- Grandpa finality gadget
 
 ## Build
 
@@ -34,16 +34,16 @@ cargo build --release
 Purge any existing developer chain state:
 
 ```bash
-./target/release/node-template purge-chain --dev
+./target/release/sensio-network purge-chain --dev
 ```
 
 Start a development chain with:
 
 ```bash
-./target/release/node-template --dev
+./target/release/sensio-network --dev
 ```
 
-Detailed logs may be shown by running the node with the following environment variables set: `RUST_LOG=debug RUST_BACKTRACE=1 cargo run -- --dev`.
+Detailed logs may be shown by running the node with the following environment variables set: `RUST_LOG=debug RUST_ =1 cargo run -- --dev`.
 
 ### Multi-Node Local Testnet
 
@@ -86,7 +86,7 @@ A substrate node template is always based on a certain version of Substrate. You
 opening [Cargo.toml](Cargo.toml) and see the template referred to a specific Substrate commit(
 `rev` field), branch, or version.
 
-You can generate your own Substrate node-template based on a particular Substrate
+You can generate your own Substrate sensio-network based on a particular Substrate
 version/commit by running following commands:
 
 ```bash
@@ -94,13 +94,13 @@ version/commit by running following commands:
 git clone https://github.com/paritytech/substrate.git
 cd substrate
 
-# Switch to a particular branch or commit of the Substrate repo your node-template based on
+# Switch to a particular branch or commit of the Substrate repo your sensio-network based on
 git checkout <branch/tag/sha1>
 
 # Run the helper script to generate a node template.
 # This script compiles Substrate and takes a while to complete. It takes a relative file path
 #   from the current dir. to output the compressed node template.
-.maintain/node-template-release.sh ../node-template.tar.gz
+.maintain/sensio-network-release.sh ../sensio-network.tar.gz
 ```
 
 Noted though you will likely get faster and more thorough support if you stick with the releases

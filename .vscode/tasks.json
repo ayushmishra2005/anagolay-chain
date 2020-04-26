@@ -4,16 +4,27 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "cargo build debug",
-      "type": "shell",
-      "command": "./scripts/build.sh"
-    },
-    {
       "label": "purge chain",
       "type": "shell",
       "command": "target/debug/sensio-network",
-      "args": ["purge-chain", "--dev"],
+      "args": ["purge-chain", "-y", "--dev"],
       "problemMatcher": ["$rustc"]
+    },
+    {
+      "type": "shell",
+      "label": "cargo check",
+      "command": "cargo",
+      "args": ["check"],
+      "problemMatcher": ["$rustc"],
+      "group": "build"
+    },
+    {
+      "type": "shell",
+      "label": "cargo build",
+      "command": "cargo",
+      "args": ["build"],
+      "problemMatcher": ["$rustc"],
+      "group": "build"
     },
     {
       "label": "start chain",
@@ -21,6 +32,14 @@
       "command": "target/debug/sensio-network",
       "args": ["--dev"],
       "problemMatcher": ["$rustc"]
+    },
+    {
+      "type": "shell",
+      "label": "cargo test",
+      "command": "cargo",
+      "args": ["test"],
+      "problemMatcher": ["$rustc"],
+      "group": "build"
     }
   ]
 }

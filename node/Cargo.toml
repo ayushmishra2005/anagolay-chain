@@ -4,16 +4,16 @@ build = 'build.rs'
 edition = '2018'
 homepage = 'https://substrate.dev'
 license = 'Unlicense'
-name = 'node-template'
+name = 'sensio-network'
 repository = 'https://github.com/paritytech/substrate/'
-version = '2.0.0-alpha.5'
+version = '2.0.0-alpha.4'
 
 [build-dependencies]
 vergen = '3.0.4'
 
 [build-dependencies.build-script-utils]
 package = 'substrate-build-script-utils'
-version = '2.0.0-alpha.5'
+version = '2.0.0-alpha.4'
 
 [dependencies]
 futures = '0.3.1'
@@ -26,11 +26,11 @@ version = '0.8.0-alpha.5'
 
 [dependencies.grandpa-primitives]
 package = 'sp-finality-grandpa'
-version = '2.0.0-alpha.5'
+version = '2.0.0-alpha.4'
 
-[dependencies.node-template-runtime]
+[dependencies.sensio-network-runtime]
 path = '../runtime'
-version = '2.0.0-alpha.5'
+version = '2.0.0-alpha.4'
 
 [dependencies.sc-basic-authorship]
 version = '0.8.0-alpha.5'
@@ -42,7 +42,7 @@ version = '0.8.0-alpha.5'
 version = '0.8.0-alpha.5'
 
 [dependencies.sc-client-api]
-version = '2.0.0-alpha.5'
+version = '2.0.0-alpha.4'
 
 [dependencies.sc-consensus-aura]
 version = '0.8.0-alpha.5'
@@ -57,7 +57,7 @@ version = '0.8.0-alpha.5'
 version = '0.8.0-alpha.5'
 
 [dependencies.sc-transaction-pool]
-version = '2.0.0-alpha.5'
+version = '2.0.0-alpha.4'
 
 [dependencies.sp-consensus]
 version = '0.8.0-alpha.5'
@@ -66,16 +66,16 @@ version = '0.8.0-alpha.5'
 version = '0.8.0-alpha.5'
 
 [dependencies.sp-core]
-version = '2.0.0-alpha.5'
+version = '2.0.0-alpha.4'
 
 [dependencies.sp-inherents]
-version = '2.0.0-alpha.5'
+version = '2.0.0-alpha.4'
 
 [dependencies.sp-runtime]
-version = '2.0.0-alpha.5'
+version = '2.0.0-alpha.4'
 
 [dependencies.sp-transaction-pool]
-version = '2.0.0-alpha.5'
+version = '2.0.0-alpha.4'
 
 [[bin]]
-name = 'node-template'
+name = 'sensio-network'

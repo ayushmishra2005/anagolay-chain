@@ -1,18 +1,16 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use frame_support::debug::native;
+use frame_support::codec::{Decode, Encode};
+// use frame_support::debug::native;
 use frame_support::{decl_error, decl_event, decl_module, decl_storage, ensure, StorageMap};
-use parity_scale_codec::{Decode, Encode};
 use sp_runtime::{traits::Hash, RuntimeDebug};
 use sp_std::{clone::Clone, default::Default, vec, vec::Vec};
 use system::ensure_signed;
 
-/// The pallet's configuration trait.
+///The pallet's configuration trait.
 pub trait Trait: system::Trait {
   /// The overarching event type.
   type Event: From<Event<Self>> + Into<<Self as system::Trait>::Event>;
-  // /// Generic rule trait
-  // type Rule: Codec + Default + Copy + EncodeLike;
 }
 
 // This pallet's storage items.
@@ -22,46 +20,45 @@ decl_storage! {
 
   trait Store for Module<T: Trait> as PoEModule
   {
-    // https://github.com/paritytech/substrate/blob/c34e0641abe52249866b62fdb0c2aeed41903be4/frame/support/procedural/src/lib.rs#L132
-    Proofs: map hasher(blake2_128_concat) Vec<u8> => (T::AccountId, T::BlockNumber, T::Hash);
-    // Rules: map hasher(blake2_128_concat) Vec<u8> => Rule;
-
-    // We removed the creator field in favor for the current structure
-    // Maybe later it will be useful
-    // creator: Vec<u8>, // this can be did:foo:barID or accountID on the blockchain
-    Rules:  map hasher(blake2_128_concat) Vec<u8> => (T::AccountId, T::BlockNumber, Vec<u8>);
+    /// [Proof, AccountId BlockNumber]
+    Proofs get(proof): map hasher(blake2_128_concat) T::Hash=> (Proof, T::AccountId, T::BlockNumber);
+    /// [Rule, AccountId BlockNumber]
+    Rules get(rule):  map hasher(blake2_128_concat) T::Hash => (Rule, T::AccountId, T::BlockNumber);
   }
 }
 
-#[derive(Encode, Decode, Clone, PartialEq, Eq)]
-#[cfg_attr(feature = "std", derive(Debug))]
-pub struct Proof<AccountId, Hash, Rule> {
-  account_id: AccountId,
-  impl_rule: Vec<Rule>,
-  proof: Hash,
-  payload: Hash,
+/// PoE Proof
+#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
+// #[cfg_attr(feature = "std", derive(Debug))]
+pub struct Proof {
+  id: Vec<u8>,   // hexEncode(cid(body))
+  body: Vec<u8>, // this is generic now, a string, make it GENERIC rust way.
+  created_at: u64,
+  prev: Vec<u8>,
+  rule_id: Vec<u8>, // which rule is executed
   for_what: ForWhat,
 }
+// This is how payload can look like
+// const body = {
+//   ruleId: string,
+//   params: string, // JSON.stringify(executedOps.op[])
+//   owner: string, // this will be a DID or URN
+//   forWhat: forWhat,
+// };
 
-// /// implement default
-// impl<A, H, B, R> Default for Proof<A, H, B, R>
-// where
-//     A: Default,
-//     H: Default,
-//     B: Default,
-//     R: Default,
-// {
-//     fn default() -> Self {
-//         Proof {
-//             account_id: A::default(),
-//             block_number: B::default(),
-//             proof: H::default(),
-//             rules: R::default(),
-//             content_hash: H::default(),
-//             photo: true,
-//         }
-//     }
-// }
+/// implement default
+impl Default for Proof {
+  fn default() -> Self {
+    Proof {
+      id: b"".to_vec(),
+      body: b"".to_vec(),
+      created_at: 0, // millis
+      prev: b"".to_vec(),
+      rule_id: b"".to_vec(),
+      for_what: ForWhat::default(),
+    }
+  }
+}
 
 /// List of equipment that needs rules generated
 #[derive(Encode, Decode, Clone, PartialEq, Eq)]
@@ -81,7 +78,7 @@ enum ForWhat {
 
 impl Default for ForWhat {
   fn default() -> Self {
-    ForWhat::Photo
+    ForWhat::Generic
   }
 }
 
@@ -90,202 +87,379 @@ impl Default for ForWhat {
 #[cfg_attr(feature = "std", derive(Debug))]
 struct Operation {
   op: Vec<u8>,
+  name: Vec<u8>,
   desc: Vec<u8>,
   hash_algo: Vec<u8>,
+  hash_bits: u32,
   encode_algo: Vec<u8>,
   prefix: Vec<u8>,
-  ops: Vec<Operation>, // you can  use the ops to build more complex operations
+  ops: Vec<Operation>, // you can  use the ops to build more complex rule
 }
 
 impl Default for Operation {
   fn default() -> Self {
     Operation {
       op: b"".to_vec(),
+      name: b"".to_vec(),
       desc: b"".to_vec(),
-      hash_algo: b"blake2b-128".to_vec(),
+      hash_algo: b"blake2b".to_vec(),
+      hash_bits: 256,
       encode_algo: b"hex".to_vec(),
       prefix: b"0x".to_vec(),
       ops: vec![],
     }
   }
 }
+/// Rule which must be applied to the PoE
+#[derive(Encode, Decode, Clone, PartialEq)]
+#[cfg_attr(feature = "std", derive(Debug))]
+pub struct RuleBody {
+  version: u32,
+  name: Vec<u8>,
+  description: Vec<u8>,
+  creator: Vec<u8>,
+  for_what: ForWhat,
+  parent: Vec<u8>,
+  ops: Vec<Operation>,
+  build_params: Operation,
+  create_proof: Operation,
+  // optional_number: Option<u32>,
+}
 
 /// Rule which must be applied to the PoE
 #[derive(Encode, Decode, Clone, PartialEq, RuntimeDebug)]
 // #[cfg_attr(feature = "std", derive(Debug))]
 pub struct Rule {
-  description: Vec<u8>,
-  for_what: ForWhat,
-  version: u32,
-  creator: Vec<u8>,
-  build_params: Operation,
-  ops: Vec<Operation>,
-  parent: Vec<u8>,
+  id: Vec<u8>, // a CID the body
+  created_at: u64,
+  prev: Vec<u8>,
+  body: RuleBody,
 }
 
 impl Default for Rule {
   fn default() -> Self {
     Rule {
-      version: 0,
-      description: b"".to_vec(),
-      creator: b"".to_vec(),
-      for_what: ForWhat::default(),
-      parent: b"".to_vec(),
-      ops: vec![],
-      build_params: Operation {
-        desc: b"Special func".to_vec(),
-        op: b"create_payload".to_vec(),
-        hash_algo: b"blake2b-128".to_vec(),
-        encode_algo: b"hex".to_vec(),
-        prefix: b"0x".to_vec(),
+      id: b"".to_vec(),
+      created_at: 0,
+      prev: b"".to_vec(),
+      body: RuleBody {
+        version: 1,
+        name: b"".to_vec(),
+        description: b"".to_vec(),
+        creator: b"".to_vec(),
+        for_what: ForWhat::default(),
+        parent: b"".to_vec(),
         ops: vec![],
+        build_params: Operation {
+          op: b"create_payload".to_vec(),
+          name: b"Special func".to_vec(),
+          desc: b"Special func description".to_vec(),
+          hash_algo: b"blake2b".to_vec(),
+          hash_bits: 256,
+          encode_algo: b"hex".to_vec(),
+          prefix: b"0x".to_vec(),
+          ops: vec![],
+        },
+        create_proof: Operation {
+          op: b"create_proof".to_vec(),
+          name: b"How Proof should be created".to_vec(),
+          desc: b"When applying this rule, use this to create the proof".to_vec(),
+          hash_algo: b"blake2b".to_vec(),
+          hash_bits: 256,
+          encode_algo: b"hex".to_vec(),
+          prefix: b"0x".to_vec(),
+          ops: vec![],
+        },
       },
     }
   }
 }
+
+/// Default values for this runtime
+#[derive(Encode, Decode, Clone, PartialEq)]
+#[cfg_attr(feature = "std", derive(Debug))]
+struct DefaultValues {
+  hash_algo: Vec<u8>,
+  hash_bits: u32,
+  encoding_algo: Vec<u8>,
+  encoding_prefix: Vec<u8>,
+}
+
 // The pallet's dispatchable functions.
 decl_module! {
     /// The module declaration.
     pub struct Module<T: Trait> for enum Call where origin: T::Origin {
 
-         /// Rules for the PoE
-        // const rules: Vec<Rule> = vec![Rule {
-        //     name: b"rule 1".to_vec(),
-        //     version: 1,
-        //     for_what: ForWhat::Photo,
-        //     ops: vec![
-        //         Operation {
-        //             op: b"init".to_vec(),
-        //             : b"object".to_vec(),
-        //             output: true
-        //         },
-
-
-        //     ]
-        // }];
+        /// Default values for the poe, like encoding scheme and hashing functions
+        const defaults: DefaultValues = DefaultValues{
+          hash_algo : b"blake2b".to_vec(),
+          hash_bits : 256,
+          encoding_algo : b"hex".to_vec(),
+          encoding_prefix : b"0x".to_vec(),
+        };
 
         // Initializing errors
-        // this includes information about your errors in the node's metadata.
-        // it is needed only if you are using errors in your pallet
         type Error = Error<T>;
 
         // Initializing events
-        // this is needed only if you are using events in your pallet
         fn deposit_event() = default;
 
-        /// create rule with decoding
-        fn create_rule ( origin, rule_cid: Vec<u8>, payload: Vec<u8>) {
+        /// Create Rule
+        fn create_rule ( origin, rule:Rule ) {
             let sender = ensure_signed(origin)?;
 
-            ensure!(!Rules::<T>::contains_key(&rule_cid), Error::<T>::RuleAlreadyCreated);
-            native::info!("My payload struct: {:?}", payload.to_vec());
+            let rule_id = rule.id.clone();
+            let rule_id_hash = rule_id.using_encoded(<T as system::Trait>::Hashing::hash);
 
-            // Call the `system` pallet to get the current block number
+            ensure!(!Rules::<T>::contains_key(&rule_id_hash), Error::<T>::RuleAlreadyCreated);
+
             let current_block = <system::Module<T>>::block_number();
 
-            Rules::<T>::insert(&rule_cid, (sender.clone(),current_block,  payload));
+            Rules::<T>::insert(&rule_id_hash, ( rule, sender.clone(), current_block));
 
-
-            // let proof = Rule::decode(&mut &payload[..]);
-            // native::info!("My struct: {:?}", proof);
-
-            Self::deposit_event(RawEvent::RuleCreated(sender, rule_cid.clone()));
+            // deposit the event
+            Self::deposit_event(RawEvent::RuleCreated(sender, rule_id));
         }
 
-        /// Create rule with type
-        // fn create_rule ( origin, rule_cid: Vec<u8>, payload: Rule) {
-        //     let sender = ensure_signed(origin)?;
+        /// Create proof and claim
+        fn create_proof(origin, proof: Proof) {
+          let sender = ensure_signed(origin)?;
 
-        //     ensure!(!Rules::contains_key(&rule_cid), Error::<T>::RuleAlreadyCreated);
+          let rule_id = proof.rule_id.clone();
+          let rule_id_hash = rule_id.using_encoded(<T as system::Trait>::Hashing::hash);
 
-        //     native::info!("My struct: {:?}", payload);
+          let rule = Rules::<T>::get(rule_id_hash);
 
-        //     Self::deposit_event(RawEvent::RuleCreated(sender, rule_cid));
-        // }
+          // native::info!("My rule_id: {:?}", rule);
+          ensure!(Rules::<T>::contains_key(&rule_id_hash), Error::<T>::NoSuchRule);
 
+          // the 0 comes from first element in the tuple value -- storage
+          if proof.for_what != rule.0.body.for_what  {
+            ensure!(false, Error::<T>::TypeForClaimRuleMismatch);
+          }
 
-         /// Allow a user to claim ownership of an unclaimed proof
-        fn create_claim(origin, proof: Vec<u8>, _payload: Vec<u8>) {
-            // Verify that the incoming transaction is signed and store who the
-            // caller of this function is.
-            let sender = ensure_signed(origin)?;
-            // let nonce = Self::nonce();
-            // Verify that the specified proof has not been claimed yet or error with the message
-            ensure!(!Proofs::<T>::contains_key(&proof), Error::<T>::ProofAlreadyClaimed);
+          let id = proof.id.clone();
 
+          // Check is Proof claimed already
+          let proof_hash = id.using_encoded(<T as system::Trait>::Hashing::hash);
+          ensure!(!Proofs::<T>::contains_key(&proof_hash), Error::<T>::ProofAlreadyClaimed);
 
-            let data_hash =<T as system::Trait>::Hashing::hash(b"s");
+          // Call the `system` pallet to get the current block number
+          let current_block = <system::Module<T>>::block_number();
 
-            // Call the `system` pallet to get the current block number
-            let current_block = <system::Module<T>>::block_number();
-            //
-            // let p = Proof {
-            //     account_id : sender.clone(),
-            //     block_number: current_block,
-            //     proof: proof.clone(),
-            //     rules: "uri:ipfs:QM....".as_bytes().to_vec(),
-            //     content_hash: data_hash.encode(),
-            //     photo: true,
-            // };
-            //
-            // // Store the proof with the sender and the current block number
-            // <Proofs::<T>>::insert(&proof, p);
-            <Proofs::<T>>::insert(&proof, (sender.clone(), current_block, data_hash));
-            //
-            // // Emit an event that the claim was created
-            Self::deposit_event(RawEvent::ClaimCreated(sender, proof));
-        }
+          // native::info!("My proof: {:?}", &proof);
 
+          // Store the proof with the sender and the current block number
 
-        /// Allow the owner to revoke their claim
-        fn revoke_claim(origin, proof: Vec<u8>) {
-            // Determine who is calling the function
-            let sender = ensure_signed(origin)?;
-
-            // Verify that the specified proof has been claimed
-            ensure!(Proofs::<T>::contains_key(&proof), Error::<T>::NoSuchProof);
-
-            // Emit an event that the claim was erased
-            Self::deposit_event(RawEvent::ClaimRevoked(sender, proof));
-        }
-    }
+          <Proofs::<T>>::insert(&proof_hash, ( proof, sender.clone(), current_block));
+          // Emit an event that the claim was created
+          Self::deposit_event(RawEvent::ProofCreated(sender, id));
+      }
+  }
 }
 
 // The pallet's errors
 decl_error! {
-    pub enum Error for Module<T: Trait> {
-        /// Value was None
-        NoneValue,
-        /// Value reached maximum and cannot be incremented further
-        StorageOverflow,
-         /// This proof has already been claimed
-        ProofAlreadyClaimed,
-        /// The proof does not exist, so it cannot be revoked
-        NoSuchProof,
-        /// The proof is claimed by another account, so caller can't revoke it
-        NotProofOwner,
-        /// Rule already exists
-        RuleAlreadyCreated,
-    }
+  pub enum Error for Module<T: Trait> {
+      ///Value was None
+      NoneValue,
+      ///Value reached maximum and cannot be incremented further
+      StorageOverflow,
+       ///This proof has already been claimed
+      ProofAlreadyClaimed,
+      ///The proof does not exist, so it cannot be revoked
+      NoSuchProof,
+      ///The proof is claimed by another account, so caller can't revoke it
+      NotProofOwner,
+      ///ForWhat mismatch
+      TypeForClaimRuleMismatch,
+      ///Rule already exists
+      RuleAlreadyCreated,
+      ///Rule doesn't exits, create one.
+      NoSuchRule
+  }
 }
-
 // The pallet's events
 decl_event!(
   pub enum Event<T>
   where
     AccountId = <T as system::Trait>::AccountId,
   {
-    /// Event emitted when a proof has been claimed.
-    ClaimCreated(AccountId, Vec<u8>),
-    /// Event emitted when a claim is revoked by the owner.
-    ClaimRevoked(AccountId, Vec<u8>),
-    /// Event emitted when a rule is created.
+    ///Proof is created and claimed
+    ProofCreated(AccountId, Vec<u8>),
+    ///Rule is created
     RuleCreated(AccountId, Vec<u8>),
   }
 );
 
 #[cfg(test)]
-mod mock;
+mod tests {
+  use super::*;
 
-#[cfg(test)]
-mod tests;
+  use frame_support::{
+    assert_noop, assert_ok, impl_outer_origin, parameter_types, weights::Weight,
+  };
+  use sp_core::H256;
+  use sp_io::TestExternalities;
+  use sp_runtime::{
+    testing::Header,
+    traits::{BlakeTwo256, IdentityLookup},
+    Perbill,
+  };
+
+  impl_outer_origin! {
+      pub enum Origin for Test {}
+  }
+
+  // For testing the pallet, we construct most of a mock runtime. This means
+  // first constructing a configuration type (`Test`) which `impl`s each of the
+  // configuration traits of pallets we want to use.
+  #[derive(Clone, Eq, PartialEq)]
+  pub struct Test;
+  parameter_types! {
+      pub const BlockHashCount: u64 = 250;
+      pub const MaximumBlockWeight: Weight = 1024;
+      pub const MaximumBlockLength: u32 = 2 * 1024;
+      pub const AvailableBlockRatio: Perbill = Perbill::from_percent(75);
+  }
+  impl system::Trait for Test {
+    type Origin = Origin;
+    type Call = ();
+    type Index = u64;
+    type BlockNumber = u64;
+    type Hash = H256;
+    type Hashing = BlakeTwo256;
+    type AccountId = u64;
+    type Lookup = IdentityLookup<Self::AccountId>;
+    type Header = Header;
+    type Event = ();
+    type BlockHashCount = BlockHashCount;
+    type MaximumBlockWeight = MaximumBlockWeight;
+    type MaximumBlockLength = MaximumBlockLength;
+    type AvailableBlockRatio = AvailableBlockRatio;
+    type Version = ();
+    type ModuleToIndex = ();
+    type AccountData = ();
+    type OnNewAccount = ();
+    type OnKilledAccount = ();
+  }
+
+  impl Trait for Test {
+    type Event = ();
+  }
+
+  pub type Poe = Module<Test>;
+
+  pub struct ExtBuilder;
+  impl ExtBuilder {
+    pub fn build() -> TestExternalities {
+      let storage = system::GenesisConfig::default()
+        .build_storage::<Test>()
+        .unwrap();
+      TestExternalities::from(storage)
+    }
+  }
+
+  #[test]
+  fn rule_create_default() {
+    ExtBuilder::build().execute_with(|| {
+      let mut r = Rule::default();
+      r.id = b"dummy-text".to_vec();
+
+      let res = Poe::create_rule(Origin::signed(1), r);
+      assert_ok!(res)
+    });
+  }
+  #[test]
+  fn rule_error_on_duplicate() {
+    ExtBuilder::build().execute_with(|| {
+      let mut r1 = Rule::default();
+      r1.id = b"dummy-text".to_vec();
+
+      let res1 = Poe::create_rule(Origin::signed(1), r1.clone());
+      assert_ok!(res1);
+
+      let res2 = Poe::create_rule(Origin::signed(1), r1);
+      assert_noop!(res2, Error::<Test>::RuleAlreadyCreated);
+    });
+  }
+  #[test]
+  fn proof_create_default() {
+    ExtBuilder::build().execute_with(|| {
+      // todo create default rule, figure out better way
+      let mut r = Rule::default();
+      r.id = b"dummy-text".to_vec();
+      let res = Poe::create_rule(Origin::signed(1), r.clone());
+      assert_ok!(res);
+      // todo create default rule, figure out better way
+
+      let mut proof = Proof::default();
+      proof.id = b"proof-id".to_vec();
+      proof.rule_id = r.id.clone();
+
+      let res = Poe::create_proof(Origin::signed(1), proof.clone());
+      assert_ok!(res)
+    });
+  }
+  #[test]
+  fn proof_error_on_duplicate() {
+    ExtBuilder::build().execute_with(|| {
+      // todo create default rule, figure out better way
+      let mut r = Rule::default();
+      r.id = b"dummy-text".to_vec();
+
+      let res = Poe::create_rule(Origin::signed(1), r.clone());
+      assert_ok!(res);
+      // todo create default rule, figure out better way
+
+      let mut proof = Proof::default();
+      proof.id = b"proof-id".to_vec();
+      proof.rule_id = r.id.clone();
+      // create the proof
+      let res1 = Poe::create_proof(Origin::signed(1), proof.clone());
+
+      assert_ok!(res1);
+
+      // create the proof AGAIN
+      let res2 = Poe::create_proof(Origin::signed(1), proof.clone());
+
+      assert_noop!(res2, Error::<Test>::ProofAlreadyClaimed);
+    });
+  }
+
+  #[test]
+  fn proof_error_on_no_rule() {
+    ExtBuilder::build().execute_with(|| {
+      let mut proof = Proof::default();
+      proof.id = b"proof-id".to_vec();
+      let rule_id = b"dummy-text-never-created".to_vec();
+      proof.rule_id = rule_id;
+      let res = Poe::create_proof(Origin::signed(1), proof);
+      assert_noop!(res, Error::<Test>::NoSuchRule);
+    });
+  }
+  #[test]
+  fn proof_error_on_for_what_mismatch() {
+    ExtBuilder::build().execute_with(|| {
+      // todo create default rule, figure out better way
+      let mut r = Rule::default();
+      r.id = b"dummy-text".to_vec();
+      r.body.for_what = ForWhat::Generic;
+      let res = Poe::create_rule(Origin::signed(1), r.clone());
+      assert_ok!(res);
+      // todo create default rule, figure out better way
+
+      let mut proof = Proof::default();
+      proof.id = b"proof-id".to_vec();
+      proof.rule_id = r.id.clone();
+      proof.for_what = ForWhat::Photo;
+
+      let res = Poe::create_proof(Origin::signed(1), proof);
+      assert_noop!(res, Error::<Test>::TypeForClaimRuleMismatch);
+    });
+  }
+  #[test]
+  fn test_template() {
+    ExtBuilder::build().execute_with(|| {});
+  }
+}
