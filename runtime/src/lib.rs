@@ -14,11 +14,11 @@ use sp_api::impl_runtime_apis;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_core::OpaqueMetadata;
 use sp_runtime::traits::{
-    BlakeTwo256, Block as BlockT, ConvertInto, IdentifyAccount, IdentityLookup, Verify,
+  BlakeTwo256, Block as BlockT, ConvertInto, IdentifyAccount, IdentityLookup, Verify,
 };
 use sp_runtime::{
-    create_runtime_str, generic, impl_opaque_keys, transaction_validity::TransactionValidity,
-    ApplyExtrinsicResult, MultiSignature,
+  create_runtime_str, generic, impl_opaque_keys, transaction_validity::TransactionValidity,
+  ApplyExtrinsicResult, MultiSignature,
 };
 use sp_std::prelude::*;
 #[cfg(feature = "std")]
@@ -28,17 +28,15 @@ use sp_version::RuntimeVersion;
 // A few exports that help ease life for downstream crates.
 pub use balances::Call as BalancesCall;
 pub use frame_support::{
-    construct_runtime, parameter_types, traits::Randomness, weights::Weight, StorageValue,
+  construct_runtime, parameter_types, traits::Randomness, weights::Weight, StorageValue,
 };
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 pub use sp_runtime::{Perbill, Permill};
 pub use timestamp::Call as TimestampCall;
 
-// pub use kitties;
+/// PoE Module
 pub use poe;
-/// Importing a template pallet
-pub use template;
 
 /// An index to a block.
 pub type BlockNumber = u32;
@@ -71,33 +69,33 @@ pub type DigestItem = generic::DigestItem<Hash>;
 /// of data like extrinsics, allowing for them to continue syncing the network through upgrades
 /// to even the core data structures.
 pub mod opaque {
-    use super::*;
+  use super::*;
 
-    pub use sp_runtime::OpaqueExtrinsic as UncheckedExtrinsic;
+  pub use sp_runtime::OpaqueExtrinsic as UncheckedExtrinsic;
 
-    /// Opaque block header type.
-    pub type Header = generic::Header<BlockNumber, BlakeTwo256>;
-    /// Opaque block type.
-    pub type Block = generic::Block<Header, UncheckedExtrinsic>;
-    /// Opaque block identifier type.
-    pub type BlockId = generic::BlockId<Block>;
+  /// Opaque block header type.
+  pub type Header = generic::Header<BlockNumber, BlakeTwo256>;
+  /// Opaque block type.
+  pub type Block = generic::Block<Header, UncheckedExtrinsic>;
+  /// Opaque block identifier type.
+  pub type BlockId = generic::BlockId<Block>;
 
-    impl_opaque_keys! {
-        pub struct SessionKeys {
-            pub aura: Aura,
-            pub grandpa: Grandpa,
-        }
-    }
+  impl_opaque_keys! {
+      pub struct SessionKeys {
+          pub aura: Aura,
+          pub grandpa: Grandpa,
+      }
+  }
 }
 
 /// This runtime version.
 pub const VERSION: RuntimeVersion = RuntimeVersion {
-    spec_name: create_runtime_str!("node-template"),
-    impl_name: create_runtime_str!("node-template"),
-    authoring_version: 1,
-    spec_version: 1,
-    impl_version: 1,
-    apis: RUNTIME_API_VERSIONS,
+  spec_name: create_runtime_str!("sensio-network"),
+  impl_name: create_runtime_str!("sensio-network"),
+  authoring_version: 1,
+  spec_version: 1,
+  impl_version: 1,
+  apis: RUNTIME_API_VERSIONS,
 };
 
 pub const MILLISECS_PER_BLOCK: u64 = 6000;
@@ -112,10 +110,10 @@ pub const DAYS: BlockNumber = HOURS * 24;
 /// The version information used to identify this runtime when compiled natively.
 #[cfg(feature = "std")]
 pub fn native_version() -> NativeVersion {
-    NativeVersion {
-        runtime_version: VERSION,
-        can_author_with: Default::default(),
-    }
+  NativeVersion {
+    runtime_version: VERSION,
+    can_author_with: Default::default(),
+  }
 }
 
 parameter_types! {
@@ -127,54 +125,54 @@ parameter_types! {
 }
 
 impl system::Trait for Runtime {
-    /// The identifier used to distinguish between accounts.
-    type AccountId = AccountId;
-    /// The aggregated dispatch type that is available for extrinsics.
-    type Call = Call;
-    /// The lookup mechanism to get account ID from whatever is passed in dispatchers.
-    type Lookup = IdentityLookup<AccountId>;
-    /// The index type for storing how many extrinsics an account has signed.
-    type Index = Index;
-    /// The index type for blocks.
-    type BlockNumber = BlockNumber;
-    /// The type for hashing blocks and tries.
-    type Hash = Hash;
-    /// The hashing algorithm used.
-    type Hashing = BlakeTwo256;
-    /// The header type.
-    type Header = generic::Header<BlockNumber, BlakeTwo256>;
-    /// The ubiquitous event type.
-    type Event = Event;
-    /// The ubiquitous origin type.
-    type Origin = Origin;
-    /// Maximum number of block number to block hash mappings to keep (oldest pruned first).
-    type BlockHashCount = BlockHashCount;
-    /// Maximum weight of each block.
-    type MaximumBlockWeight = MaximumBlockWeight;
-    /// Maximum size of all encoded transactions (in bytes) that are allowed in one block.
-    type MaximumBlockLength = MaximumBlockLength;
-    /// Portion of the block weight that is available to all normal transactions.
-    type AvailableBlockRatio = AvailableBlockRatio;
-    /// Version of the runtime.
-    type Version = Version;
-    /// Converts a module to the index of the module in `construct_runtime!`.
-    ///
-    /// This type is being generated by `construct_runtime!`.
-    type ModuleToIndex = ModuleToIndex;
-    /// What to do if a new account is created.
-    type OnNewAccount = ();
-    /// What to do if an account is fully reaped from the system.
-    type OnKilledAccount = ();
-    /// The data to be stored in an account.
-    type AccountData = balances::AccountData<Balance>;
+  /// The identifier used to distinguish between accounts.
+  type AccountId = AccountId;
+  /// The aggregated dispatch type that is available for extrinsics.
+  type Call = Call;
+  /// The lookup mechanism to get account ID from whatever is passed in dispatchers.
+  type Lookup = IdentityLookup<AccountId>;
+  /// The index type for storing how many extrinsics an account has signed.
+  type Index = Index;
+  /// The index type for blocks.
+  type BlockNumber = BlockNumber;
+  /// The type for hashing blocks and tries.
+  type Hash = Hash;
+  /// The hashing algorithm used.
+  type Hashing = BlakeTwo256;
+  /// The header type.
+  type Header = generic::Header<BlockNumber, BlakeTwo256>;
+  /// The ubiquitous event type.
+  type Event = Event;
+  /// The ubiquitous origin type.
+  type Origin = Origin;
+  /// Maximum number of block number to block hash mappings to keep (oldest pruned first).
+  type BlockHashCount = BlockHashCount;
+  /// Maximum weight of each block.
+  type MaximumBlockWeight = MaximumBlockWeight;
+  /// Maximum size of all encoded transactions (in bytes) that are allowed in one block.
+  type MaximumBlockLength = MaximumBlockLength;
+  /// Portion of the block weight that is available to all normal transactions.
+  type AvailableBlockRatio = AvailableBlockRatio;
+  /// Version of the runtime.
+  type Version = Version;
+  /// Converts a module to the index of the module in `construct_runtime!`.
+  ///
+  /// This type is being generated by `construct_runtime!`.
+  type ModuleToIndex = ModuleToIndex;
+  /// What to do if a new account is created.
+  type OnNewAccount = ();
+  /// What to do if an account is fully reaped from the system.
+  type OnKilledAccount = ();
+  /// The data to be stored in an account.
+  type AccountData = balances::AccountData<Balance>;
 }
 
 impl aura::Trait for Runtime {
-    type AuthorityId = AuraId;
+  type AuthorityId = AuraId;
 }
 
 impl grandpa::Trait for Runtime {
-    type Event = Event;
+  type Event = Event;
 }
 
 parameter_types! {
@@ -182,10 +180,10 @@ parameter_types! {
 }
 
 impl timestamp::Trait for Runtime {
-    /// A timestamp: milliseconds since the unix epoch.
-    type Moment = u64;
-    type OnTimestampSet = Aura;
-    type MinimumPeriod = MinimumPeriod;
+  /// A timestamp: milliseconds since the unix epoch.
+  type Moment = u64;
+  type OnTimestampSet = Aura;
+  type MinimumPeriod = MinimumPeriod;
 }
 
 parameter_types! {
@@ -193,13 +191,13 @@ parameter_types! {
 }
 
 impl balances::Trait for Runtime {
-    /// The type for recording an account's balance.
-    type Balance = Balance;
-    /// The ubiquitous event type.
-    type Event = Event;
-    type DustRemoval = ();
-    type ExistentialDeposit = ExistentialDeposit;
-    type AccountStore = System;
+  /// The type for recording an account's balance.
+  type Balance = Balance;
+  /// The ubiquitous event type.
+  type Event = Event;
+  type DustRemoval = ();
+  type ExistentialDeposit = ExistentialDeposit;
+  type AccountStore = System;
 }
 
 parameter_types! {
@@ -208,26 +206,21 @@ parameter_types! {
 }
 
 impl transaction_payment::Trait for Runtime {
-    type Currency = balances::Module<Runtime>;
-    type OnTransactionPayment = ();
-    type TransactionBaseFee = TransactionBaseFee;
-    type TransactionByteFee = TransactionByteFee;
-    type WeightToFee = ConvertInto;
-    type FeeMultiplierUpdate = ();
+  type Currency = balances::Module<Runtime>;
+  type OnTransactionPayment = ();
+  type TransactionBaseFee = TransactionBaseFee;
+  type TransactionByteFee = TransactionByteFee;
+  type WeightToFee = ConvertInto;
+  type FeeMultiplierUpdate = ();
 }
 
 impl sudo::Trait for Runtime {
-    type Event = Event;
-    type Call = Call;
-}
-
-/// Used for the module template in `./template.rs`
-impl template::Trait for Runtime {
-    type Event = Event;
+  type Event = Event;
+  type Call = Call;
 }
 
 impl poe::Trait for Runtime {
-    type Event = Event;
+  type Event = Event;
 }
 
 // impl kitties::Trait for Runtime {
@@ -235,25 +228,22 @@ impl poe::Trait for Runtime {
 // }
 
 construct_runtime!(
-	pub enum Runtime where
-		Block = Block,
-		NodeBlock = opaque::Block,
-		UncheckedExtrinsic = UncheckedExtrinsic
-	{
-		System: system::{Module, Call, Config, Storage, Event<T>},
-		RandomnessCollectiveFlip: randomness_collective_flip::{Module, Call, Storage},
-		Timestamp: timestamp::{Module, Call, Storage, Inherent},
-		Aura: aura::{Module, Config<T>, Inherent(Timestamp)},
-		Grandpa: grandpa::{Module, Call, Storage, Config, Event},
-		Balances: balances::{Module, Call, Storage, Config<T>, Event<T>},
-		TransactionPayment: transaction_payment::{Module, Storage},
-		Sudo: sudo::{Module, Call, Config<T>, Storage, Event<T>},
-		// Used for the module template in `./template.rs`
-		TemplateModule: template::{Module, Call, Storage, Event<T>},
-		PoeModule: poe::{Module, Call, Storage, Event<T>},
-		// KittiesModule: kitties::{Module, Call, Storage, Event<T>},
+    pub enum Runtime where
+        Block = Block,
+        NodeBlock = opaque::Block,
+        UncheckedExtrinsic = UncheckedExtrinsic
+    {
+        System: system::{Module, Call, Config, Storage, Event<T>},
+        RandomnessCollectiveFlip: randomness_collective_flip::{Module, Call, Storage},
+        Timestamp: timestamp::{Module, Call, Storage, Inherent},
+        Aura: aura::{Module, Config<T>, Inherent(Timestamp)},
+        Grandpa: grandpa::{Module, Call, Storage, Config, Event},
+        Balances: balances::{Module, Call, Storage, Config<T>, Event<T>},
+        TransactionPayment: transaction_payment::{Module, Storage},
+        Sudo: sudo::{Module, Call, Config<T>, Storage, Event<T>},
+        Poe: poe::{Module, Call, Storage, Event<T>},
 
-	}
+    }
 );
 
 /// The address format for describing accounts.
@@ -268,12 +258,12 @@ pub type SignedBlock = generic::SignedBlock<Block>;
 pub type BlockId = generic::BlockId<Block>;
 /// The SignedExtension to the basic transaction logic.
 pub type SignedExtra = (
-    system::CheckVersion<Runtime>,
-    system::CheckGenesis<Runtime>,
-    system::CheckEra<Runtime>,
-    system::CheckNonce<Runtime>,
-    system::CheckWeight<Runtime>,
-    transaction_payment::ChargeTransactionPayment<Runtime>,
+  system::CheckVersion<Runtime>,
+  system::CheckGenesis<Runtime>,
+  system::CheckEra<Runtime>,
+  system::CheckNonce<Runtime>,
+  system::CheckWeight<Runtime>,
+  transaction_payment::ChargeTransactionPayment<Runtime>,
 );
 /// Unchecked extrinsic type as expected by this runtime.
 pub type UncheckedExtrinsic = generic::UncheckedExtrinsic<Address, Call, Signature, SignedExtra>;
@@ -281,7 +271,7 @@ pub type UncheckedExtrinsic = generic::UncheckedExtrinsic<Address, Call, Signatu
 pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, Call, SignedExtra>;
 /// Executive: handles dispatch to the various modules.
 pub type Executive =
-    frame_executive::Executive<Runtime, Block, system::ChainContext<Runtime>, Runtime, AllModules>;
+  frame_executive::Executive<Runtime, Block, system::ChainContext<Runtime>, Runtime, AllModules>;
 
 impl_runtime_apis! {
     impl sp_api::Core<Block> for Runtime {

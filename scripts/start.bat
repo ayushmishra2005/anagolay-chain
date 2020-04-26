@@ -1,1 +1,1 @@
-.\target\debug\node-template.exe --dev  -l error,runtime
+.\target\debug\sensio-network.exe --dev  -l error,runtime
