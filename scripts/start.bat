@@ -1,1 +1,1 @@
-.\target\debug\sensio-network.exe --dev  -l error,runtime
+.\target\debug\sensio.exe --dev  -l error,runtime

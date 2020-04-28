@@ -4584,7 +4584,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a0eddf2e8f50ced781f288c19f18621fa72a3779e3cb58dbf23b07469b0abeb4"
 
 [[package]]
-name = "sensio-network"
+name = "sensio"
 version = "2.0.0-alpha.4"
 dependencies = [
  "futures 0.3.4",
@@ -4599,7 +4599,7 @@ dependencies = [
  "sc-network",
  "sc-service",
  "sc-transaction-pool",
- "sensio-network-runtime",
+ "sensio-runtime",
  "sp-consensus",
  "sp-consensus-aura",
  "sp-core",
@@ -4613,7 +4613,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "sensio-network-runtime"
+name = "sensio-runtime"
 version = "2.0.0-alpha.4"
 dependencies = [
  "frame-executive",

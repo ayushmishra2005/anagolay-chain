@@ -1,6 +1,6 @@
 use grandpa_primitives::AuthorityId as GrandpaId;
 use sc_service;
-use sensio_network_runtime::{
+use sensio_runtime::{
     AccountId, AuraConfig, BalancesConfig, GenesisConfig, GrandpaConfig, Signature, SudoConfig,
     SystemConfig, WASM_BINARY,
 };
