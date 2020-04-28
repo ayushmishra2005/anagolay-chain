@@ -22,8 +22,8 @@ decl_storage! {
   {
     /// [Proof, AccountId BlockNumber]
     Proofs get(proof): map hasher(blake2_128_concat) T::Hash=> (Proof, T::AccountId, T::BlockNumber);
-    /// [Rule, AccountId BlockNumber]
-    Rules get(rule):  map hasher(blake2_128_concat) T::Hash => (Rule, T::AccountId, T::BlockNumber);
+    /// [RuleId, Rule, AccountId BlockNumber]
+    Rules get(rule):  map hasher(blake2_128_concat) T::Hash => (Vec<u8>, Rule, T::AccountId, T::BlockNumber);
   }
 }
 
@@ -110,66 +110,40 @@ impl Default for Operation {
     }
   }
 }
-/// Rule which must be applied to the PoE
-#[derive(Encode, Decode, Clone, PartialEq)]
-#[cfg_attr(feature = "std", derive(Debug))]
-pub struct RuleBody {
-  version: u32,
-  name: Vec<u8>,
-  description: Vec<u8>,
-  creator: Vec<u8>,
-  for_what: ForWhat,
-  parent: Vec<u8>,
-  ops: Vec<Operation>,
-  build_params: Operation,
-  create_proof: Operation,
-  // optional_number: Option<u32>,
-}
 
 /// Rule which must be applied to the PoE
 #[derive(Encode, Decode, Clone, PartialEq, RuntimeDebug)]
 // #[cfg_attr(feature = "std", derive(Debug))]
 pub struct Rule {
-  id: Vec<u8>, // a CID the body
-  created_at: u64,
-  prev: Vec<u8>,
-  body: RuleBody,
+  version: u32,
+  name: Vec<u8>,
+  desc: Vec<u8>,
+  creator: Vec<u8>,
+  for_what: ForWhat,
+  parent: Vec<u8>,
+  ops: Vec<Operation>,
+  build_params: Operation,
 }
 
 impl Default for Rule {
   fn default() -> Self {
     Rule {
-      id: b"".to_vec(),
-      created_at: 0,
-      prev: b"".to_vec(),
-      body: RuleBody {
-        version: 1,
-        name: b"".to_vec(),
-        description: b"".to_vec(),
-        creator: b"".to_vec(),
-        for_what: ForWhat::default(),
-        parent: b"".to_vec(),
+      version: 1,
+      name: b"".to_vec(),
+      desc: b"".to_vec(),
+      creator: b"".to_vec(),
+      for_what: ForWhat::default(),
+      parent: b"".to_vec(),
+      ops: vec![],
+      build_params: Operation {
+        op: b"build_params".to_vec(),
+        name: b"Special func".to_vec(),
+        desc: b"Special func description".to_vec(),
+        hash_algo: b"blake2b".to_vec(),
+        hash_bits: 256,
+        encode_algo: b"hex".to_vec(),
+        prefix: b"0x".to_vec(),
         ops: vec![],
-        build_params: Operation {
-          op: b"create_payload".to_vec(),
-          name: b"Special func".to_vec(),
-          desc: b"Special func description".to_vec(),
-          hash_algo: b"blake2b".to_vec(),
-          hash_bits: 256,
-          encode_algo: b"hex".to_vec(),
-          prefix: b"0x".to_vec(),
-          ops: vec![],
-        },
-        create_proof: Operation {
-          op: b"create_proof".to_vec(),
-          name: b"How Proof should be created".to_vec(),
-          desc: b"When applying this rule, use this to create the proof".to_vec(),
-          hash_algo: b"blake2b".to_vec(),
-          hash_bits: 256,
-          encode_algo: b"hex".to_vec(),
-          prefix: b"0x".to_vec(),
-          ops: vec![],
-        },
       },
     }
   }
@@ -205,17 +179,16 @@ decl_module! {
         fn deposit_event() = default;
 
         /// Create Rule
-        fn create_rule ( origin, rule:Rule ) {
+        fn create_rule ( origin, rule_id: Vec<u8>, rule:Rule ) {
             let sender = ensure_signed(origin)?;
 
-            let rule_id = rule.id.clone();
             let rule_id_hash = rule_id.using_encoded(<T as system::Trait>::Hashing::hash);
 
             ensure!(!Rules::<T>::contains_key(&rule_id_hash), Error::<T>::RuleAlreadyCreated);
 
             let current_block = <system::Module<T>>::block_number();
 
-            Rules::<T>::insert(&rule_id_hash, ( rule, sender.clone(), current_block));
+            Rules::<T>::insert(&rule_id_hash, (rule_id.clone(), rule, sender.clone(), current_block));
 
             // deposit the event
             Self::deposit_event(RawEvent::RuleCreated(sender, rule_id));
@@ -234,7 +207,7 @@ decl_module! {
           ensure!(Rules::<T>::contains_key(&rule_id_hash), Error::<T>::NoSuchRule);
 
           // the 0 comes from first element in the tuple value -- storage
-          if proof.for_what != rule.0.body.for_what  {
+          if proof.for_what != rule.1.for_what  {
             ensure!(false, Error::<T>::TypeForClaimRuleMismatch);
           }
 
@@ -363,23 +336,23 @@ mod tests {
   #[test]
   fn rule_create_default() {
     ExtBuilder::build().execute_with(|| {
-      let mut r = Rule::default();
-      r.id = b"dummy-text".to_vec();
+      let r = Rule::default();
+      let rule_id = b"dummy-text".to_vec();
 
-      let res = Poe::create_rule(Origin::signed(1), r);
+      let res = Poe::create_rule(Origin::signed(1), rule_id.clone(), r);
       assert_ok!(res)
     });
   }
   #[test]
   fn rule_error_on_duplicate() {
     ExtBuilder::build().execute_with(|| {
-      let mut r1 = Rule::default();
-      r1.id = b"dummy-text".to_vec();
+      let r1 = Rule::default();
+      let rule_id = b"dummy-text".to_vec();
 
-      let res1 = Poe::create_rule(Origin::signed(1), r1.clone());
+      let res1 = Poe::create_rule(Origin::signed(1), rule_id.clone(), r1.clone());
       assert_ok!(res1);
 
-      let res2 = Poe::create_rule(Origin::signed(1), r1);
+      let res2 = Poe::create_rule(Origin::signed(1), rule_id.clone(), r1);
       assert_noop!(res2, Error::<Test>::RuleAlreadyCreated);
     });
   }
@@ -387,15 +360,15 @@ mod tests {
   fn proof_create_default() {
     ExtBuilder::build().execute_with(|| {
       // todo create default rule, figure out better way
-      let mut r = Rule::default();
-      r.id = b"dummy-text".to_vec();
-      let res = Poe::create_rule(Origin::signed(1), r.clone());
+      let r = Rule::default();
+      let rule_id = b"dummy-text".to_vec();
+      let res = Poe::create_rule(Origin::signed(1), rule_id.clone(), r.clone());
       assert_ok!(res);
       // todo create default rule, figure out better way
 
       let mut proof = Proof::default();
       proof.id = b"proof-id".to_vec();
-      proof.rule_id = r.id.clone();
+      proof.rule_id = rule_id.clone();
 
       let res = Poe::create_proof(Origin::signed(1), proof.clone());
       assert_ok!(res)
@@ -405,16 +378,15 @@ mod tests {
   fn proof_error_on_duplicate() {
     ExtBuilder::build().execute_with(|| {
       // todo create default rule, figure out better way
-      let mut r = Rule::default();
-      r.id = b"dummy-text".to_vec();
-
-      let res = Poe::create_rule(Origin::signed(1), r.clone());
+      let r = Rule::default();
+      let rule_id = b"dummy-text".to_vec();
+      let res = Poe::create_rule(Origin::signed(1), rule_id.clone(), r.clone());
       assert_ok!(res);
       // todo create default rule, figure out better way
 
       let mut proof = Proof::default();
       proof.id = b"proof-id".to_vec();
-      proof.rule_id = r.id.clone();
+      proof.rule_id = rule_id.clone();
       // create the proof
       let res1 = Poe::create_proof(Origin::signed(1), proof.clone());
 
@@ -431,8 +403,8 @@ mod tests {
   fn proof_error_on_no_rule() {
     ExtBuilder::build().execute_with(|| {
       let mut proof = Proof::default();
-      proof.id = b"proof-id".to_vec();
       let rule_id = b"dummy-text-never-created".to_vec();
+      proof.id = b"proof-id".to_vec();
       proof.rule_id = rule_id;
       let res = Poe::create_proof(Origin::signed(1), proof);
       assert_noop!(res, Error::<Test>::NoSuchRule);
@@ -443,15 +415,15 @@ mod tests {
     ExtBuilder::build().execute_with(|| {
       // todo create default rule, figure out better way
       let mut r = Rule::default();
-      r.id = b"dummy-text".to_vec();
-      r.body.for_what = ForWhat::Generic;
-      let res = Poe::create_rule(Origin::signed(1), r.clone());
+      let rule_id = b"dummy-text".to_vec();
+      r.for_what = ForWhat::Generic;
+      let res = Poe::create_rule(Origin::signed(1), rule_id.clone(), r.clone());
       assert_ok!(res);
       // todo create default rule, figure out better way
 
       let mut proof = Proof::default();
       proof.id = b"proof-id".to_vec();
-      proof.rule_id = r.id.clone();
+      proof.rule_id = rule_id.clone();
       proof.for_what = ForWhat::Photo;
 
       let res = Poe::create_proof(Origin::signed(1), proof);

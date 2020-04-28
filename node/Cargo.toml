@@ -4,7 +4,7 @@ build = 'build.rs'
 edition = '2018'
 homepage = 'https://substrate.dev'
 license = 'Unlicense'
-name = 'sensio-network'
+name = 'sensio'
 repository = 'https://github.com/paritytech/substrate/'
 version = '2.0.0-alpha.4'
 
@@ -28,7 +28,7 @@ version = '0.8.0-alpha.5'
 package = 'sp-finality-grandpa'
 version = '2.0.0-alpha.4'
 
-[dependencies.sensio-network-runtime]
+[dependencies.sensio-runtime]
 path = '../runtime'
 version = '2.0.0-alpha.4'
 
@@ -78,4 +78,4 @@ version = '2.0.0-alpha.4'
 version = '2.0.0-alpha.4'
 
 [[bin]]
-name = 'sensio-network'
+name = 'sensio'
