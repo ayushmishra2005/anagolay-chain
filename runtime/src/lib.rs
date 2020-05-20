@@ -107,6 +107,9 @@ pub const MINUTES: BlockNumber = 60_000 / (MILLISECS_PER_BLOCK as BlockNumber);
 pub const HOURS: BlockNumber = MINUTES * 60;
 pub const DAYS: BlockNumber = HOURS * 24;
 
+pub const MILLICENTS: Balance = 1_000_000_000;
+pub const CENTS: Balance = 1_000 * MILLICENTS;
+
 /// The version information used to identify this runtime when compiled natively.
 #[cfg(feature = "std")]
 pub fn native_version() -> NativeVersion {
@@ -219,13 +222,26 @@ impl sudo::Trait for Runtime {
     type Call = Call;
 }
 
+parameter_types! {
+  // One storage item; value is size 4+4+16+32 bytes = 56 bytes.
+  pub const MultisigDepositBase: Balance = 30 * CENTS;
+  // Additional storage item size of 32 bytes.
+  pub const MultisigDepositFactor: Balance = 5 * CENTS;
+  pub const MaxSignatories: u16 = 100;
+}
+
+impl pallet_utility::Trait for Runtime {
+    type Event = Event;
+    type Call = Call;
+    type Currency = Balances;
+    type MultisigDepositBase = MultisigDepositBase;
+    type MultisigDepositFactor = MultisigDepositFactor;
+    type MaxSignatories = MaxSignatories;
+}
+
 impl poe::Trait for Runtime {
     type Event = Event;
 }
-
-// impl kitties::Trait for Runtime {
-// 	type Event = Event;
-// }
 
 construct_runtime!(
     pub enum Runtime where
@@ -241,6 +257,8 @@ construct_runtime!(
         Balances: balances::{Module, Call, Storage, Config<T>, Event<T>},
         TransactionPayment: transaction_payment::{Module, Storage},
         Sudo: sudo::{Module, Call, Config<T>, Storage, Event<T>},
+        Utility: pallet_utility::{Module, Call, Storage, Event<T>},
+
         Poe: poe::{Module, Call, Storage, Event<T>},
 
     }

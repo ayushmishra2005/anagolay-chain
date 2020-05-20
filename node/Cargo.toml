@@ -1,12 +1,12 @@
 [package]
-authors = ['Anonymous']
+authors = ['urn:pgp:d1f5e247a976f1e3c14f0a437a6db9962ef3978e']
+repository = 'https://gitlab.com/sensio_group/network-node/'
+homepage = 'https://sensio.network'
 build = 'build.rs'
 edition = '2018'
-homepage = 'https://substrate.dev'
-license = 'Unlicense'
+license = 'Apache 2.0'
 name = 'sensio'
-repository = 'https://github.com/paritytech/substrate/'
-version = '2.0.0-alpha.4'
+version = '0.1.0'
 
 [build-dependencies]
 vergen = '3.0.4'
@@ -26,10 +26,6 @@ version = '0.8.0-alpha.5'
 
 [dependencies.grandpa-primitives]
 package = 'sp-finality-grandpa'
-version = '2.0.0-alpha.4'
-
-[dependencies.sensio-runtime]
-path = '../runtime'
 version = '2.0.0-alpha.4'
 
 [dependencies.sc-basic-authorship]
@@ -76,6 +72,10 @@ version = '2.0.0-alpha.4'
 
 [dependencies.sp-transaction-pool]
 version = '2.0.0-alpha.4'
+
+[dependencies.sensio-runtime]
+path = '../runtime'
+version = '0.1.0'
 
 [[bin]]
 name = 'sensio'
