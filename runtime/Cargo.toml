@@ -1,11 +1,11 @@
 [package]
-authors = ['Anonymous']
+authors = ['urn:pgp:d1f5e247a976f1e3c14f0a437a6db9962ef3978e']
+repository = 'https://gitlab.com/sensio_group/network-node/'
+homepage = 'https://sensio.network'
+license = 'Apache 2.0'
 edition = '2018'
-homepage = 'https://substrate.dev'
-license = 'Unlicense'
 name = 'sensio-runtime'
-repository = 'https://github.com/paritytech/substrate/'
-version = '2.0.0-alpha.4'
+version = '0.1.0'
 
 [dependencies.aura]
 default-features = false
@@ -104,15 +104,13 @@ default-features = false
 package = 'frame-system'
 version = '2.0.0-alpha.4'
 
-[dependencies.poe]
-default-features = false
-package = 'pallet-poe'
-path = '../pallets/poe'
-version = '0.1.0'
-
 [dependencies.timestamp]
 default-features = false
 package = 'pallet-timestamp'
+version = '2.0.0-alpha.4'
+
+[dependencies.pallet-utility]
+default-features = false
 version = '2.0.0-alpha.4'
 
 [dependencies.transaction-payment]
@@ -124,31 +122,38 @@ version = '2.0.0-alpha.4'
 package = 'substrate-wasm-builder-runner'
 version = '1.0.5'
 
+[dependencies.poe]
+default-features = false
+package = 'pallet-poe'
+path = '../pallets/poe'
+version = '0.1.0'
+
 [features]
 default = ['std']
 std = [
-    'aura/std',
-    'balances/std',
-    'codec/std',
-    'frame-executive/std',
-    'frame-support/std',
-    'grandpa/std',
-    'randomness-collective-flip/std',
-    'serde',
-    'sp-api/std',
-    'sp-block-builder/std',
-    'sp-consensus-aura/std',
-    'sp-core/std',
-    'sp-inherents/std',
-    'sp-io/std',
-    'sp-offchain/std',
-    'sp-runtime/std',
-    'sp-session/std',
-    'sp-std/std',
-    'sp-transaction-pool/std',
-    'sp-version/std',
-    'sudo/std',
-    'system/std',
-    'transaction-payment/std',
-    'poe/std'
+  'aura/std',
+  'balances/std',
+  'codec/std',
+  'frame-executive/std',
+  'frame-support/std',
+  'grandpa/std',
+  'randomness-collective-flip/std',
+  'serde',
+  'sp-api/std',
+  'sp-block-builder/std',
+  'sp-consensus-aura/std',
+  'sp-core/std',
+  'sp-inherents/std',
+  'sp-io/std',
+  'sp-offchain/std',
+  'sp-runtime/std',
+  'sp-session/std',
+  'sp-std/std',
+  'pallet-utility/std',
+  'sp-transaction-pool/std',
+  'sp-version/std',
+  'sudo/std',
+  'system/std',
+  'transaction-payment/std',
+  'poe/std'
 ]

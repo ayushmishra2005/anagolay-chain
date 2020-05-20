@@ -1,10 +1,10 @@
 [package]
-authors = ['Anonymous']
+authors = ['urn:pgp:d1f5e247a976f1e3c14f0a437a6db9962ef3978e']
+repository = 'https://gitlab.com/sensio_group/network-node/'
+homepage = 'https://sensio.network'
 edition = '2018'
-homepage = 'https://substrate.dev'
-license = 'Unlicense'
+license = 'Apache 2.0'
 name = 'pallet-poe'
-repository = 'https://github.com/paritytech/substrate/'
 version = '0.1.0'
 
 [dependencies.parity-scale-codec]
@@ -31,6 +31,7 @@ version = '2.0.0-alpha.4'
 
 [dependencies.sp-io]
 default-features = false
+features = ["disable_panic_handler", "disable_oom"]
 version = '2.0.0-alpha.4'
 
 [dependencies.sp-runtime]
@@ -40,6 +41,23 @@ version = '2.0.0-alpha.4'
 [dependencies.sp-std]
 default-features = false
 version = '2.0.0-alpha.4'
+
+[dependencies.timestamp]
+default-features = false
+package = 'pallet-timestamp'
+version = '2.0.0-alpha.4'
+
+[dependencies.cid]
+default-features = false
+version = "0.4.0"
+
+[dependencies.multihash]
+default-features = false
+version = "0.10.1"
+
+[dependencies.multibase]
+default-features = false
+version = "0.8.0"
 
 [features]
 default = ['std']
