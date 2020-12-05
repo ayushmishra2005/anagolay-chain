@@ -1,0 +1,43 @@
+[env]
+RUST_BACKTRACE = "1"
+
+[config]
+default_to_workspace = false
+
+[tasks.test]
+description = "Test the app"
+command = "cargo"
+args = ["test"]
+
+
+[tasks.purge-dev-chain]
+description = "Purge Test chain"
+command = "target/debug/sensio"
+args = ["purge-chain", "-y", "--dev" ]
+
+[tasks.build]
+description = "Runs the rust compiler for the production"
+command = "cargo"
+args = ["build", "--release"]
+
+[tasks.build-dev]
+description = "Runs the rust compiler for the development"
+command = "cargo"
+args = ["build"]
+
+[tasks.start]
+linux_alias = "linux_start"
+windows_alias = "windows_start"
+
+[tasks.linux_start]
+command = "./target/debug/sensio"
+args = [
+    "--dev",
+    "-l",
+    "error,runtime,info",
+    "--no-telemetry",
+    "--rpc-external",
+    "--unsafe-ws-external"
+]
+
+[tasks.windows_start]

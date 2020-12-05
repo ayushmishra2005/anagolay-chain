@@ -1,0 +1,16 @@
+version: "3"
+services:
+  node:
+    image: sensiogroup/network-node:0.2.0-dev
+    restart: always
+    # network_mode: bridge
+    ports:
+      - "30333:30333"
+      - "9933:9933"
+      - "9944:9944"
+    volumes:
+      - "sensio-data:/data"
+    command: sensio --dev --no-telemetry --rpc-external --unsafe-ws-external
+
+volumes:
+  sensio-data:
