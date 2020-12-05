@@ -2,4 +2,13 @@
 panic = 'unwind'
 
 [workspace]
-members = ['node', 'pallets/poe', 'runtime']
+members = [
+    'node',
+    # 'implemented-operations/sn-cid',
+    'pallets/sensio',
+    'pallets/operations',
+    'pallets/statements',
+    'pallets/rules',
+    'pallets/poe',
+    'runtime'
+]

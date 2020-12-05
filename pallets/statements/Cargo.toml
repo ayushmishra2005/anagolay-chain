@@ -1,0 +1,83 @@
+[package]
+authors = ['urn:pgp:d1f5e247a976f1e3c14f0a437a6db9962ef3978e']
+repository = 'https://gitlab.com/sensio_group/network-node/'
+homepage = 'https://sensio.network/pallet/statements'
+edition = '2018'
+license = 'Apache 2.0'
+name = 'pallet-statements'
+version = '0.1.0'
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
+
+[features]
+default = ['std']
+std = [
+    'codec/std',
+    'frame-support/std',
+    'frame-system/std',
+    'sp-std/std',
+    "sp-io/std",
+    'sensio/std',
+    'operations/std',
+]
+
+[dependencies.codec]
+default-features = false
+features = ['derive']
+package = 'parity-scale-codec'
+version = '1.3.1'
+
+[dependencies.sp-std]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+tag = 'v2.0.0-rc4'
+version = '2.0.0-rc4'
+
+[dependencies.frame-support]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+tag = 'v2.0.0-rc4'
+version = '2.0.0-rc4'
+
+[dependencies.frame-system]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+tag = 'v2.0.0-rc4'
+version = '2.0.0-rc4'
+
+[dependencies.sp-core]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+tag = 'v2.0.0-rc4'
+version = '2.0.0-rc4'
+
+[dependencies.sp-io]
+default-features = false
+# features = ["disable_panic_handler", "disable_oom"]
+git = 'https://github.com/paritytech/substrate.git'
+tag = 'v2.0.0-rc4'
+version = '2.0.0-rc4'
+
+[dependencies.sp-runtime]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+tag = 'v2.0.0-rc4'
+version = '2.0.0-rc4'
+
+[dependencies.sensio]
+package = 'pallet-sensio'
+default-features = false
+path = '../sensio'
+version = '0.1.0'
+
+[dependencies.operations]
+package = 'pallet-operations'
+default-features = false
+path = '../operations'
+version = '0.1.0'
+
+[dependencies.sn-cid]
+default-features = false
+path = '../../implemented-operations/sn-cid'
+version = '0.1.0'

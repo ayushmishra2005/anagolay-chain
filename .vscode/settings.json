@@ -1,0 +1,17 @@
+{
+    "cSpell.words": ["dedup", "sigs", "twox"],
+    "workbench.colorTheme": "Night Owl",
+    "workbench.colorCustomizations": {
+        "statusBar.background": "#053b00",
+        "titleBar.activeBackground": "#053b00",
+        "titleBar.activeForeground": "#cccccc"
+    },
+    "rust-client.updateOnStartup": true,
+    "rust.all_features": true,
+    "rust-client.channel": "stable",
+    "rust-client.disableRustup": true,
+    "rust.build_on_save": false,
+    "rust.cfg_test": false,
+    "rust.no_default_features": true,
+
+}

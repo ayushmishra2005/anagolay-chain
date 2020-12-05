@@ -1,0 +1,23 @@
+image: "sensiogroup/network-node-builder:latest"
+
+stages:
+    - build
+    - test
+
+.only-master-and-dev:
+    only:
+        - master
+        - 13-version-0-2-0
+        - 12-improve-docker-build-process-and-ci-cd
+
+test:
+    extends: .only-master-and-dev
+    stage: test
+    script:
+        - cargo make test
+
+build:release:
+    extends: .only-master-and-dev
+    stage: build
+    script:
+        - cargo make build

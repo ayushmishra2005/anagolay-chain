@@ -7,153 +7,231 @@ edition = '2018'
 name = 'sensio-runtime'
 version = '0.1.0'
 
+[package.metadata.docs.rs]
+targets = ['x86_64-unknown-linux-gnu']
+
+[build-dependencies.wasm-builder-runner]
+package = 'substrate-wasm-builder-runner'
+version = '1.0.5'
+
+[features]
+default = ['std']
+std = [
+    'aura/std',
+    'balances/std',
+    'codec/std',
+    'frame-executive/std',
+    'frame-support/std',
+    'grandpa/std',
+    'randomness-collective-flip/std',
+    'serde',
+    'sp-api/std',
+    'sp-block-builder/std',
+    'sp-consensus-aura/std',
+    'sp-core/std',
+    'sp-inherents/std',
+    'sp-io/std',
+    'sp-offchain/std',
+    'sp-runtime/std',
+    'sp-session/std',
+    'sp-std/std',
+    'pallet-utility/std',
+    'sp-transaction-pool/std',
+    'sp-version/std',
+    'sudo/std',
+    'system/std',
+    'timestamp/std',
+    'transaction-payment/std',
+    'sensio/std',
+    'operations/std',
+    'statements/std',
+    'rules/std',
+    'poe/std',
+]
+
 [dependencies.aura]
 default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+tag = 'v2.0.0-rc4'
 package = 'pallet-aura'
-version = '2.0.0-alpha.4'
+version = '2.0.0-rc4'
 
 [dependencies.balances]
 default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+tag = 'v2.0.0-rc4'
 package = 'pallet-balances'
-version = '2.0.0-alpha.4'
+version = '2.0.0-rc4'
 
 [dependencies.codec]
 default-features = false
 features = ['derive']
 package = 'parity-scale-codec'
-version = '1.2.0'
+version = '1.3.1'
 
 [dependencies.frame-executive]
 default-features = false
-version = '2.0.0-alpha.4'
+git = 'https://github.com/paritytech/substrate.git'
+tag = 'v2.0.0-rc4'
+version = '2.0.0-rc4'
 
 [dependencies.frame-support]
 default-features = false
-version = '2.0.0-alpha.4'
+git = 'https://github.com/paritytech/substrate.git'
+tag = 'v2.0.0-rc4'
+version = '2.0.0-rc4'
 
 [dependencies.grandpa]
 default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+tag = 'v2.0.0-rc4'
 package = 'pallet-grandpa'
-version = '2.0.0-alpha.4'
+version = '2.0.0-rc4'
 
 [dependencies.randomness-collective-flip]
 default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+tag = 'v2.0.0-rc4'
 package = 'pallet-randomness-collective-flip'
-version = '2.0.0-alpha.4'
+version = '2.0.0-rc4'
 
 [dependencies.serde]
 features = ['derive']
 optional = true
-version = '1.0.101'
+version = '1.0.114'
 
 [dependencies.sp-api]
 default-features = false
-version = '2.0.0-alpha.4'
+git = 'https://github.com/paritytech/substrate.git'
+tag = 'v2.0.0-rc4'
+version = '2.0.0-rc4'
 
 [dependencies.sp-block-builder]
 default-features = false
-version = '2.0.0-alpha.4'
+git = 'https://github.com/paritytech/substrate.git'
+tag = 'v2.0.0-rc4'
+version = '2.0.0-rc4'
 
 [dependencies.sp-consensus-aura]
 default-features = false
-version = '0.8.0-alpha.5'
+git = 'https://github.com/paritytech/substrate.git'
+tag = 'v2.0.0-rc4'
+version = '0.8.0-rc4'
 
 [dependencies.sp-core]
 default-features = false
-version = '2.0.0-alpha.4'
+git = 'https://github.com/paritytech/substrate.git'
+tag = 'v2.0.0-rc4'
+version = '2.0.0-rc4'
 
 [dependencies.sp-inherents]
 default-features = false
-version = '2.0.0-alpha.4'
+git = 'https://github.com/paritytech/substrate.git'
+tag = 'v2.0.0-rc4'
+version = '2.0.0-rc4'
 
 [dependencies.sp-io]
 default-features = false
-version = '2.0.0-alpha.4'
+git = 'https://github.com/paritytech/substrate.git'
+tag = 'v2.0.0-rc4'
+version = '2.0.0-rc4'
 
 [dependencies.sp-offchain]
 default-features = false
-version = '2.0.0-alpha.4'
+git = 'https://github.com/paritytech/substrate.git'
+tag = 'v2.0.0-rc4'
+version = '2.0.0-rc4'
 
 [dependencies.sp-runtime]
 default-features = false
-version = '2.0.0-alpha.4'
+git = 'https://github.com/paritytech/substrate.git'
+tag = 'v2.0.0-rc4'
+version = '2.0.0-rc4'
 
 [dependencies.sp-session]
 default-features = false
-version = '2.0.0-alpha.4'
+git = 'https://github.com/paritytech/substrate.git'
+tag = 'v2.0.0-rc4'
+version = '2.0.0-rc4'
 
 [dependencies.sp-std]
 default-features = false
-version = '2.0.0-alpha.4'
+git = 'https://github.com/paritytech/substrate.git'
+tag = 'v2.0.0-rc4'
+version = '2.0.0-rc4'
 
 [dependencies.sp-transaction-pool]
 default-features = false
-version = '2.0.0-alpha.4'
+git = 'https://github.com/paritytech/substrate.git'
+tag = 'v2.0.0-rc4'
+version = '2.0.0-rc4'
 
 [dependencies.sp-version]
 default-features = false
-version = '2.0.0-alpha.4'
+git = 'https://github.com/paritytech/substrate.git'
+tag = 'v2.0.0-rc4'
+version = '2.0.0-rc4'
 
 [dependencies.sudo]
 default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+tag = 'v2.0.0-rc4'
 package = 'pallet-sudo'
-version = '2.0.0-alpha.4'
+version = '2.0.0-rc4'
 
 [dependencies.system]
 default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+tag = 'v2.0.0-rc4'
 package = 'frame-system'
-version = '2.0.0-alpha.4'
+version = '2.0.0-rc4'
 
 [dependencies.timestamp]
 default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+tag = 'v2.0.0-rc4'
 package = 'pallet-timestamp'
-version = '2.0.0-alpha.4'
+version = '2.0.0-rc4'
 
 [dependencies.pallet-utility]
 default-features = false
-version = '2.0.0-alpha.4'
+git = 'https://github.com/paritytech/substrate.git'
+tag = 'v2.0.0-rc4'
+version = '2.0.0-rc4'
 
 [dependencies.transaction-payment]
 default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+tag = 'v2.0.0-rc4'
 package = 'pallet-transaction-payment'
-version = '2.0.0-alpha.4'
+version = '2.0.0-rc4'
 
-[build-dependencies.wasm-builder-runner]
-package = 'substrate-wasm-builder-runner'
-version = '1.0.5'
+[dependencies.sensio]
+default-features = false
+package = 'pallet-sensio'
+path = '../pallets/sensio'
+version = '0.1.0'
+
+[dependencies.operations]
+default-features = false
+package = 'pallet-operations'
+path = '../pallets/operations'
+version = '0.1.0'
+
+[dependencies.statements]
+default-features = false
+package = 'pallet-statements'
+path = '../pallets/statements'
+version = '0.1.0'
+
+[dependencies.rules]
+default-features = false
+package = 'pallet-rules'
+path = '../pallets/rules'
+version = '0.1.0'
 
 [dependencies.poe]
 default-features = false
 package = 'pallet-poe'
 path = '../pallets/poe'
 version = '0.1.0'
-
-[features]
-default = ['std']
-std = [
-  'aura/std',
-  'balances/std',
-  'codec/std',
-  'frame-executive/std',
-  'frame-support/std',
-  'grandpa/std',
-  'randomness-collective-flip/std',
-  'serde',
-  'sp-api/std',
-  'sp-block-builder/std',
-  'sp-consensus-aura/std',
-  'sp-core/std',
-  'sp-inherents/std',
-  'sp-io/std',
-  'sp-offchain/std',
-  'sp-runtime/std',
-  'sp-session/std',
-  'sp-std/std',
-  'pallet-utility/std',
-  'sp-transaction-pool/std',
-  'sp-version/std',
-  'sudo/std',
-  'system/std',
-  'transaction-payment/std',
-  'poe/std'
-]
