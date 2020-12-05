@@ -25,7 +25,7 @@ fn statements_create_ownership_error_on_duplicate() {
         assert_ok!(res_first);
 
         let res_duplicate = StatementsTest::create_ownership(Origin::signed(1), r.clone());
-        assert_noop!(res_duplicate, Error::<Test>::OwnershipAlreadyCreated);
+        assert_noop!(res_duplicate, Error::<Test>::ProofHasStatement);
     });
 }
 #[test]
@@ -54,7 +54,7 @@ fn statements_create_copyright_error_on_duplicate() {
         assert_ok!(res_first);
 
         let res_duplicate = StatementsTest::create_copyright(Origin::signed(1), r.clone());
-        assert_noop!(res_duplicate, Error::<Test>::CopyrightAlreadyCreated);
+        assert_noop!(res_duplicate, Error::<Test>::ProofHasStatement);
     });
 }
 #[test]
