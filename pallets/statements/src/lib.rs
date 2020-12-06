@@ -2,7 +2,7 @@
 
 use frame_support::codec::{Decode, Encode};
 // use frame_support::debug::native;
-// use frame_support::debug;
+use frame_support::debug;
 use frame_support::{decl_error, decl_event, decl_module, decl_storage, ensure};
 use sensio::{CreatorId, GenericId};
 
@@ -12,6 +12,9 @@ use sp_std::{clone::Clone, default::Default, vec::Vec};
 
 mod mock;
 mod tests;
+
+const LOG: &str = "sensio";
+
 
 ///The pallet's configuration trait.
 pub trait Trait: system::Trait {
@@ -163,6 +166,24 @@ decl_storage! {
     /// ALL statements
     pub Statements get(fn statements):  double_map hasher(blake2_128_concat) GenericId, hasher(twox_64_concat) T::AccountId => StatementInfo<T::AccountId, T::BlockNumber>;
 
+    ///Statement to previous statement index table for quick check. The StatementB has a parent StatementA in `prev_id` field this will be 
+    ///Example: 
+
+    /// ```ts
+    /// const aStatement = {
+    ///   //   ... normal as the rest,
+    ///   prev_id: ''
+    /// }
+
+    /// const bStatement = {
+    ///   //  ... normal as the rest,
+    ///   prev_id: aStatement.id
+    /// }
+    /// ```
+    /// so this will be a map of bStatement.GenericId => aStatement.GenericId
+    /// And now we try to revoke the `aStatement` it will fail, because it is the part of the `bStatement`
+    pub StatementToPrevious get(fn prev_statement): map hasher(blake2_128_concat) GenericId => GenericId;
+
     /// Amount of saved Statements
     pub StatementsCount get(fn statements_count): u128;
 
@@ -185,18 +206,23 @@ decl_module! {
         /// Create Copyright
         #[weight = 10_000]
         fn create_copyright ( origin, statement: SensioStatement )  {
+            debug::RuntimeLogger::init();
             let sender = ensure_signed(origin)?;
             let current_block = <system::Module<T>>::block_number();
 
             // Statement must be type of copyright
             ensure!(statement.data.claim.claim_type == SensioClaimType::COPYRIGHT, Error::<T>::WrongClaimType );
             // Ensure that ProofCurrentStatements has or not the statement
-            // ensure!(!ProofValidStatements::<T>::contains_key(&statement.data.claim.poe_id), Error::<T>::CopyrightAlreadyCreated);
+            
+            debug::debug!(target: LOG, "issue {:?}", statement);
+
+
+            ensure!(statement.data.claim.prev_id.is_empty(),Error::<T>::CreatingChildStatementNotSupported );
+
             Self::check_statements_for_proof(&statement)?;
 
             // Do we have such a statement
             ensure!(!Statements::<T>::contains_key(&statement.id, &sender), Error::<T>::CopyrightAlreadyCreated);
-
 
             //@FUCK this needs fixing, it's a work-around for https://gitlab.com/sensio_group/network-node/-/issues/31
             let statement_info = Self::build_statement_info(&statement, &sender, &current_block);
@@ -215,8 +241,9 @@ decl_module! {
 
             // Statement must be type of copyright
             ensure!(statement.data.claim.claim_type == SensioClaimType::OWNERSHIP,Error::<T>::WrongClaimType );
+
+            ensure!(statement.data.claim.prev_id.is_empty(),Error::<T>::CreatingChildStatementNotSupported );
              // Ensure that ProofCurrentStatements has or not the statement
-            // ensure!(!ProofValidStatements::<T>::contains_key(&statement.data.claim.poe_id), Error::<T>::CopyrightAlreadyCreated);
             Self::check_statements_for_proof(&statement)?;
 
             // Do we have such a statement
@@ -238,6 +265,8 @@ decl_module! {
             // https://substrate.dev/docs/en/knowledgebase/runtime/origin
             let sender = ensure_signed(origin)?;
 
+            ensure!(StatementToPrevious::contains_key(&statement_id), Error::<T>::StatementHasChildStatement);
+            
             // Verify that the specified statement has been claimed.
             ensure!(Statements::<T>::contains_key(&statement_id, &sender), Error::<T>::NoSuchStatement);
 
@@ -270,7 +299,11 @@ decl_error! {
         /// Statement already exist
         StatementExist,
         /// Statement doesn't exits.
-        NoSuchStatement
+        NoSuchStatement,
+        /// Statement has child statement and ite cannot be revoked
+        StatementHasChildStatement,
+        /// Create child statement is not yet supported
+        CreatingChildStatementNotSupported,
     }
 }
 // The pallet's events

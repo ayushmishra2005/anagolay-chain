@@ -7,6 +7,7 @@ use super::*;
 use frame_support::{assert_noop, assert_ok};
 use sn_cid::sn_cid;
 
+
 #[test]
 fn statements_create_ownership() {
     ExtBuilder::build().execute_with(|| {
@@ -45,6 +46,26 @@ fn statements_create_copyright() {
         let res = StatementsTest::create_copyright(Origin::signed(1), r.clone());
         assert_ok!(res);
     });
+}
+#[test]
+fn copyright_create_child() {
+    ExtBuilder::build().execute_with(|| {
+        let mut r = SensioStatement::default();
+        r.data.claim.prev_id = b"my-fake-vec-id".to_vec();
+        let res = StatementsTest::create_copyright(Origin::signed(1), r.clone());
+        assert_noop!(res, Error::<Test>::CreatingChildStatementNotSupported);
+        });
+}
+#[test]
+fn ownership_create_child() {
+    ExtBuilder::build().execute_with(|| {
+        let mut r = SensioStatement::default();
+        r.data.claim.prev_id = b"my-fake-vec-id".to_vec();
+        r.data.claim.claim_type = SensioClaimType::OWNERSHIP;
+
+        let res = StatementsTest::create_ownership(Origin::signed(1), r.clone());
+        assert_noop!(res, Error::<Test>::CreatingChildStatementNotSupported);
+        });
 }
 #[test]
 fn statements_create_copyright_error_on_duplicate() {
