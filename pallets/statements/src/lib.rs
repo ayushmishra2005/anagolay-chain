@@ -15,7 +15,6 @@ mod tests;
 
 const LOG: &str = "sensio";
 
-
 ///The pallet's configuration trait.
 pub trait Trait: system::Trait {
     /// The overarching event type.
@@ -166,8 +165,8 @@ decl_storage! {
     /// ALL statements
     pub Statements get(fn statements):  double_map hasher(blake2_128_concat) GenericId, hasher(twox_64_concat) T::AccountId => StatementInfo<T::AccountId, T::BlockNumber>;
 
-    ///Statement to previous statement index table for quick check. The StatementB has a parent StatementA in `prev_id` field this will be 
-    ///Example: 
+    ///Statement to previous statement index table for quick check. The StatementB has a parent StatementA in `prev_id` field this will be
+    ///Example:
 
     /// ```ts
     /// const aStatement = {
@@ -213,7 +212,7 @@ decl_module! {
             // Statement must be type of copyright
             ensure!(statement.data.claim.claim_type == SensioClaimType::COPYRIGHT, Error::<T>::WrongClaimType );
             // Ensure that ProofCurrentStatements has or not the statement
-            
+
             debug::debug!(target: LOG, "issue {:?}", statement);
 
 
@@ -266,13 +265,24 @@ decl_module! {
             let sender = ensure_signed(origin)?;
 
             ensure!(StatementToPrevious::contains_key(&statement_id), Error::<T>::StatementHasChildStatement);
-            
+
             // Verify that the specified statement has been claimed.
             ensure!(Statements::<T>::contains_key(&statement_id, &sender), Error::<T>::NoSuchStatement);
 
             Self::remove_statement(&statement_id, &sender)?;
             // Emit an event that the claim was erased.
             Self::deposit_event(RawEvent::StatementRevoked(sender, statement_id));
+        }
+        /// Revoke ALL statements -- test only
+        #[weight = 10_000_000]
+        fn revoke_all (origin) {
+            // Check that the extrinsic was signed and get the signer.
+            // This function will return an error if the extrinsic is not signed.
+            // https://substrate.dev/docs/en/knowledgebase/runtime/origin
+            let sender = ensure_signed(origin)?;
+
+            // Emit an event that the claim was erased.
+            
         }
   }
 }
@@ -348,8 +358,12 @@ impl<T: Trait> Module<T> {
         statement_id: &GenericId,
         account_id: &T::AccountId,
     ) -> Result<bool, Error<T>> {
-        let statement_info: StatementInfo<T::AccountId, T::BlockNumber> = Statements::<T>::get(&statement_id, &account_id);
-        Self::remove_statement_from_proof(&statement_info.statement.data.claim.poe_id, &statement_info.statement.id)?;
+        let statement_info: StatementInfo<T::AccountId, T::BlockNumber> =
+            Statements::<T>::get(&statement_id, &account_id);
+        Self::remove_statement_from_proof(
+            &statement_info.statement.data.claim.poe_id,
+            &statement_info.statement.id,
+        )?;
         Statements::<T>::remove(&statement_id, &account_id);
         Self::decrease_statements_count();
         Ok(true)
