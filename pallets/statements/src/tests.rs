@@ -7,6 +7,7 @@ use super::*;
 use frame_support::{assert_noop, assert_ok};
 use sn_cid::sn_cid;
 
+
 #[test]
 fn statements_create_ownership() {
     ExtBuilder::build().execute_with(|| {
@@ -25,7 +26,7 @@ fn statements_create_ownership_error_on_duplicate() {
         assert_ok!(res_first);
 
         let res_duplicate = StatementsTest::create_ownership(Origin::signed(1), r.clone());
-        assert_noop!(res_duplicate, Error::<Test>::OwnershipAlreadyCreated);
+        assert_noop!(res_duplicate, Error::<Test>::ProofHasStatement);
     });
 }
 #[test]
@@ -47,6 +48,26 @@ fn statements_create_copyright() {
     });
 }
 #[test]
+fn copyright_create_child() {
+    ExtBuilder::build().execute_with(|| {
+        let mut r = SensioStatement::default();
+        r.data.claim.prev_id = b"my-fake-vec-id".to_vec();
+        let res = StatementsTest::create_copyright(Origin::signed(1), r.clone());
+        assert_noop!(res, Error::<Test>::CreatingChildStatementNotSupported);
+        });
+}
+#[test]
+fn ownership_create_child() {
+    ExtBuilder::build().execute_with(|| {
+        let mut r = SensioStatement::default();
+        r.data.claim.prev_id = b"my-fake-vec-id".to_vec();
+        r.data.claim.claim_type = SensioClaimType::OWNERSHIP;
+
+        let res = StatementsTest::create_ownership(Origin::signed(1), r.clone());
+        assert_noop!(res, Error::<Test>::CreatingChildStatementNotSupported);
+        });
+}
+#[test]
 fn statements_create_copyright_error_on_duplicate() {
     ExtBuilder::build().execute_with(|| {
         let r = SensioStatement::default();
@@ -54,7 +75,7 @@ fn statements_create_copyright_error_on_duplicate() {
         assert_ok!(res_first);
 
         let res_duplicate = StatementsTest::create_copyright(Origin::signed(1), r.clone());
-        assert_noop!(res_duplicate, Error::<Test>::CopyrightAlreadyCreated);
+        assert_noop!(res_duplicate, Error::<Test>::ProofHasStatement);
     });
 }
 #[test]

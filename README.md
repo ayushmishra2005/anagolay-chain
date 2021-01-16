@@ -28,3 +28,5 @@ use frame_support::{
     storage::IterableStorageDoubleMap,
 };
 ```
+
+`find . -name "\*.sh" -exec chmod +x {} \;`
