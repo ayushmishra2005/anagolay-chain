@@ -41,9 +41,20 @@ RUN cargo fetch
 RUN cargo build --release
 
 # Final stage. Copy the node executable and the script
-
 FROM debian:stretch-slim
 
-WORKDIR /app
+ENV RUST_BACKTRACE 1
 
-# COPY --from=builder /app/target/release/dock-node .
+COPY --from=builder /app/target/release/sensio /usr/local/bin
+
+# let's see will this run in this container
+RUN /usr/local/bin/sensio --version
+
+USER sensio
+
+EXPOSE 30333 9933 9944
+
+VOLUME ["/data"]
+
+ENTRYPOINT  ["/usr/local/bin/sensio"]
+CMD []
