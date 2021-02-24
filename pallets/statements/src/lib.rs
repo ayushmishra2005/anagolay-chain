@@ -223,7 +223,7 @@ decl_module! {
             // Do we have such a statement
             ensure!(!Statements::<T>::contains_key(&statement.id, &sender), Error::<T>::CopyrightAlreadyCreated);
 
-            //@FUCK this needs fixing, it's a work-around for https://gitlab.com/sensio_group/network-node/-/issues/31
+            //@FUCK this needs fixing, it's a work-around for https://gitlab.com/anagolay/node/-/issues/31
             let statement_info = Self::build_statement_info(&statement, &sender, &current_block);
             Self::add_statement_to_proof(&statement.data.claim.poe_id, &statement.id)?;
             Self::insert_statement(&statement_info, &sender);
@@ -248,7 +248,7 @@ decl_module! {
             // Do we have such a statement
             ensure!(!Statements::<T>::contains_key(&statement.id, &sender), Error::<T>::OwnershipAlreadyCreated);
 
-            //@FUCK this needs fixing, it's a work-around for https://gitlab.com/sensio_group/network-node/-/issues/31
+            //@FUCK this needs fixing, it's a work-around for https://gitlab.com/anagolay/node/-/issues/31
             let statement_info = Self::build_statement_info(&statement, &sender, &current_block);
             Self::add_statement_to_proof(&statement.data.claim.poe_id, &statement.id)?;
             Self::insert_statement(&statement_info, &sender);
@@ -279,10 +279,10 @@ decl_module! {
             // Check that the extrinsic was signed and get the signer.
             // This function will return an error if the extrinsic is not signed.
             // https://substrate.dev/docs/en/knowledgebase/runtime/origin
-            let sender = ensure_signed(origin)?;
+            let _sender = ensure_signed(origin)?;
 
             // Emit an event that the claim was erased.
-            
+
         }
   }
 }

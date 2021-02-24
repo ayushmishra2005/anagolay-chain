@@ -26,11 +26,11 @@ pub const PERCEPTUAL_HASH_NAME: &[u8] = b"perceptual_hash";
 pub struct CustomInputParam {
     ///  'SnByteArray' | 'ProofParams[]' | 'SnBoolean'
     data: Vec<u8>,
-    /// The real data type check the outputDecoded in sensio SDK, for more info check the https://gitlab.com/sensio_group/network-node/-/issues/27
+    /// The real data type check the outputDecoded in sensio SDK, for more info check the https://gitlab.com/anagolay/node/-/issues/27
     decoded: Vec<u8>,
 }
 
-///Operation output definition, more info here https://gitlab.com/sensio_group/network-node/-/issues/27
+///Operation output definition, more info here https://gitlab.com/anagolay/node/-/issues/27
 #[derive(Default, Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
 pub struct OperationOutput {
     desc: Vec<u8>,

@@ -1,7 +1,7 @@
 [package]
 authors = ['urn:pgp:d1f5e247a976f1e3c14f0a437a6db9962ef3978e']
-repository = 'https://gitlab.com/sensio_group/network-node/'
-homepage = 'https://sensio.network/pallet/statements'
+repository = 'https://gitlab.com/anagolay/node/'
+homepage = 'https://anagolay.network/pallet/statements'
 edition = '2018'
 license = 'Apache 2.0'
 name = 'pallet-statements'

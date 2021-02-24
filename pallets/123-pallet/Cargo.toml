@@ -1,8 +1,8 @@
 [package]
 authors = ['urn:pgp:d1f5e247a976f1e3c14f0a437a6db9962ef3978e']
 description = '123 template pallet'
-repository = 'https://gitlab.com/sensio_group/network-node/'
-homepage = 'https://sensio.network/pallet/123'
+repository = 'https://gitlab.com/anagolay/node/'
+homepage = 'https://anagolay.network/pallet/123'
 edition = '2018'
 license = 'Apache 2.0'
 name = 'pallet-123'
