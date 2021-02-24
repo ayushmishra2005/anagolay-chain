@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+cd $(dirname $(dirname $(dirname $(readlink -f "$0"))))
+
+echo -e '\e[1;32m🔧 Building Docker Image\e[0m'
+# docker build -f devops/docker/Dockerfile . &>/dev/null
+docker build -f devops/docker/Dockerfile .

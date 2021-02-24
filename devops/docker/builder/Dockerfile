@@ -4,9 +4,9 @@ LABEL description="This box is HUGE, it contains the cached verison of the node 
 # ENV DEBIAN_FRONTEND=noninteractive
 ENV RUST_BACKTRACE 1
 
-WORKDIR /sensio
+WORKDIR /anagolay
 
-COPY . /sensio
+COPY . /anagolay
 
 RUN apt-get update && \
     # apt-get dist-upgrade -y -o Dpkg::Options::="--force-confold" && \
@@ -23,4 +23,4 @@ RUN ./devops/scripts/init.sh && \
 
 RUN cargo version
 
-RUN ./target/release/sensio --version
+RUN ./target/release/anagolay --version
