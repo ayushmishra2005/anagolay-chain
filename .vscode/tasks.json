@@ -1,52 +1,54 @@
 {
-    // See https://go.microsoft.com/fwlink/?LinkId=733558
-    // for the documentation about the tasks.json format
-    "version": "2.0.0",
-    "tasks": [
-        {
-            "label": "purge chain",
-            "type": "shell",
-            "command": "target/debug/sensio",
-            "args": ["purge-chain", "-y", "--dev"],
-            "problemMatcher": ["$rustc"]
-        },
-        {
-            "type": "shell",
-            "label": "cargo check",
-            "command": "cargo",
-            "args": ["check", "--verbose"],
-            "problemMatcher": ["$rustc"],
-            "group": "build"
-        },
-        {
-            "type": "shell",
-            "label": "cargo build",
-            "command": "cargo",
-            "args": ["build"],
-            "problemMatcher": ["$rustc"],
-            "group": "build"
-        },
-        {
-            "label": "start chain",
-            "type": "shell",
-            "command": "target/debug/sensio",
-            "args": [
-                "--dev",
-                "-l",
-                "error,runtime,info",
-                "--no-telemetry",
-                "--rpc-external",
-                "--unsafe-ws-external"
-            ],
-            "problemMatcher": ["$rustc"]
-        },
-        {
-            "type": "shell",
-            "label": "cargo test",
-            "command": "cargo",
-            "args": ["test"],
-            "problemMatcher": ["$rustc"],
-            "group": "build"
-        }
-    ]
+  // See https://go.microsoft.com/fwlink/?LinkId=733558
+  // for the documentation about the tasks.json format
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "type": "shell",
+      "label": "check",
+      "command": "cargo",
+      // "args": ["check", "--verbose"],
+      "args": ["make", "check"],
+      "problemMatcher": ["$rustc"],
+      "group": "build"
+    },
+    {
+      "type": "shell",
+      "label": "test",
+      "command": "cargo",
+      "args": ["make", "test"],
+      "problemMatcher": ["$rustc"],
+      "group": "build"
+    },
+    {
+      "type": "shell",
+      "label": "build",
+      "command": "cargo",
+      "args": ["make", "build"],
+      "problemMatcher": ["$rustc"],
+      "group": "build"
+    },
+    {
+      "label": "purge chain",
+      "type": "shell",
+      "command": "cargo",
+      "args": ["make", "chain-dev-purge"],
+      "problemMatcher": ["$rustc"]
+    },
+    {
+      "label": "start dev",
+      "type": "shell",
+      "command": "cargo",
+      "args": ["make", "chain-dev-start"],
+      "problemMatcher": ["$rustc"]
+    },
+    {
+      "type": "shell",
+      "label": "fmt check",
+      "command": "cargo",
+      "args": ["make", "fmt-check"],
+      "problemMatcher": ["$rustc"],
+      "group": "build"
+    }
+  ]
 }

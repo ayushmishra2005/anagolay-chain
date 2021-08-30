@@ -1,23 +1,64 @@
-image: "sensiogroup/network-node-builder:latest"
+# image: paritytech/ci-linux:9575dfcd-20210722
+image: woss/substrate_rust_ci_cachepot
+# image: woss/rust-ci-cachepot-cuda
 
 stages:
-    - build
-    - test
+  # - check
+  # - audit
+  # - build
+  - test
+
+workflow:
+  rules:
+    - if: $CI_MERGE_REQUEST_IID
+    - if: $CI_COMMIT_TAG
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+# default:
+# cache: {}
+
+.compiler-info: &compiler-info
+  - rustup show
+  - cargo --version
+  - rustup +nightly show
+  - cargo +nightly --version
+  - cachepot -V
+
+# https://docs.gitlab.com/ee/ci/yaml/README.html#cache
+# cache: &global_cache
+#   key: build-cache
+#   paths:
+#     # - /usr/local/cargo/
+#     # - /app/.cache/
+#     - ./target/
+#   policy: pull-push # default
+
+## Add here the crates that all the jobs need
+.essential-cargo: &essential-cargo
+  - cargo install cargo-make
 
 .only-master-and-dev:
-    only:
-        - master
-        - 13-version-0-2-0
-        - 12-improve-docker-build-process-and-ci-cd
+  only:
+    - master
+    - merge_requests
 
-test:
-    extends: .only-master-and-dev
-    stage: test
-    script:
-        - cargo make test
+test:code:
+  stage: test
+  extends: .only-master-and-dev
+  before_script:
+    # - *essential-cargo
+    - *compiler-info
+  script:
+    - cargo make ci-flow
+# build-release:
+#   extends: .only-master-and-dev
+#   stage: build
+#   script:
+#     - cargo build --release
 
-build:release:
-    extends: .only-master-and-dev
-    stage: build
-    script:
-        - cargo make build
+# lint-code:
+#   stage: check
+#   before_script:
+#     - rustup component add rustfmt --toolchain nightly-x86_64-unknown-linux-gnu
+#   script:
+#     - cargo fmt -- --check

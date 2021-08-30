@@ -1,43 +1,82 @@
-[env]
-RUST_BACKTRACE = "1"
+# env_files = [
+#   "./.env"
+# ]
 
 [config]
+# https://github.com/sagiegurari/cargo-make#disabling-workspace-support
 default_to_workspace = false
 
-[tasks.test]
-description = "Test the app"
+[tasks.fmt]
+install_crate = "rustfmt"
+description = "Formats the code using the cargo fmt."
 command = "cargo"
-args = ["test"]
+args = ["fmt", "--", "--emit=files"]
 
+[tasks.fmt-check]
+description = "Checks the code using the cargo fmt."
+install_crate = "rustfmt"
+command = "cargo"
+args = ["fmt", "--", "--check"]
 
-[tasks.purge-dev-chain]
-description = "Purge Test chain"
-command = "target/debug/sensio"
-args = ["purge-chain", "-y", "--dev" ]
+[tasks.check]
+description = "Check a local package and all of its dependencies for errors."
+command = "cargo"
+args = ["check"]
+
+[tasks.clean]
+description = "Remove generated artifacts, namely `anagolay`."
+command = "cargo"
+args = ["clean", "-p", "anagolay"]
 
 [tasks.build]
-description = "Runs the rust compiler for the production"
+description = "Compile the Anagolay runtime in debug mode. Accepts any valid build arguments."
 command = "cargo"
-args = ["build", "--release"]
+args = ["build", "${@}"]
+# dependencies = ["clean"]
 
-[tasks.build-dev]
-description = "Runs the rust compiler for the development"
+[tasks.build-release]
+description = "Compile the Anagolay runtime in release mode. Accepts any valid build arguments."
 command = "cargo"
-args = ["build"]
+args = ["build", "--release", "${@}"]
+# dependencies = ["clean"]
 
-[tasks.start]
-linux_alias = "linux_start"
-windows_alias = "windows_start"
+## Build release with feature runtime-benchmarks
+[tasks.build-release-benchmarks]
+description = "Compile the Anagolay runtime in release mode with feature flag for benchmarks. "
+command = "cargo"
+args = ["build", "--release", "--features", "runtime-benchmarks"]
 
-[tasks.linux_start]
-command = "./target/debug/sensio"
+[tasks.test]
+description = "Execute unit and integration tests of a anagolay node."
+command = "cargo"
+args = ["test", "${@}"]
+# dependencies = ["build"]
+
+## Run the tests with benchmarking turned on
+[tasks.test-benchmarking]
+description = "Execute unit and integration tests of a anagolay node with flags enabled for testing benchmarks."
+command = "cargo"
+args = ["test", "--features", "runtime-benchmarks", "--features", "--all", "benchmarking"]
+
+[tasks.chain-dev-purge]
+description = "Purge the local chain database for debug build."
+command = "./target/debug/anagolay"
+args = ["purge-chain", "-y", "--dev"]
+
+[tasks.chain-dev-start]
+description = "Starts the chain in dev mode with sane default flags."
+command = "./target/debug/anagolay"
 args = [
-    "--dev",
-    "-l",
-    "error,runtime,info",
-    "--no-telemetry",
-    "--rpc-external",
-    "--unsafe-ws-external"
+  "--dev",
+  "-l",
+  "error,runtime,info",
+  "--no-telemetry",
+  "--rpc-external",
+  "--unsafe-ws-external",
 ]
+dependencies = ["build"]
 
-[tasks.windows_start]
+# Gitlab CI flow
+[tasks.ci-flow]
+description = "Experimental ci-flow which runs the checks in single run instead many."
+dependencies = ["fmt-check", "build", "test"]

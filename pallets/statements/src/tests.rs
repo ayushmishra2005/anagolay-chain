@@ -1,103 +1,160 @@
-//! Tests for the module.
+// This file is part of Anagolay Foundation.
+
+// Copyright (C) 2019-2021 Anagolay Foundation.
+// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
+
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
+
+// You should have received a copy of the GNU General Public License
+// along with this program. If not, see <https://www.gnu.org/licenses/>.
+
+//! Tests for the statements module.
 
 #![cfg(test)]
 
-use super::mock::*;
-use super::*;
-use frame_support::{assert_noop, assert_ok};
-use sn_cid::sn_cid;
+use super::{mock::*, *};
 
+use an_cid::an_cid;
+use codec::Encode;
+use frame_support::{assert_noop, assert_ok};
 
 #[test]
 fn statements_create_ownership() {
-    ExtBuilder::build().execute_with(|| {
-        let mut r = SensioStatement::default();
-        r.data.claim.claim_type = SensioClaimType::OWNERSHIP;
-        let res = StatementsTest::create_ownership(Origin::signed(1), r);
-        assert_ok!(res);
-    });
+  new_test_ext().execute_with(|| {
+    let mut r = AnagolayStatement::default();
+    r.data.claim.claim_type = AnagolayClaimType::Ownership;
+    let res = TestStatements::create_ownership(Origin::signed(1), r);
+    assert_ok!(res);
+  });
 }
 #[test]
 fn statements_create_ownership_error_on_duplicate() {
-    ExtBuilder::build().execute_with(|| {
-        let mut r = SensioStatement::default();
-        r.data.claim.claim_type = SensioClaimType::OWNERSHIP;
-        let res_first = StatementsTest::create_ownership(Origin::signed(1), r.clone());
-        assert_ok!(res_first);
+  new_test_ext().execute_with(|| {
+    let mut r = AnagolayStatement::default();
+    r.data.claim.claim_type = AnagolayClaimType::Ownership;
+    let res_first = TestStatements::create_ownership(Origin::signed(1), r.clone());
+    assert_ok!(res_first);
 
-        let res_duplicate = StatementsTest::create_ownership(Origin::signed(1), r.clone());
-        assert_noop!(res_duplicate, Error::<Test>::ProofHasStatement);
-    });
+    let res_duplicate = TestStatements::create_ownership(Origin::signed(1), r.clone());
+    assert_noop!(res_duplicate, Error::<Test>::ProofHasStatement);
+  });
 }
 #[test]
 fn statements_create_ownership_wrong_claim_type() {
-    ExtBuilder::build().execute_with(|| {
-        let r = SensioStatement::default();
-        let res = StatementsTest::create_ownership(Origin::signed(1), r.clone());
+  new_test_ext().execute_with(|| {
+    let r = AnagolayStatement::default();
+    let res = TestStatements::create_ownership(Origin::signed(1), r.clone());
 
-        assert_noop!(res, Error::<Test>::WrongClaimType);
-    });
+    assert_noop!(res, Error::<Test>::WrongClaimType);
+  });
 }
 
 #[test]
 fn statements_create_copyright() {
-    ExtBuilder::build().execute_with(|| {
-        let r = SensioStatement::default();
-        let res = StatementsTest::create_copyright(Origin::signed(1), r.clone());
-        assert_ok!(res);
-    });
+  new_test_ext().execute_with(|| {
+    let r = AnagolayStatement::default();
+    let res = TestStatements::create_copyright(Origin::signed(1), r.clone());
+    assert_ok!(res);
+  });
 }
 #[test]
 fn copyright_create_child() {
-    ExtBuilder::build().execute_with(|| {
-        let mut r = SensioStatement::default();
-        r.data.claim.prev_id = b"my-fake-vec-id".to_vec();
-        let res = StatementsTest::create_copyright(Origin::signed(1), r.clone());
-        assert_noop!(res, Error::<Test>::CreatingChildStatementNotSupported);
-        });
+  new_test_ext().execute_with(|| {
+    let mut r = AnagolayStatement::default();
+    r.data.claim.prev_id = b"my-fake-vec-id".to_vec();
+    let res = TestStatements::create_copyright(Origin::signed(1), r.clone());
+    assert_noop!(res, Error::<Test>::CreatingChildStatementNotSupported);
+  });
 }
 #[test]
 fn ownership_create_child() {
-    ExtBuilder::build().execute_with(|| {
-        let mut r = SensioStatement::default();
-        r.data.claim.prev_id = b"my-fake-vec-id".to_vec();
-        r.data.claim.claim_type = SensioClaimType::OWNERSHIP;
+  new_test_ext().execute_with(|| {
+    let mut r = AnagolayStatement::default();
+    r.data.claim.prev_id = b"my-fake-vec-id".to_vec();
+    r.data.claim.claim_type = AnagolayClaimType::Ownership;
 
-        let res = StatementsTest::create_ownership(Origin::signed(1), r.clone());
-        assert_noop!(res, Error::<Test>::CreatingChildStatementNotSupported);
-        });
+    let res = TestStatements::create_ownership(Origin::signed(1), r.clone());
+    assert_noop!(res, Error::<Test>::CreatingChildStatementNotSupported);
+  });
 }
 #[test]
 fn statements_create_copyright_error_on_duplicate() {
-    ExtBuilder::build().execute_with(|| {
-        let r = SensioStatement::default();
-        let res_first = StatementsTest::create_copyright(Origin::signed(1), r.clone());
-        assert_ok!(res_first);
+  new_test_ext().execute_with(|| {
+    let r = AnagolayStatement::default();
+    let res_first = TestStatements::create_copyright(Origin::signed(1), r.clone());
+    assert_ok!(res_first);
 
-        let res_duplicate = StatementsTest::create_copyright(Origin::signed(1), r.clone());
-        assert_noop!(res_duplicate, Error::<Test>::ProofHasStatement);
-    });
+    let res_duplicate = TestStatements::create_copyright(Origin::signed(1), r.clone());
+    assert_noop!(res_duplicate, Error::<Test>::ProofHasStatement);
+  });
 }
 #[test]
 fn statements_create_copyright_wrong_claim_type() {
-    ExtBuilder::build().execute_with(|| {
-        let mut r = SensioStatement::default();
-        r.data.claim.claim_type = SensioClaimType::OWNERSHIP;
+  new_test_ext().execute_with(|| {
+    let mut r = AnagolayStatement::default();
+    r.data.claim.claim_type = AnagolayClaimType::Ownership;
 
-        let res = StatementsTest::create_copyright(Origin::signed(1), r.clone());
-        assert_noop!(res, Error::<Test>::WrongClaimType);
-    });
+    let res = TestStatements::create_copyright(Origin::signed(1), r.clone());
+    assert_noop!(res, Error::<Test>::WrongClaimType);
+  });
 }
 
 #[test]
 fn statements_cid() {
-    ExtBuilder::build().execute_with(|| {
-        let r = b"that is f... weird".to_vec();
-        let cid = sn_cid(r.clone().encode());
-        println!("CID {:?}", cid);
-    });
+  new_test_ext().execute_with(|| {
+    let r = b"that is f... weird".to_vec();
+    let cid = an_cid(r.clone().encode());
+    println!("CID {:?}", cid);
+  });
 }
+
+#[test]
+fn statements_revoke() {
+  new_test_ext().execute_with(|| {
+    let s = AnagolayStatement::default();
+    let s_id = s.id.clone();
+    let res1 = TestStatements::create_copyright(Origin::signed(1), s.clone());
+    assert_ok!(res1);
+    let res2 = TestStatements::revoke(Origin::signed(1), s_id);
+    assert_ok!(res2);
+  });
+}
+
+#[test]
+fn statements_revoke_no_such_statements() {
+  new_test_ext().execute_with(|| {
+    let s_id = b"my-fake-vec-id".to_vec();
+    let res = TestStatements::revoke(Origin::signed(1), s_id);
+    assert_noop!(res, Error::<Test>::NoSuchStatement);
+  });
+}
+
+#[test]
+fn statements_revoke_statement_has_child_statements() {
+  new_test_ext().execute_with(|| {
+    let mut s = AnagolayStatement::default();
+    let _res1 = TestStatements::create_copyright(Origin::signed(1), s.clone());
+
+    // do this after the create, since it will fail because we don't accept this ATM
+    s.data.claim.prev_id = b"child-statement-id".to_vec();
+
+    StatementToPrevious::<Test>::insert(&s.id, &s.data.claim.prev_id);
+
+    let res = TestStatements::revoke(Origin::signed(1), s.id);
+
+    assert_noop!(res, Error::<Test>::StatementHasChildStatement);
+  });
+}
+
 #[test]
 fn test_template() {
-    ExtBuilder::build().execute_with(|| {});
+  new_test_ext().execute_with(|| {});
 }

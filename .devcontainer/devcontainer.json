@@ -1,0 +1,42 @@
+// If you want to run as a non-root user in the container, see ../docker-compose.yml.
+{
+  "name": "Anagolay node",
+  "dockerComposeFile": "../docker-compose.yml",
+  "service": "code", // attaches to this service after docker-compose up `runServices`
+  "runServices": ["code"],
+  // "image": "woss/substrate_devcontainer:latest",
+  // "build": {
+  //   "dockerfile": "../devcontainer.base.Dockerfile"
+  // },
+  "workspaceFolder": "/app",
+  // Use 'settings' to set *default* container specific settings.json values on container create.
+  // You can edit these settings after create using File > Preferences > Settings > Remote.
+  "settings": {
+    "terminal.integrated.defaultProfile.linux": "zsh",
+    "lldb.executable": "/usr/bin/lldb",
+    // VS Code don't watch files under ./target
+    "files.watcherExclude": {
+      "**/target/**": true
+    }
+  },
+  // Uncomment next line if you want to copy your .ssh creds and other config files for easier use inside container
+  "postCreateCommand": "bash .devcontainer/copy-local-config-and-ssh-creds.sh",
+  // noVNC, VNC, debug ports
+  "forwardPorts": [6080, 5901, 9222, 30333, 9933, 9944],
+  // "remoteUser": "vscode",
+
+  "remoteUser": "vscode",
+  // Add the IDs of extensions you want installed when the container is created in the array below.
+  "extensions": [
+    "rust-lang.rust",
+    "tamasfe.even-better-toml",
+    "belfz.search-crates-io",
+    "panicbit.cargo",
+    "serayuzgur.crates",
+    "vadimcn.vscode-lldb",
+    "mutantdino.resourcemonitor",
+    "formulahendry.code-runner",
+    "ms-azuretools.vscode-docker",
+    "actboy168.tasks"
+  ]
+}

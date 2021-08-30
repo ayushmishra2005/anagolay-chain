@@ -1,5 +1,8 @@
 target
-.idea/
+.vscode
+.git
 doc
 Dockerfile
-.dockerignore
+certs
+coverage
+.devcontainer

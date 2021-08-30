@@ -1,5 +1,14 @@
-## Statements definition
+# Benchmarking
 
-Create, replace and store Statements definitions;
+Create benchmarking for Statement pallet.
 
-Contains the storage management and Statements definition
+# Statements
+
+To generate pallet weights and enable benchmarking, run the following script:
+
+```sh
+
+./scripts/run-benchmarks.sh dev statements
+
+cargo test -p an-statements --features runtime-benchmarks --features --all benchmarking
+```

@@ -1,76 +1,89 @@
+// This file is part of Anagolay Foundation.
+
+// Copyright (C) 2019-2021 Anagolay Foundation.
+// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
+
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
+
+// You should have received a copy of the GNU General Public License
+// along with this program. If not, see <https://www.gnu.org/licenses/>.
+
 //! Test utilities
 
 #![cfg(test)]
 
-use crate::{Module, Trait};
-use frame_support::{impl_outer_origin, parameter_types, weights::Weight};
+use crate as rules;
+use crate::Config;
+use frame_support::parameter_types;
 use frame_system as system;
 use sp_core::H256;
-use sp_io::TestExternalities;
 use sp_runtime::{
-    testing::Header,
-    traits::{BlakeTwo256, IdentityLookup},
-    Perbill,
+  testing::Header,
+  traits::{BlakeTwo256, IdentityLookup},
 };
 
-impl_outer_origin! {
-    pub enum Origin for Test {}
-}
+type UncheckedExtrinsic = system::mocking::MockUncheckedExtrinsic<Test>;
+type Block = system::mocking::MockBlock<Test>;
 
-// For testing the pallet, we construct most of a mock runtime. This means
-// first constructing a configuration type (`Test`) which `impl`s each of the
-// configuration traits of pallets we want to use.
-
-// Workaround for https://github.com/rust-lang/rust/issues/26925 . Remove when sorted.
-#[derive(Clone, PartialEq, Eq, Debug)]
-pub struct Test;
+// Configure a mock runtime to test the pallet.
+frame_support::construct_runtime!(
+    pub enum Test where
+        Block = Block,
+        NodeBlock = Block,
+        UncheckedExtrinsic = UncheckedExtrinsic,
+    {
+        System: system::{Module, Call, Config, Storage, Event<T>},
+        TestRules: rules::{Module, Call, Storage, Event<T>},
+    }
+);
 
 parameter_types! {
     pub const BlockHashCount: u64 = 250;
-    pub const MaximumBlockWeight: Weight = 1024;
-    pub const MaximumBlockLength: u32 = 2 * 1024;
-    pub const AvailableBlockRatio: Perbill = Perbill::one();
+    pub const SS58Prefix: u8 = 42;
 }
 
-impl system::Trait for Test {
-    type BaseCallFilter = ();
-    type Origin = Origin;
-    type Call = ();
-    type Index = u64;
-    type BlockNumber = u64;
-    type Hash = H256;
-    type Hashing = BlakeTwo256;
-    type AccountId = u64;
-    type Lookup = IdentityLookup<Self::AccountId>;
-    type Header = Header;
-    type Event = ();
-    type BlockHashCount = BlockHashCount;
-    type MaximumBlockWeight = MaximumBlockWeight;
-    type DbWeight = ();
-    type BlockExecutionWeight = ();
-    type ExtrinsicBaseWeight = ();
-    type MaximumExtrinsicWeight = MaximumBlockWeight;
-    type MaximumBlockLength = MaximumBlockLength;
-    type AvailableBlockRatio = AvailableBlockRatio;
-    type Version = ();
-    type ModuleToIndex = ();
-    type AccountData = ();
-    type OnNewAccount = ();
-    type OnKilledAccount = ();
+impl system::Config for Test {
+  type BaseCallFilter = ();
+  type BlockWeights = ();
+  type BlockLength = ();
+  type Origin = Origin;
+  type Call = Call;
+  type Index = u64;
+  type BlockNumber = u64;
+  type Hash = H256;
+  type Hashing = BlakeTwo256;
+  type AccountId = u64;
+  type Lookup = IdentityLookup<Self::AccountId>;
+  type Header = Header;
+  type Event = ();
+  type BlockHashCount = BlockHashCount;
+  type DbWeight = ();
+  type Version = ();
+  type PalletInfo = PalletInfo;
+  type AccountData = ();
+  type OnNewAccount = ();
+  type OnKilledAccount = ();
+  type SystemWeightInfo = ();
+  type SS58Prefix = SS58Prefix;
 }
 
-impl Trait for Test {
-    type Event = ();
+impl Config for Test {
+  type Event = ();
+  type WeightInfo = ();
 }
 
-pub type RulesTest = Module<Test>;
-
-pub struct ExtBuilder;
-impl ExtBuilder {
-    pub fn build() -> TestExternalities {
-        let storage = system::GenesisConfig::default()
-            .build_storage::<Test>()
-            .unwrap();
-        TestExternalities::from(storage)
-    }
+// Build genesis storage according to the mock runtime.
+pub fn new_test_ext() -> sp_io::TestExternalities {
+  system::GenesisConfig::default()
+    .build_storage::<Test>()
+    .unwrap()
+    .into()
 }

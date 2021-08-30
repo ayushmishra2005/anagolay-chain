@@ -1,239 +1,292 @@
+// This file is part of Anagolay Foundation.
+
+// Copyright (C) 2019-2021 Anagolay Foundation.
+// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
+
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
+
+// You should have received a copy of the GNU General Public License
+// along with this program. If not, see <https://www.gnu.org/licenses/>.
+
+// Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
 
 // use frame_support::debug::native;
 // use frame_support::debug;
-use frame_support::codec::{Decode, Encode};
-use frame_support::{decl_error, decl_event, decl_module, decl_storage, ensure};
-use frame_system::{self as system, ensure_signed};
-use sp_runtime::{traits::Hash, RuntimeDebug};
-use sp_std::{clone::Clone, default::Default, vec, vec::Vec};
 
-use operations::Trait as OperationTrait;
-use rules::{PutInStorage, Trait as RulesTrait};
-use sensio::{CreatorId, ForWhat, GenericId};
+use anagolay::{CreatorId, ForWhat, GenericId};
+use rules::PutInStorage;
 
+mod benchmarking;
 mod mock;
 mod tests;
+pub mod weights;
 
-///The pallet's configuration trait. Including the Operation trait too.
-pub trait Trait: system::Trait + OperationTrait + RulesTrait {
+pub use pallet::*;
+pub use weights::WeightInfo;
+
+#[frame_support::pallet]
+pub mod pallet {
+  use super::*;
+  use frame_support::pallet_prelude::*;
+  use frame_system::pallet_prelude::*;
+  use sp_runtime::traits::Hash;
+  use sp_std::prelude::*;
+
+  #[pallet::pallet]
+  #[pallet::generate_store(pub(super) trait Store)]
+  pub struct Pallet<T>(_);
+
+  #[pallet::config]
+  ///The pallet's configuration trait.
+  pub trait Config: frame_system::Config + rules::Config {
     /// The overarching event type.
-    type Event: From<Event<Self>> + Into<<Self as system::Trait>::Event>;
+    type Event: From<Event<Self>>
+      + Into<<Self as frame_system::Config>::Event>
+      + IsType<<Self as frame_system::Config>::Event>;
     // type ExternalRulesStorage: PutInStorage<Self::AccountId, Self::BlockNumber>;
     type ExternalRulesStorage: PutInStorage;
-}
 
-/// key-value where key is Operation.op and value is fn(Operation)
-#[derive(Default, Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
-// #[cfg_attr(feature = "std", derive(Debug))]
-pub struct ProofParams {
+    /// Weight information for extrinsics for this pallet.
+    type WeightInfo: WeightInfo;
+  }
+
+  /// key-value where key is Operation.op and value is fn(Operation)
+  #[derive(Default, Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
+  // #[cfg_attr(feature = "std", derive(Debug))]
+  pub struct ProofParams {
     /// Operation.name, hex encoded using Parity scale codec
     k: Vec<u8>,
     /// operation Output value serialized using cbor and represented as CID
     v: Vec<u8>,
-}
+  }
 
-/// Proof Incoming data
-#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
-// #[cfg_attr(feature = "std", derive(Debug))]
-pub struct ProofData {
-    rule_id: GenericId,
+  /// Proof Incoming data
+  #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
+  // #[cfg_attr(feature = "std", derive(Debug))]
+  pub struct ProofData {
+    pub(super) rule_id: GenericId,
     // which rule is executed
     prev_id: GenericId,
     creator: CreatorId,
     groups: Vec<ForWhat>,
     // must be the same as for the rule
     params: Vec<ProofParams>,
-}
+  }
 
-impl Default for ProofData {
+  impl Default for ProofData {
     fn default() -> Self {
-        ProofData {
-            rule_id: GenericId::default(),
-            prev_id: GenericId::default(),
-            groups: vec![ForWhat::default()],
-            creator: CreatorId::default(),
-            params: vec![],
-        }
+      ProofData {
+        rule_id: GenericId::default(),
+        prev_id: GenericId::default(),
+        groups: vec![ForWhat::default()],
+        creator: CreatorId::default(),
+        params: vec![],
+      }
     }
-}
+  }
 
-/// PoE Proof
-#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
-// #[cfg_attr(feature = "std", derive(Debug))]
-pub struct Proof {
-    id: GenericId,
+  /// PoE Proof
+  #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
+  // #[cfg_attr(feature = "std", derive(Debug))]
+  pub struct Proof {
+    pub(super) id: GenericId,
     // which rule is executed
-    data: ProofData,
-}
+    pub(super) data: ProofData,
+  }
 
-impl Default for Proof {
+  impl Default for Proof {
     fn default() -> Self {
-        let data = ProofData::default();
-        Proof {
-            id: b"".to_vec(),
-            data,
-        }
+      let data = ProofData::default();
+      Proof {
+        id: b"".to_vec(),
+        data,
+      }
     }
-}
+  }
 
-/// Proof Info, this is what gets stored
-#[derive(Default, Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
-// #[cfg_attr(feature = "std", derive(Debug))]
-pub struct ProofInfo<Proof, AccountId, BlockNumber> {
+  /// Proof Info, this is what gets stored
+  #[derive(Default, Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
+  // #[cfg_attr(feature = "std", derive(Debug))]
+  pub struct ProofInfo<Proof, AccountId, BlockNumber> {
     proof: Proof,
     account_id: AccountId,
     block_number: BlockNumber,
-}
-
-/// PHash Info, what gets stored
-#[derive(Encode, Decode, Clone, PartialEq, Default, RuntimeDebug)]
-// #[cfg_attr(feature = "std", derive(Debug))]
-pub struct PhashInfo {
-    p_hash: Vec<u8>,
-    proof_id: GenericId,
-}
-
-// This pallet's storage items.
-decl_storage! {
-  // It is important to update your storage name so that your pallet's
-  // storage items are isolated from other pallets.
-
-  trait Store for Module<T: Trait> as PoeStorage
-  {
-    /// Perceptual hash finder hash(phash) : (PerceptualHash, ProofId)
-    PHashes get(fn p_hashes): double_map hasher(blake2_128_concat) T::Hash, hasher(twox_64_concat) T::AccountId => PhashInfo;
-
-    /// PHashes count
-    PHashCount get(fn phash_count): u128;
-
-    /// PoE Proofs
-    pub Proofs get(fn proofs): double_map hasher(blake2_128_concat) GenericId, hasher(twox_64_concat) T::AccountId => ProofInfo<Proof, T::AccountId, T::BlockNumber>;
-
-    /// Proofs count
-    ProofsCount get(fn proofs_count): u128;
   }
-}
 
-// The pallet's dispatchable functions.
-decl_module! {
-    /// The module declaration.
-    pub struct Module<T: Trait> for enum Call where origin: T::Origin {
-        // Initializing errors
-        type Error = Error<T>;
+  /// PHash Info, what gets stored
+  #[derive(Encode, Decode, Clone, PartialEq, Default, RuntimeDebug)]
+  // #[cfg_attr(feature = "std", derive(Debug))]
+  pub struct PhashInfo {
+    pub(super) p_hash: Vec<u8>,
+    pub(super) proof_id: GenericId,
+  }
 
-        // Initializing events
-        fn deposit_event() = default;
+  #[pallet::hooks]
+  impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {}
 
-        /// Create proof and claim
-        #[weight = 10_000]
-        fn create_proof(origin, proof: Proof) {
-          let sender = ensure_signed(origin.clone())?;
+  #[pallet::call]
+  impl<T: Config> Pallet<T> {
+    /// Create proof and claim
+    #[pallet::weight(<T as Config>::WeightInfo::create_proof())]
+    pub(super) fn create_proof(origin: OriginFor<T>, proof: Proof) -> DispatchResultWithPostInfo {
+      let sender = ensure_signed(origin.clone())?;
 
-          let rule_id = &proof.data.rule_id;
+      let rule_id = &proof.data.rule_id;
 
-          let proof_id = proof.id.clone();
+      let proof_id = proof.id.clone();
 
-          let rule_record = rules::Module::<T>::rules(rule_id, &sender);
+      let rule_record = rules::Pallet::<T>::rules(rule_id, &sender);
 
-          // @TODO somehow figure this out. we don't need it NOW but must be done before the Milestone 2 is submitted
-          // ensure!(&rule_record, Error::<T>::NoSuchRule);
+      // @TODO somehow figure this out. we don't need it NOW but must be done before the Milestone 2 is submitted
+      // ensure!(&rule_record, Error::<T>::NoSuchRule);
 
-          // The types must match
-          if proof.data.groups != rule_record.rule.data.groups  {
-            ensure!(false, Error::<T>::ProofRuleTypeMismatch);
-          }
-
-
-          // Proof exists?
-          ensure!(!Proofs::<T>::contains_key(&proof_id,&sender), Error::<T>::ProofAlreadyClaimed);
-
-          // Call the `system` pallet to get the current block number
-          let current_block = <system::Module<T>>::block_number();
-
-          let proof_info = ProofInfo {
-            proof: proof.clone(),
-            account_id: sender.clone(),
-            block_number: current_block.clone(),
-          };
-
-          Proofs::<T>::insert(&proof_id, &sender, proof_info.clone());
-
-          Self::increase_proof_count();
-
-          // Emit an event that the proof was created
-          Self::deposit_event(RawEvent::ProofCreated(sender, proof_id.clone()));
+      // The types must match
+      if proof.data.groups != rule_record.rule.data.groups {
+        ensure!(false, Error::<T>::ProofRuleTypeMismatch);
       }
 
-      /// INDEX storage, save the connection phash <-> proofId for hamming/leven distance calc. Eventually refactor this, for now leave it
-      #[weight = 10_000]
-      fn save_phash(origin, payload_data: PhashInfo) {
-        let sender = ensure_signed(origin)?;
+      // Proof exists?
+      ensure!(
+        !Proofs::<T>::contains_key(&proof_id, &sender),
+        Error::<T>::ProofAlreadyClaimed
+      );
 
-        // Check is do we have the proof, can't add without
-        ensure!(Proofs::<T>::contains_key(&payload_data.proof_id, &sender), Error::<T>::NoSuchProof);
+      let proof_info = ProofInfo {
+        proof: proof.clone(),
+        account_id: sender.clone(),
+        block_number: <frame_system::Pallet<T>>::block_number(), // Call the `system` pallet to get the current block number
+      };
 
-        let payload_data_digest = payload_data.using_encoded(<T as system::Trait>::Hashing::hash);
+      Proofs::<T>::insert(&proof_id, &sender, proof_info.clone());
 
+      Self::increase_proof_count();
 
-        ensure!(!PHashes::<T>::contains_key(&payload_data_digest, &sender), Error::<T>::PHashAndProofIdComboAlreadyExist);
+      // Emit an event that the proof was created
+      Self::deposit_event(Event::ProofCreated(sender, proof_id));
 
-        PHashes::<T>::insert(&payload_data_digest, &sender, payload_data.clone());
+      Ok(().into())
+    }
 
-        Self::increase_phash_count();
+    /// INDEX storage, save the connection phash <-> proofId for hamming/leven distance calc. Eventually refactor this, for now leave it
+    #[pallet::weight(<T as Config>::WeightInfo::save_phash())]
+    pub(super) fn save_phash(
+      origin: OriginFor<T>,
+      payload_data: PhashInfo,
+    ) -> DispatchResultWithPostInfo {
+      let sender = ensure_signed(origin)?;
 
-        // Emit an event that the proof was created
-        Self::deposit_event(RawEvent::PhashCreated(sender, payload_data_digest));
+      // Check is do we have the proof, can't add without
+      ensure!(
+        Proofs::<T>::contains_key(&payload_data.proof_id, &sender),
+        Error::<T>::NoSuchProof
+      );
+
+      let payload_data_digest =
+        payload_data.using_encoded(<T as frame_system::Config>::Hashing::hash);
+
+      ensure!(
+        !PHashes::<T>::contains_key(&payload_data_digest, &sender),
+        Error::<T>::PHashAndProofIdComboAlreadyExist
+      );
+
+      PHashes::<T>::insert(&payload_data_digest, &sender, payload_data.clone());
+
+      Self::increase_phash_count();
+
+      // Emit an event that the proof was created
+      Self::deposit_event(Event::PhashCreated(sender, payload_data_digest));
+
+      Ok(().into())
     }
   }
-}
 
-// The pallet's errors
-decl_error! {
-    pub enum Error for Module<T: Trait> {
-        ///Value was None
-        NoneValue,
-        ///Value reached maximum and cannot be incremented further
-        StorageOverflow,
-        ///This proof has already been claimed
-        ProofAlreadyClaimed,
-        ///The proof does not exist, so it cannot be revoked
-        NoSuchProof,
-        ///The proof is claimed by another account, so caller can't revoke it
-        NotProofOwner,
-        ///ForWhat mismatch
-        ProofRuleTypeMismatch,
-        ///Proof Belongs to another account
-        ProofBelongsToAnotherAccount,
-        ///PHash + ProofId already exist
-        PHashAndProofIdComboAlreadyExist,
-    }
-}
-// The pallet's events
-decl_event!(
-    pub enum Event<T>
-    where
-        AccountId = <T as system::Trait>::AccountId,
-        Hash = <T as system::Trait>::Hash,
-    {
-        ///Proof is created and claimed
-        ProofCreated(AccountId, GenericId),
-        /// Phash is created
-        PhashCreated(AccountId, Hash),
-    }
-);
+  #[pallet::event]
+  #[pallet::generate_deposit(pub(crate) fn deposit_event)]
+  #[pallet::metadata(T::AccountId = "AccountId", T::Hash = "Hash")]
+  pub enum Event<T: Config> {
+    /// Proof is created and claimed . \{owner, cid}\
+    ProofCreated(T::AccountId, GenericId),
+    /// Phash is created. \{owner, pHash}\
+    PhashCreated(T::AccountId, T::Hash),
+  }
 
-impl<T: Trait> Module<T> {
+  #[pallet::error]
+  pub enum Error<T> {
+    ///Value was None
+    NoneValue,
+    ///Value reached maximum and cannot be incremented further
+    StorageOverflow,
+    ///This proof has already been claimed
+    ProofAlreadyClaimed,
+    ///The proof does not exist, so it cannot be revoked
+    NoSuchProof,
+    ///The proof is claimed by another account, so caller can't revoke it
+    NotProofOwner,
+    ///ForWhat mismatch
+    ProofRuleTypeMismatch,
+    ///Proof Belongs to another account
+    ProofBelongsToAnotherAccount,
+    ///PHash + ProofId already exist
+    PHashAndProofIdComboAlreadyExist,
+  }
+
+  #[pallet::storage]
+  #[pallet::getter(fn p_hashes)]
+  /// Perceptual hash finder hash(phash) : (PerceptualHash, ProofId)
+  pub(super) type PHashes<T: Config> = StorageDoubleMap<
+    _,
+    Blake2_128Concat,
+    T::Hash,
+    Twox64Concat,
+    T::AccountId,
+    PhashInfo,
+    ValueQuery,
+  >;
+
+  #[pallet::storage]
+  #[pallet::getter(fn phash_count)]
+  /// PHashes count
+  pub(super) type PHashCount<T: Config> = StorageValue<_, u128, ValueQuery>;
+
+  #[pallet::storage]
+  #[pallet::getter(fn proofs)]
+  /// PoE Proofs
+  pub type Proofs<T: Config> = StorageDoubleMap<
+    _,
+    Blake2_128Concat,
+    GenericId,
+    Twox64Concat,
+    T::AccountId,
+    ProofInfo<Proof, T::AccountId, T::BlockNumber>,
+    ValueQuery,
+  >;
+
+  #[pallet::storage]
+  #[pallet::getter(fn proofs_count)]
+  /// Proofs count
+  pub(super) type ProofsCount<T: Config> = StorageValue<_, u128, ValueQuery>;
+
+  impl<T: Config> Pallet<T> {
     fn increase_proof_count() -> u128 {
-        let count = Self::proofs_count();
-        let new_count = &count + 1;
-        ProofsCount::put(new_count);
-        new_count
+      let count = Self::proofs_count();
+      let new_count = &count + 1;
+      <ProofsCount<T>>::put(new_count);
+      new_count
     }
     fn increase_phash_count() -> u128 {
-        let count = Self::phash_count();
-        let new_count = &count + 1;
-        PHashCount::put(new_count);
-        new_count
+      let count = Self::phash_count();
+      let new_count = &count + 1;
+      <PHashCount<T>>::put(new_count);
+      new_count
     }
+  }
 }

@@ -1,3 +1,15 @@
 {
-    "recommendations": ["matklad.rust-analyzer", "rust-lang.rust"]
+  "recommendations": [
+    "rust-lang.rust",
+    // "matklad.rust-analyzer",
+    "bungcip.better-toml",
+    "belfz.search-crates-io",
+    "panicbit.cargo",
+    "serayuzgur.crates",
+    "vadimcn.vscode-lldb",
+    "mutantdino.resourcemonitor",
+    "formulahendry.code-runner",
+    "ms-azuretools.vscode-docker",
+    "actboy168.tasks"
+  ]
 }

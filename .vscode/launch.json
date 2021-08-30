@@ -8,7 +8,7 @@
             "name": "Debug",
             "type": "lldb-mi",
             "request": "launch",
-            "target": "${workspaceRoot}/target/debug/sensio",
+            "target": "${workspaceRoot}/target/debug/anagolay",
             "cwd": "${workspaceRoot}",
             "valuesFormatting": "parseText"
         }

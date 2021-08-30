@@ -1,237 +1,100 @@
 [package]
-authors = ['urn:pgp:d1f5e247a976f1e3c14f0a437a6db9962ef3978e']
+authors = ['did:substrate:GHm6gp6khjcxQvnbnSsHdYejsFK1nNVxcGyGAsbDfsymtLr']
 repository = 'https://gitlab.com/anagolay/node/'
 homepage = 'https://anagolay.network'
-license = 'Apache 2.0'
+license-file = "./LICENSE"
 edition = '2018'
-name = 'sensio-runtime'
+name = 'anagolay-runtime'
 version = '0.1.0'
 
 [package.metadata.docs.rs]
 targets = ['x86_64-unknown-linux-gnu']
 
-[build-dependencies.wasm-builder-runner]
-package = 'substrate-wasm-builder-runner'
-version = '1.0.5'
+[build-dependencies]
+substrate-wasm-builder = '4.0'
 
 [features]
 default = ['std']
+runtime-benchmarks = [
+  'frame-benchmarking',
+  'frame-support/runtime-benchmarks',
+  'frame-system-benchmarking',
+  'hex-literal',
+  'sp-runtime/runtime-benchmarks',
+  'system/runtime-benchmarks',
+  'an-operations/runtime-benchmarks',
+  'an-poe/runtime-benchmarks',
+  'an-rules/runtime-benchmarks',
+  'an-statements/runtime-benchmarks',
+
+]
 std = [
-    'aura/std',
-    'balances/std',
-    'codec/std',
-    'frame-executive/std',
-    'frame-support/std',
-    'grandpa/std',
-    'randomness-collective-flip/std',
-    'serde',
-    'sp-api/std',
-    'sp-block-builder/std',
-    'sp-consensus-aura/std',
-    'sp-core/std',
-    'sp-inherents/std',
-    'sp-io/std',
-    'sp-offchain/std',
-    'sp-runtime/std',
-    'sp-session/std',
-    'sp-std/std',
-    'pallet-utility/std',
-    'sp-transaction-pool/std',
-    'sp-version/std',
-    'sudo/std',
-    'system/std',
-    'timestamp/std',
-    'transaction-payment/std',
-    'sensio/std',
-    'operations/std',
-    'statements/std',
-    'rules/std',
-    'poe/std',
+  'aura/std',
+  'balances/std',
+  'codec/std',
+  'frame-executive/std',
+  'frame-support/std',
+  'grandpa/std',
+  'pallet-utility/std',
+  'randomness-collective-flip/std',
+  'serde',
+  'sp-api/std',
+  'sp-block-builder/std',
+  'sp-consensus-aura/std',
+  'sp-core/std',
+  'sp-inherents/std',
+  'sp-offchain/std',
+  'sp-runtime/std',
+  'sp-session/std',
+  'sp-std/std',
+  'sp-transaction-pool/std',
+  'sp-version/std',
+  'sudo/std',
+  'system/std',
+  'timestamp/std',
+  'transaction-payment/std',
+  'anagolay/std',
+  'an-operations/std',
+  'an-statements/std',
+  'an-poe/std',
+  'an-rules/std',
 ]
 
-[dependencies.aura]
-default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'v2.0.0-rc4'
-package = 'pallet-aura'
-version = '2.0.0-rc4'
+[dependencies]
+aura = { version = '3.0', default-features = false, package = 'pallet-aura' }
+balances = { version = '3.0', default-features = false, package = 'pallet-balances' }
+codec = { version = '2.1', default-features = false, features = [
+  'derive',
+], package = 'parity-scale-codec' }
+frame-benchmarking = { version = '3.0', default-features = false, optional = true }
+frame-executive = { version = '3.0', default-features = false }
+frame-support = { version = '3.0', default-features = false }
+frame-system-benchmarking = { version = '3.0', default-features = false, optional = true }
+grandpa = { version = '3.0', default-features = false, package = 'pallet-grandpa' }
+hex-literal = { version = '0.3', optional = true }
+randomness-collective-flip = { version = '3.0', default-features = false, package = 'pallet-randomness-collective-flip' }
+pallet-utility = { version = '3.0', default-features = false }
+serde = { version = '1.0', features = ['derive'], optional = true }
+sp-api = { version = '3.0', default-features = false }
+sp-block-builder = { version = '3.0', default-features = false }
+sp-consensus-aura = { version = '0.9', default-features = false }
+sp-core = { version = '3.0', default-features = false }
+sp-inherents = { version = '3.0', default-features = false }
+sp-offchain = { version = '3.0', default-features = false }
+sp-runtime = { version = '3.0', default-features = false }
+sp-session = { version = '3.0', default-features = false }
+sp-std = { version = '3.0', default-features = false }
+sp-transaction-pool = { version = '3.0', default-features = false }
+sp-version = { version = '3.0', default-features = false }
+sudo = { version = '3.0', default-features = false, package = 'pallet-sudo' }
+system = { version = '3.0', default-features = false, package = 'frame-system' }
+system-rpc-runtime-api = { version = '3.0', default-features = false, package = 'frame-system-rpc-runtime-api' }
+timestamp = { version = '3.0', default-features = false, package = 'pallet-timestamp' }
+transaction-payment = { version = '3.0', default-features = false, package = 'pallet-transaction-payment' }
+transaction-payment-rpc-runtime-api = { version = '3.0', default-features = false, package = 'pallet-transaction-payment-rpc-runtime-api' }
 
-[dependencies.balances]
-default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'v2.0.0-rc4'
-package = 'pallet-balances'
-version = '2.0.0-rc4'
-
-[dependencies.codec]
-default-features = false
-features = ['derive']
-package = 'parity-scale-codec'
-version = '1.3.1'
-
-[dependencies.frame-executive]
-default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'v2.0.0-rc4'
-version = '2.0.0-rc4'
-
-[dependencies.frame-support]
-default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'v2.0.0-rc4'
-version = '2.0.0-rc4'
-
-[dependencies.grandpa]
-default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'v2.0.0-rc4'
-package = 'pallet-grandpa'
-version = '2.0.0-rc4'
-
-[dependencies.randomness-collective-flip]
-default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'v2.0.0-rc4'
-package = 'pallet-randomness-collective-flip'
-version = '2.0.0-rc4'
-
-[dependencies.serde]
-features = ['derive']
-optional = true
-version = '1.0.114'
-
-[dependencies.sp-api]
-default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'v2.0.0-rc4'
-version = '2.0.0-rc4'
-
-[dependencies.sp-block-builder]
-default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'v2.0.0-rc4'
-version = '2.0.0-rc4'
-
-[dependencies.sp-consensus-aura]
-default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'v2.0.0-rc4'
-version = '0.8.0-rc4'
-
-[dependencies.sp-core]
-default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'v2.0.0-rc4'
-version = '2.0.0-rc4'
-
-[dependencies.sp-inherents]
-default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'v2.0.0-rc4'
-version = '2.0.0-rc4'
-
-[dependencies.sp-io]
-default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'v2.0.0-rc4'
-version = '2.0.0-rc4'
-
-[dependencies.sp-offchain]
-default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'v2.0.0-rc4'
-version = '2.0.0-rc4'
-
-[dependencies.sp-runtime]
-default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'v2.0.0-rc4'
-version = '2.0.0-rc4'
-
-[dependencies.sp-session]
-default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'v2.0.0-rc4'
-version = '2.0.0-rc4'
-
-[dependencies.sp-std]
-default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'v2.0.0-rc4'
-version = '2.0.0-rc4'
-
-[dependencies.sp-transaction-pool]
-default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'v2.0.0-rc4'
-version = '2.0.0-rc4'
-
-[dependencies.sp-version]
-default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'v2.0.0-rc4'
-version = '2.0.0-rc4'
-
-[dependencies.sudo]
-default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'v2.0.0-rc4'
-package = 'pallet-sudo'
-version = '2.0.0-rc4'
-
-[dependencies.system]
-default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'v2.0.0-rc4'
-package = 'frame-system'
-version = '2.0.0-rc4'
-
-[dependencies.timestamp]
-default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'v2.0.0-rc4'
-package = 'pallet-timestamp'
-version = '2.0.0-rc4'
-
-[dependencies.pallet-utility]
-default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'v2.0.0-rc4'
-version = '2.0.0-rc4'
-
-[dependencies.transaction-payment]
-default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'v2.0.0-rc4'
-package = 'pallet-transaction-payment'
-version = '2.0.0-rc4'
-
-[dependencies.sensio]
-default-features = false
-package = 'pallet-sensio'
-path = '../pallets/sensio'
-version = '0.1.0'
-
-[dependencies.operations]
-default-features = false
-package = 'pallet-operations'
-path = '../pallets/operations'
-version = '0.1.0'
-
-[dependencies.statements]
-default-features = false
-package = 'pallet-statements'
-path = '../pallets/statements'
-version = '0.1.0'
-
-[dependencies.rules]
-default-features = false
-package = 'pallet-rules'
-path = '../pallets/rules'
-version = '0.1.0'
-
-[dependencies.poe]
-default-features = false
-package = 'pallet-poe'
-path = '../pallets/poe'
-version = '0.1.0'
+anagolay = { path = '../pallets/anagolay', default-features = false, package = 'pallet-anagolay' }
+an-operations = { path = '../pallets/operations', default-features = false, package = 'an-operations' }
+an-rules = { path = '../pallets/rules', default-features = false, package = 'an-rules' }
+an-statements = { path = '../pallets/statements', default-features = false, package = 'an-statements' }
+an-poe = { path = '../pallets/poe', default-features = false, package = 'an-poe' }

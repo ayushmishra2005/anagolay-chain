@@ -1,4 +1,4 @@
-//! The Substrate Node Sensio runtime. This can be compiled with `#[no_std]`, ready for Wasm.
+//! The Substrate Node Anagolay runtime. This can be compiled with `#[no_std]`, ready for Wasm.
 
 #![cfg_attr(not(feature = "std"), no_std)]
 // `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
@@ -8,18 +8,15 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
-use grandpa::fg_primitives;
-use grandpa::{AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList};
+use grandpa::{fg_primitives, AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList};
 use sp_api::impl_runtime_apis;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
-use sp_runtime::traits::{
-    BlakeTwo256, Block as BlockT, IdentifyAccount, IdentityLookup, NumberFor, Saturating, Verify,
-};
 use sp_runtime::{
-    create_runtime_str, generic, impl_opaque_keys,
-    transaction_validity::{TransactionSource, TransactionValidity},
-    ApplyExtrinsicResult, MultiSignature,
+  create_runtime_str, generic, impl_opaque_keys,
+  traits::{BlakeTwo256, Block as BlockT, IdentifyAccount, IdentityLookup, NumberFor, Verify},
+  transaction_validity::{TransactionSource, TransactionValidity},
+  ApplyExtrinsicResult, MultiSignature,
 };
 use sp_std::prelude::*;
 #[cfg(feature = "std")]
@@ -29,33 +26,33 @@ use sp_version::RuntimeVersion;
 // A few exports that help ease life for downstream crates.
 pub use balances::Call as BalancesCall;
 pub use frame_support::{
-    construct_runtime, parameter_types,
-    traits::{KeyOwnerProofSystem, Randomness},
-    weights::{
-        constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
-        IdentityFee, Weight,
-    },
-    StorageValue,
+  construct_runtime, parameter_types,
+  traits::{KeyOwnerProofSystem, Randomness},
+  weights::{
+    constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
+    IdentityFee, Weight,
+  },
+  StorageValue,
 };
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 pub use sp_runtime::{Perbill, Permill};
 pub use timestamp::Call as TimestampCall;
 
-/// Importing a sensio pallet
-pub use sensio;
+/// Importing a anagolay pallet
+pub use anagolay;
 
 /// Importing a operations pallet
-pub use operations;
+pub use an_operations;
 
 /// Importing a statements pallet
-pub use statements;
+pub use an_statements;
 
 /// Importing a rules pallet
-pub use rules;
+pub use an_rules;
 
 /// Importing a poe pallet
-pub use poe;
+pub use an_poe;
 
 /// An index to a block.
 pub type BlockNumber = u32;
@@ -88,34 +85,34 @@ pub type DigestItem = generic::DigestItem<Hash>;
 /// of data like extrinsics, allowing for them to continue syncing the network through upgrades
 /// to even the core data structures.
 pub mod opaque {
-    use super::*;
+  use super::*;
 
-    pub use sp_runtime::OpaqueExtrinsic as UncheckedExtrinsic;
+  pub use sp_runtime::OpaqueExtrinsic as UncheckedExtrinsic;
 
-    /// Opaque block header type.
-    pub type Header = generic::Header<BlockNumber, BlakeTwo256>;
-    /// Opaque block type.
-    pub type Block = generic::Block<Header, UncheckedExtrinsic>;
-    /// Opaque block identifier type.
-    pub type BlockId = generic::BlockId<Block>;
+  /// Opaque block header type.
+  pub type Header = generic::Header<BlockNumber, BlakeTwo256>;
+  /// Opaque block type.
+  pub type Block = generic::Block<Header, UncheckedExtrinsic>;
+  /// Opaque block identifier type.
+  pub type BlockId = generic::BlockId<Block>;
 
-    impl_opaque_keys! {
-        pub struct SessionKeys {
-            pub aura: Aura,
-            pub grandpa: Grandpa,
-        }
-    }
+  impl_opaque_keys! {
+      pub struct SessionKeys {
+          pub aura: Aura,
+          pub grandpa: Grandpa,
+      }
+  }
 }
 
 /// This runtime version.
 pub const VERSION: RuntimeVersion = RuntimeVersion {
-    spec_name: create_runtime_str!("node-sensio"),
-    impl_name: create_runtime_str!("node-sensio"),
-    authoring_version: 1,
-    spec_version: 1,
-    impl_version: 1,
-    apis: RUNTIME_API_VERSIONS,
-    transaction_version: 1,
+  spec_name: create_runtime_str!("node-anagolay"),
+  impl_name: create_runtime_str!("node-anagolay"),
+  authoring_version: 1,
+  spec_version: 1,
+  impl_version: 1,
+  apis: RUNTIME_API_VERSIONS,
+  transaction_version: 1,
 };
 
 pub const MILLISECS_PER_BLOCK: u64 = 6000;
@@ -130,168 +127,169 @@ pub const DAYS: BlockNumber = HOURS * 24;
 /// The version information used to identify this runtime when compiled natively.
 #[cfg(feature = "std")]
 pub fn native_version() -> NativeVersion {
-    NativeVersion {
-        runtime_version: VERSION,
-        can_author_with: Default::default(),
-    }
+  NativeVersion {
+    runtime_version: VERSION,
+    can_author_with: Default::default(),
+  }
 }
+
+const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
 
 parameter_types! {
     pub const BlockHashCount: BlockNumber = 2400;
     /// We allow for 2 seconds of compute with a 6 second average block time.
-    pub const MaximumBlockWeight: Weight = 2 * WEIGHT_PER_SECOND;
-    pub const AvailableBlockRatio: Perbill = Perbill::from_percent(75);
-    /// Assume 10% of weight for average on_initialize calls.
-    pub MaximumExtrinsicWeight: Weight = AvailableBlockRatio::get()
-        .saturating_sub(Perbill::from_percent(10)) * MaximumBlockWeight::get();
-    pub const MaximumBlockLength: u32 = 5 * 1024 * 1024;
+    pub BlockWeights: system::limits::BlockWeights = system::limits::BlockWeights
+        ::with_sensible_defaults(2 * WEIGHT_PER_SECOND, NORMAL_DISPATCH_RATIO);
+    pub BlockLength: system::limits::BlockLength = system::limits::BlockLength
+        ::max_with_normal_ratio(5 * 1024 * 1024, NORMAL_DISPATCH_RATIO);
+    pub const SS58Prefix: u8 = 42;
     pub const Version: RuntimeVersion = VERSION;
 }
 
-impl system::Trait for Runtime {
-    /// The basic call filter to use in dispatchable.
-    type BaseCallFilter = ();
-    /// The identifier used to distinguish between accounts.
-    type AccountId = AccountId;
-    /// The aggregated dispatch type that is available for extrinsics.
-    type Call = Call;
-    /// The lookup mechanism to get account ID from whatever is passed in dispatchers.
-    type Lookup = IdentityLookup<AccountId>;
-    /// The index type for storing how many extrinsics an account has signed.
-    type Index = Index;
-    /// The index type for blocks.
-    type BlockNumber = BlockNumber;
-    /// The type for hashing blocks and tries.
-    type Hash = Hash;
-    /// The hashing algorithm used.
-    type Hashing = BlakeTwo256;
-    /// The header type.
-    type Header = generic::Header<BlockNumber, BlakeTwo256>;
-    /// The ubiquitous event type.
-    type Event = Event;
-    /// The ubiquitous origin type.
-    type Origin = Origin;
-    /// Maximum number of block number to block hash mappings to keep (oldest pruned first).
-    type BlockHashCount = BlockHashCount;
-    /// Maximum weight of each block.
-    type MaximumBlockWeight = MaximumBlockWeight;
-    /// The weight of database operations that the runtime can invoke.
-    type DbWeight = RocksDbWeight;
-    /// The weight of the overhead invoked on the block import process, independent of the
-    /// extrinsics included in that block.
-    type BlockExecutionWeight = BlockExecutionWeight;
-    /// The base weight of any extrinsic processed by the runtime, independent of the
-    /// logic of that extrinsic. (Signature verification, nonce increment, fee, etc...)
-    type ExtrinsicBaseWeight = ExtrinsicBaseWeight;
-    /// The maximum weight that a single extrinsic of `Normal` dispatch class can have,
-    /// idependent of the logic of that extrinsics. (Roughly max block weight - average on
-    /// initialize cost).
-    type MaximumExtrinsicWeight = MaximumExtrinsicWeight;
-    /// Maximum size of all encoded transactions (in bytes) that are allowed in one block.
-    type MaximumBlockLength = MaximumBlockLength;
-    /// Portion of the block weight that is available to all normal transactions.
-    type AvailableBlockRatio = AvailableBlockRatio;
-    /// Version of the runtime.
-    type Version = Version;
-    /// Converts a module to the index of the module in `construct_runtime!`.
-    ///
-    /// This type is being generated by `construct_runtime!`.
-    type ModuleToIndex = ModuleToIndex;
-    /// What to do if a new account is created.
-    type OnNewAccount = ();
-    /// What to do if an account is fully reaped from the system.
-    type OnKilledAccount = ();
-    /// The data to be stored in an account.
-    type AccountData = balances::AccountData<Balance>;
+impl system::Config for Runtime {
+  /// The basic call filter to use in dispatchable.
+  type BaseCallFilter = ();
+  /// Block & extrinsics weights: base values and limits.
+  type BlockWeights = BlockWeights;
+  /// The maximum length of a block (in bytes).
+  type BlockLength = BlockLength;
+  /// The identifier used to distinguish between accounts.
+  type AccountId = AccountId;
+  /// The aggregated dispatch type that is available for extrinsics.
+  type Call = Call;
+  /// The lookup mechanism to get account ID from whatever is passed in dispatchers.
+  type Lookup = IdentityLookup<AccountId>;
+  /// The index type for storing how many extrinsics an account has signed.
+  type Index = Index;
+  /// The index type for blocks.
+  type BlockNumber = BlockNumber;
+  /// The type for hashing blocks and tries.
+  type Hash = Hash;
+  /// The hashing algorithm used.
+  type Hashing = BlakeTwo256;
+  /// The header type.
+  type Header = generic::Header<BlockNumber, BlakeTwo256>;
+  /// The ubiquitous event type.
+  type Event = Event;
+  /// The ubiquitous origin type.
+  type Origin = Origin;
+  /// Maximum number of block number to block hash mappings to keep (oldest pruned first).
+  type BlockHashCount = BlockHashCount;
+  /// The weight of database operations that the runtime can invoke.
+  type DbWeight = RocksDbWeight;
+  /// Version of the runtime.
+  type Version = Version;
+  /// Converts a module to the index of the module in `construct_runtime!`.
+  ///
+  /// This type is being generated by `construct_runtime!`.
+  type PalletInfo = PalletInfo;
+  /// What to do if a new account is created.
+  type OnNewAccount = ();
+  /// What to do if an account is fully reaped from the system.
+  type OnKilledAccount = ();
+  /// The data to be stored in an account.
+  type AccountData = balances::AccountData<Balance>;
+  /// Weight information for the extrinsics of this pallet.
+  type SystemWeightInfo = system::weights::SubstrateWeight<Runtime>;
+  /// This is used as an identifier of the chain. 42 is the generic substrate prefix.
+  type SS58Prefix = SS58Prefix;
 }
 
-impl aura::Trait for Runtime {
-    type AuthorityId = AuraId;
+impl aura::Config for Runtime {
+  type AuthorityId = AuraId;
 }
 
-impl grandpa::Trait for Runtime {
-    type Event = Event;
-    type Call = Call;
+impl grandpa::Config for Runtime {
+  type Event = Event;
+  type Call = Call;
 
-    type KeyOwnerProofSystem = ();
+  type KeyOwnerProofSystem = ();
 
-    type KeyOwnerProof =
-        <Self::KeyOwnerProofSystem as KeyOwnerProofSystem<(KeyTypeId, GrandpaId)>>::Proof;
+  type KeyOwnerProof =
+    <Self::KeyOwnerProofSystem as KeyOwnerProofSystem<(KeyTypeId, GrandpaId)>>::Proof;
 
-    type KeyOwnerIdentification = <Self::KeyOwnerProofSystem as KeyOwnerProofSystem<(
-        KeyTypeId,
-        GrandpaId,
-    )>>::IdentificationTuple;
+  type KeyOwnerIdentification =
+    <Self::KeyOwnerProofSystem as KeyOwnerProofSystem<(KeyTypeId, GrandpaId)>>::IdentificationTuple;
 
-    type HandleEquivocation = ();
+  type HandleEquivocation = ();
+
+  type WeightInfo = ();
 }
 
 parameter_types! {
     pub const MinimumPeriod: u64 = SLOT_DURATION / 2;
 }
 
-impl timestamp::Trait for Runtime {
-    /// A timestamp: milliseconds since the unix epoch.
-    type Moment = u64;
-    type OnTimestampSet = Aura;
-    type MinimumPeriod = MinimumPeriod;
+impl timestamp::Config for Runtime {
+  /// A timestamp: milliseconds since the unix epoch.
+  type Moment = u64;
+  type OnTimestampSet = Aura;
+  type MinimumPeriod = MinimumPeriod;
+  type WeightInfo = ();
 }
 
 parameter_types! {
     pub const ExistentialDeposit: u128 = 500;
+    pub const MaxLocks: u32 = 50;
 }
 
-impl balances::Trait for Runtime {
-    /// The type for recording an account's balance.
-    type Balance = Balance;
-    /// The ubiquitous event type.
-    type Event = Event;
-    type DustRemoval = ();
-    type ExistentialDeposit = ExistentialDeposit;
-    type AccountStore = System;
+impl balances::Config for Runtime {
+  type MaxLocks = MaxLocks;
+  /// The type for recording an account's balance.
+  type Balance = Balance;
+  /// The ubiquitous event type.
+  type Event = Event;
+  type DustRemoval = ();
+  type ExistentialDeposit = ExistentialDeposit;
+  type AccountStore = System;
+  type WeightInfo = balances::weights::SubstrateWeight<Runtime>;
 }
 
 parameter_types! {
     pub const TransactionByteFee: Balance = 1;
 }
 
-impl transaction_payment::Trait for Runtime {
-    type Currency = balances::Module<Runtime>;
-    type OnTransactionPayment = ();
-    type TransactionByteFee = TransactionByteFee;
-    type WeightToFee = IdentityFee<Balance>;
-    type FeeMultiplierUpdate = ();
+impl transaction_payment::Config for Runtime {
+  type OnChargeTransaction = transaction_payment::CurrencyAdapter<balances::Pallet<Runtime>, ()>;
+  type TransactionByteFee = TransactionByteFee;
+  type WeightToFee = IdentityFee<Balance>;
+  type FeeMultiplierUpdate = ();
 }
 
-impl pallet_utility::Trait for Runtime {
-    type Event = Event;
-    type Call = Call;
+impl pallet_utility::Config for Runtime {
+  type Event = Event;
+  type Call = Call;
+  type WeightInfo = ();
 }
 
-impl sudo::Trait for Runtime {
-    type Event = Event;
-    type Call = Call;
+impl sudo::Config for Runtime {
+  type Event = Event;
+  type Call = Call;
 }
 
-impl sensio::Trait for Runtime {
-    type Event = Event;
+impl anagolay::Config for Runtime {
+  type Event = Event;
 }
 
-impl operations::Trait for Runtime {
-    type Event = Event;
+impl an_operations::Config for Runtime {
+  type Event = Event;
+  type WeightInfo = an_operations::weights::AnagolayWeight<Runtime>;
 }
 
-impl statements::Trait for Runtime {
-    type Event = Event;
+impl an_statements::Config for Runtime {
+  type Event = Event;
+  type WeightInfo = an_statements::weights::AnagolayWeight<Runtime>;
 }
 
-impl rules::Trait for Runtime {
-    type Event = Event;
+impl an_rules::Config for Runtime {
+  type Event = Event;
+  type WeightInfo = an_rules::weights::AnagolayWeight<Runtime>;
 }
 
-impl poe::Trait for Runtime {
-    type Event = Event;
-    type ExternalRulesStorage = rules::Module<Runtime>;
+impl an_poe::Config for Runtime {
+  type Event = Event;
+  type ExternalRulesStorage = an_rules::Pallet<Runtime>;
+  type WeightInfo = an_poe::weights::AnagolayWeight<Runtime>;
 }
 
 construct_runtime!(
@@ -303,7 +301,7 @@ construct_runtime!(
         System: system::{Module, Call, Config, Storage, Event<T>},
         RandomnessCollectiveFlip: randomness_collective_flip::{Module, Call, Storage},
         Timestamp: timestamp::{Module, Call, Storage, Inherent},
-        Aura: aura::{Module, Config<T>, Inherent(Timestamp)},
+        Aura: aura::{Module, Config<T>},
         Grandpa: grandpa::{Module, Call, Storage, Config, Event},
         Balances: balances::{Module, Call, Storage, Config<T>, Event<T>},
         TransactionPayment: transaction_payment::{Module, Storage},
@@ -313,12 +311,12 @@ construct_runtime!(
         Utility: pallet_utility::{Module, Call, Event},
 
 
-        // Used for the module sensio in `./sensio.rs`
-        Sensio: sensio::{Module, Call, Storage, Event<T>},
-        Operations: operations::{Module, Call, Storage, Event<T>},
-        Statements: statements::{Module, Call, Storage, Event<T>},
-        Rules: rules::{Module, Call, Storage, Event<T>},
-        Poe: poe::{Module, Call, Storage, Event<T>},
+        // Used for the module anagolay in `./anagolay.rs`
+        Anagolay: anagolay::{Module, Call, Storage, Event<T>},
+        Operations: an_operations::{Module, Call, Storage, Event<T>},
+        Statements: an_statements::{Module, Call, Storage, Event<T>},
+        Rules: an_rules::{Module, Call, Storage, Event<T>},
+        Poe: an_poe::{Module, Call, Storage, Event<T>},
     }
 );
 
@@ -334,13 +332,13 @@ pub type SignedBlock = generic::SignedBlock<Block>;
 pub type BlockId = generic::BlockId<Block>;
 /// The SignedExtension to the basic transaction logic.
 pub type SignedExtra = (
-    system::CheckSpecVersion<Runtime>,
-    system::CheckTxVersion<Runtime>,
-    system::CheckGenesis<Runtime>,
-    system::CheckEra<Runtime>,
-    system::CheckNonce<Runtime>,
-    system::CheckWeight<Runtime>,
-    transaction_payment::ChargeTransactionPayment<Runtime>,
+  system::CheckSpecVersion<Runtime>,
+  system::CheckTxVersion<Runtime>,
+  system::CheckGenesis<Runtime>,
+  system::CheckEra<Runtime>,
+  system::CheckNonce<Runtime>,
+  system::CheckWeight<Runtime>,
+  transaction_payment::ChargeTransactionPayment<Runtime>,
 );
 /// Unchecked extrinsic type as expected by this runtime.
 pub type UncheckedExtrinsic = generic::UncheckedExtrinsic<Address, Call, Signature, SignedExtra>;
@@ -348,7 +346,7 @@ pub type UncheckedExtrinsic = generic::UncheckedExtrinsic<Address, Call, Signatu
 pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, Call, SignedExtra>;
 /// Executive: handles dispatch to the various modules.
 pub type Executive =
-    frame_executive::Executive<Runtime, Block, system::ChainContext<Runtime>, Runtime, AllModules>;
+  frame_executive::Executive<Runtime, Block, system::ChainContext<Runtime>, Runtime, AllModules>;
 
 impl_runtime_apis! {
     impl sp_api::Core<Block> for Runtime {
@@ -438,7 +436,7 @@ impl_runtime_apis! {
             Grandpa::grandpa_authorities()
         }
 
-        fn submit_report_equivocation_extrinsic(
+        fn submit_report_equivocation_unsigned_extrinsic(
             _equivocation_proof: fg_primitives::EquivocationProof<
                 <Block as BlockT>::Hash,
                 NumberFor<Block>,
@@ -456,6 +454,66 @@ impl_runtime_apis! {
             // defined our key owner proof type as a bottom type (i.e. a type
             // with no values).
             None
+        }
+    }
+
+    impl system_rpc_runtime_api::AccountNonceApi<Block, AccountId, Index> for Runtime {
+        fn account_nonce(account: AccountId) -> Index {
+            System::account_nonce(account)
+        }
+    }
+
+    impl transaction_payment_rpc_runtime_api::TransactionPaymentApi<Block, Balance> for Runtime {
+        fn query_info(
+            uxt: <Block as BlockT>::Extrinsic,
+            len: u32,
+        ) -> transaction_payment_rpc_runtime_api::RuntimeDispatchInfo<Balance> {
+            TransactionPayment::query_info(uxt, len)
+        }
+
+        fn query_fee_details(
+            uxt: <Block as BlockT>::Extrinsic,
+            len: u32,
+        ) -> transaction_payment::FeeDetails<Balance> {
+            TransactionPayment::query_fee_details(uxt, len)
+        }
+    }
+
+    #[cfg(feature = "runtime-benchmarks")]
+    impl frame_benchmarking::Benchmark<Block> for Runtime {
+        fn dispatch_benchmark(
+            config: frame_benchmarking::BenchmarkConfig
+        ) -> Result<Vec<frame_benchmarking::BenchmarkBatch>, sp_runtime::RuntimeString> {
+            use frame_benchmarking::{Benchmarking, BenchmarkBatch, add_benchmark, TrackedStorageKey};
+
+            impl frame_system_benchmarking::Config for Runtime {}
+
+            let whitelist: Vec<TrackedStorageKey> = vec![
+                // Block Number
+                hex_literal::hex!("26aa394eea5630e07c48ae0c9558cef702a5c1b19ab7a04f536c519aca4983ac").to_vec().into(),
+                // Total Issuance
+                hex_literal::hex!("c2261276cc9d1f8598ea4b6a74b15c2f57c875e4cff74148e4628f264b974c80").to_vec().into(),
+                // Execution Phase
+                hex_literal::hex!("26aa394eea5630e07c48ae0c9558cef7ff553b5a9862a516939d82b3d3d8661a").to_vec().into(),
+                // Event Count
+                hex_literal::hex!("26aa394eea5630e07c48ae0c9558cef70a98fdbe9ce6c55837576c60c7af3850").to_vec().into(),
+                // System Events
+                hex_literal::hex!("26aa394eea5630e07c48ae0c9558cef780d41e5e16056765bc8461851072c9d7").to_vec().into(),
+            ];
+
+            let mut batches = Vec::<BenchmarkBatch>::new();
+            let params = (&config, &whitelist);
+
+            add_benchmark!(params, batches, an_operations, Operations);
+
+            add_benchmark!(params, batches, an_poe, Poe);
+
+            add_benchmark!(params, batches, an_rules, Rules);
+
+            add_benchmark!(params, batches, an_statements, Statements);
+
+            if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
+            Ok(batches)
         }
     }
 }

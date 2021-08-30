@@ -1,0 +1,10 @@
+# custom aliases and configs
+alias gs="git status"
+alias v="nvim"
+alias vi="nvim"
+alias vim="nvim"
+alias explorer="explorer.exe"
+alias adog="git log --all --decorate --oneline --graph"
+alias ll="ls -l"
+alias lld="ls -l --group-directories-first"
+alias la="ll -a"

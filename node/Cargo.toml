@@ -1,121 +1,61 @@
 [package]
-authors = ['urn:pgp:d1f5e247a976f1e3c14f0a437a6db9962ef3978e']
+authors = ['did:substrate:GHm6gp6khjcxQvnbnSsHdYejsFK1nNVxcGyGAsbDfsymtLr']
 repository = 'https://gitlab.com/anagolay/node/'
 homepage = 'https://anagolay.network'
 build = 'build.rs'
 edition = '2018'
-license = 'Apache 2.0'
-name = 'sensio'
+license-file = "./LICENSE"
+name = 'anagolay'
 version = '0.2.0'
 
 [package.metadata.docs.rs]
 targets = ['x86_64-unknown-linux-gnu']
 
 [build-dependencies]
+substrate-build-script-utils = '3.0'
 vergen = '3.0.4'
 
 
 [[bin]]
-name = 'sensio'
+name = 'anagolay'
+
+[features]
+default = []
+runtime-benchmarks = ['anagolay-runtime/runtime-benchmarks']
 
 [dependencies]
+frame-benchmarking = '3.0'
+frame-benchmarking-cli = '3.0'
 futures = '0.3.5'
+jsonrpc-core = '15.1.0'
 log = '0.4.8'
+pallet-transaction-payment-rpc = '3.0'
 parking_lot = '0.11.0'
+sc-basic-authorship = '0.9'
+sc-cli = { version = '0.9', features = ['wasmtime'] }
+sc-client-api = '3.0'
+sc-consensus = '0.9'
+sc-consensus-aura = '0.9'
+sc-executor = '0.9'
+sc-finality-grandpa = '0.9'
+sc-keystore = '3.0'
+sc-network = '0.9'
+sc-rpc = '3.0'
+sc-rpc-api = '0.9'
+sc-service = '0.9'
+sc-telemetry = '3.0'
+sc-transaction-pool = '3.0'
+sp-api = '3.0'
+sp-block-builder = '3.0'
+sp-blockchain = '3.0'
+sp-consensus = '0.9'
+sp-consensus-aura = '0.9'
+sp-core = '3.0'
+sp-finality-grandpa = '3.0'
+sp-inherents = '3.0'
+sp-runtime = '3.0'
+sp-transaction-pool = '3.0'
 structopt = '0.3.15'
-[dependencies.sensio-runtime]
-path = '../runtime'
-version = '0.1.0'
+substrate-frame-rpc-system = '3.0'
 
-[dependencies.sc-basic-authorship]
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'v2.0.0-rc4'
-version = '0.8.0-rc4'
-
-[dependencies.sc-cli]
-features = ['wasmtime']
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'v2.0.0-rc4'
-version = '0.8.0-rc4'
-
-[dependencies.sc-client-api]
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'v2.0.0-rc4'
-version = '2.0.0-rc4'
-
-[dependencies.sc-consensus]
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'v2.0.0-rc4'
-version = '0.8.0-rc4'
-
-[dependencies.sc-consensus-aura]
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'v2.0.0-rc4'
-version = '0.8.0-rc4'
-
-[dependencies.sc-executor]
-features = ['wasmtime']
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'v2.0.0-rc4'
-version = '0.8.0-rc4'
-
-[dependencies.sc-finality-grandpa]
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'v2.0.0-rc4'
-version = '0.8.0-rc4'
-
-[dependencies.sc-network]
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'v2.0.0-rc4'
-version = '0.8.0-rc4'
-
-[dependencies.sc-service]
-features = ['wasmtime']
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'v2.0.0-rc4'
-version = '0.8.0-rc4'
-
-[dependencies.sc-transaction-pool]
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'v2.0.0-rc4'
-version = '2.0.0-rc4'
-
-[dependencies.sp-consensus]
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'v2.0.0-rc4'
-version = '0.8.0-rc4'
-
-[dependencies.sp-consensus-aura]
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'v2.0.0-rc4'
-version = '0.8.0-rc4'
-
-[dependencies.sp-core]
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'v2.0.0-rc4'
-version = '2.0.0-rc4'
-
-[dependencies.sp-finality-grandpa]
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'v2.0.0-rc4'
-version = '2.0.0-rc4'
-
-[dependencies.sp-inherents]
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'v2.0.0-rc4'
-version = '2.0.0-rc4'
-
-[dependencies.sp-runtime]
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'v2.0.0-rc4'
-version = '2.0.0-rc4'
-
-[dependencies.sp-transaction-pool]
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'v2.0.0-rc4'
-version = '2.0.0-rc4'
-
-[build-dependencies.substrate-build-script-utils]
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'v2.0.0-rc4'
-version = '2.0.0-rc4'
+anagolay-runtime = { path = '../runtime' }

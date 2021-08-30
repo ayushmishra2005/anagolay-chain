@@ -1,0 +1,7 @@
+tab_spaces = 2
+reorder_imports = true
+newline_style = "Unix"
+
+imports_granularity = "Crate"
+binop_separator = "Back"
+use_field_init_shorthand = true

@@ -1,0 +1,22 @@
+[package]
+name = "an-cid"
+version = "0.1.0"
+authors = ['did:substrate:GHm6gp6khjcxQvnbnSsHdYejsFK1nNVxcGyGAsbDfsymtLr']
+edition = "2018"
+license-file = "./LICENSE"
+
+[features]
+default = ['std']
+std = ['sp-std/std']
+# [profile.dev]
+# panic = "abort"
+# [profile.release]
+# panic = "abort"
+[package.metadata.docs.rs]
+targets = ['x86_64-unknown-linux-gnu']
+
+[dependencies]
+cid = { version = "0.5", default-features = false }
+multibase = { version = "0.8", default-features = false }
+multihash = { version = "0.11", default-features = false }
+sp-std = { version = "3.0", default-features = false }

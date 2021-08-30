@@ -1,0 +1,19 @@
+version: "3"
+# Define common behavior with https://docs.docker.com/compose/compose-file/compose-file-v3/#extension-fields
+x-rust-ci: &default-rust-ci
+  env_file: .env
+  build:
+    target: base
+    context: .
+    dockerfile: rust-ci.Dockerfile
+    args:
+      - RUST_TOOLCHAIN=nightly-2021-03-25
+      - BUILDKIT_INLINE_CACHE= 1
+  # Other settings can also be shared
+  image: anagolay/rust-ci:latest
+
+services:
+  rust-ci_latest: *default-rust-ci
+  rust-ci:
+    <<: *default-rust-ci
+    image: anagolay/rust-ci:${RUST_IMAGE_VERSION}

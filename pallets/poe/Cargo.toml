@@ -1,10 +1,10 @@
 [package]
-authors = ['urn:pgp:d1f5e247a976f1e3c14f0a437a6db9962ef3978e']
+authors = ['did:substrate:GHm6gp6khjcxQvnbnSsHdYejsFK1nNVxcGyGAsbDfsymtLr']
 repository = 'https://gitlab.com/anagolay/node/'
 homepage = 'https://anagolay.network/pallet/poe'
 edition = '2018'
-license = 'Apache 2.0'
-name = 'pallet-poe'
+license-file = "./LICENSE"
+name = 'an-poe'
 version = '0.1.0'
 
 [package.metadata.docs.rs]
@@ -13,73 +13,42 @@ targets = ['x86_64-unknown-linux-gnu']
 [features]
 default = ['std']
 std = [
-    'codec/std',
-    'frame-support/std',
-    'frame-system/std',
-    'sp-std/std',
-    "sp-io/std",
-    "sensio/std",
-    "operations/std",
-    "rules/std",
+  'codec/std',
+  'frame-benchmarking/std',
+  'frame-support/std',
+  'frame-system/std',
+  'sp-core/std',
+  'sp-runtime/std',
+  'sp-std/std',
+  "sp-io/std",
+  "anagolay/std",
+  "operations/std",
+  "rules/std",
 ]
 
-[dependencies.codec]
-default-features = false
-features = ['derive']
-package = 'parity-scale-codec'
-version = '1.3.1'
+runtime-benchmarks = [
+  'frame-benchmarking',
+  'frame-support/runtime-benchmarks',
+  'frame-system/runtime-benchmarks',
+  'sp-runtime/runtime-benchmarks',
+]
 
-[dependencies.sp-std]
-default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'v2.0.0-rc4'
-version = '2.0.0-rc4'
 
-[dependencies.frame-support]
-default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'v2.0.0-rc4'
-version = '2.0.0-rc4'
+[dev-dependencies]
+serde = { version = "1.0" }
 
-[dependencies.frame-system]
-default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'v2.0.0-rc4'
-version = '2.0.0-rc4'
+[dependencies]
+codec = { version = '2.2', default-features = false, features = [
+  'derive',
+], package = 'parity-scale-codec' }
+frame-support = { version = '3.0', default-features = false }
+frame-system = { version = '3.0', default-features = false }
+frame-benchmarking = { version = '3.0', default-features = false, optional = true }
+sp-core = { version = '3.0', default-features = false }
+sp-io = { version = '3.0', default-features = false }
+sp-runtime = { version = '3.0', default-features = false }
+sp-std = { version = '3.0', default-features = false }
 
-[dependencies.sp-core]
-default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'v2.0.0-rc4'
-version = '2.0.0-rc4'
-
-[dependencies.sp-io]
-default-features = false
-# features = ["disable_panic_handler", "disable_oom"]
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'v2.0.0-rc4'
-version = '2.0.0-rc4'
-
-[dependencies.sp-runtime]
-default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'v2.0.0-rc4'
-version = '2.0.0-rc4'
-
-[dependencies.operations]
-default-features = false
-package = 'pallet-operations'
-path = '../operations'
-version = '0.1.0'
-
-[dependencies.rules]
-default-features = false
-package = 'pallet-rules'
-path = '../rules'
-version = '0.1.0'
-
-[dependencies.sensio]
-default-features = false
-package = 'pallet-sensio'
-path = '../sensio'
-version = '0.1.0'
+anagolay = { path = '../anagolay', default-features = false, package = 'pallet-anagolay' }
+operations = { path = '../operations', default-features = false, package = 'an-operations' }
+rules = { path = '../rules', default-features = false, package = 'an-rules' }
