@@ -133,8 +133,8 @@ dependencies = [
  "frame-benchmarking",
  "frame-support",
  "frame-system",
- "pallet-anagolay",
  "parity-scale-codec",
+ "primitives-anagolay",
  "serde",
  "sp-core",
  "sp-io",
@@ -151,8 +151,8 @@ dependencies = [
  "frame-benchmarking",
  "frame-support",
  "frame-system",
- "pallet-anagolay",
  "parity-scale-codec",
+ "primitives-anagolay",
  "serde",
  "sp-core",
  "sp-io",
@@ -167,8 +167,8 @@ dependencies = [
  "frame-benchmarking",
  "frame-support",
  "frame-system",
- "pallet-anagolay",
  "parity-scale-codec",
+ "primitives-anagolay",
  "serde",
  "sp-core",
  "sp-io",
@@ -184,8 +184,8 @@ dependencies = [
  "frame-benchmarking",
  "frame-support",
  "frame-system",
- "pallet-anagolay",
  "parity-scale-codec",
+ "primitives-anagolay",
  "serde",
  "sp-core",
  "sp-io",
@@ -250,7 +250,6 @@ dependencies = [
  "frame-system-benchmarking",
  "frame-system-rpc-runtime-api",
  "hex-literal",
- "pallet-anagolay",
  "pallet-aura",
  "pallet-balances",
  "pallet-grandpa",
@@ -3909,19 +3908,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-anagolay"
-version = "0.1.0"
-dependencies = [
- "frame-support",
- "frame-system",
- "parity-scale-codec",
- "sp-core",
- "sp-io",
- "sp-runtime",
- "sp-std",
-]
-
-[[package]]
 name = "pallet-aura"
 version = "3.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4573,6 +4559,14 @@ dependencies = [
  "impl-codec",
  "impl-serde",
  "uint",
+]
+
+[[package]]
+name = "primitives-anagolay"
+version = "0.1.0"
+dependencies = [
+ "parity-scale-codec",
+ "sp-std",
 ]
 
 [[package]]
