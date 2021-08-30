@@ -53,7 +53,6 @@ std = [
   'system/std',
   'timestamp/std',
   'transaction-payment/std',
-  'anagolay/std',
   'an-operations/std',
   'an-statements/std',
   'an-poe/std',
@@ -93,7 +92,6 @@ timestamp = { version = '3.0', default-features = false, package = 'pallet-times
 transaction-payment = { version = '3.0', default-features = false, package = 'pallet-transaction-payment' }
 transaction-payment-rpc-runtime-api = { version = '3.0', default-features = false, package = 'pallet-transaction-payment-rpc-runtime-api' }
 
-anagolay = { path = '../pallets/anagolay', default-features = false, package = 'pallet-anagolay' }
 an-operations = { path = '../pallets/operations', default-features = false, package = 'an-operations' }
 an-rules = { path = '../pallets/rules', default-features = false, package = 'an-rules' }
 an-statements = { path = '../pallets/statements', default-features = false, package = 'an-statements' }

@@ -49,6 +49,6 @@ sp-io = { version = '3.0', default-features = false }
 sp-runtime = { version = '3.0', default-features = false }
 sp-std = { version = '3.0', default-features = false }
 
-anagolay = { path = '../anagolay', default-features = false, package = 'pallet-anagolay' }
 operations = { path = '../operations', default-features = false, package = 'an-operations' }
 rules = { path = '../rules', default-features = false, package = 'an-rules' }
+anagolay = { path = '../../anagolay', default-features = false, package = 'primitives-anagolay' }
