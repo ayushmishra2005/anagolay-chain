@@ -6,21 +6,14 @@ Contains the storage management and PoE definition
 
 # Benchmarking
 
-To enable benchmarking run `cargo build --release --features runtime-benchmarks`
+Create benchmarking for POE pallet.
 
-To generate pallet weights run
+# POE
+To generate pallet weights and enable benchmarking, run the following script:
 
 ```sh
-./target/release/anagolay benchmark \
-   --chain=dev \
-   --steps=50 \
-   --repeat=20 \
-   --pallet=an_poe \
-   --extrinsic="*" \
-   --execution=wasm \
-   --wasm-execution=compiled \
-   --heap-pages=4096 \
-   --output=pallets/poe/src/weights.rs \
-   --template=./templates/module-weight-template.hbs
+
+./scripts/run-benchmarks.sh dev poe
+
 ```
 
