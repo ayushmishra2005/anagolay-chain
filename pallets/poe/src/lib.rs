@@ -19,18 +19,17 @@
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
 
-// use frame_support::debug::native;
-// use frame_support::debug;
-
-use anagolay::{CreatorId, ForWhat, GenericId};
+use anagolay::GenericId;
 use rules::PutInStorage;
-
 mod benchmarking;
+mod functions;
 mod mock;
 mod tests;
+mod types;
 pub mod weights;
 
 pub use pallet::*;
+use types::{PhashInfo, Proof, ProofInfo};
 pub use weights::WeightInfo;
 
 #[frame_support::pallet]
@@ -59,75 +58,62 @@ pub mod pallet {
     type WeightInfo: WeightInfo;
   }
 
-  /// key-value where key is Operation.op and value is fn(Operation)
-  #[derive(Default, Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
-  // #[cfg_attr(feature = "std", derive(Debug))]
-  pub struct ProofParams {
-    /// Operation.name, hex encoded using Parity scale codec
-    k: Vec<u8>,
-    /// operation Output value serialized using cbor and represented as CID
-    v: Vec<u8>,
+  #[pallet::storage]
+  #[pallet::getter(fn proofs)]
+  /// PoE Proofs
+  pub type Proofs<T: Config> = StorageDoubleMap<
+    _,
+    Blake2_128Concat,
+    GenericId,
+    Twox64Concat,
+    T::AccountId,
+    ProofInfo<Proof, T::AccountId, T::BlockNumber>,
+    ValueQuery,
+  >;
+
+  #[pallet::storage]
+  #[pallet::getter(fn proofs_count)]
+  /// Proofs count
+  pub(super) type ProofsCount<T: Config> = StorageValue<_, u128, ValueQuery>;
+
+  #[pallet::storage]
+  #[pallet::getter(fn p_hashes)]
+  /// Perceptual hash finder hash(phash) : (PerceptualHash, ProofId)
+  pub(super) type PHashes<T: Config> = StorageDoubleMap<
+    _,
+    Blake2_128Concat,
+    T::Hash,
+    Twox64Concat,
+    T::AccountId,
+    PhashInfo,
+    ValueQuery,
+  >;
+
+  #[pallet::storage]
+  #[pallet::getter(fn phash_count)]
+  /// PHashes count
+  pub(super) type PHashCount<T: Config> = StorageValue<_, u128, ValueQuery>;
+
+  #[pallet::event]
+  #[pallet::generate_deposit(pub(crate) fn deposit_event)]
+  #[pallet::metadata(T::AccountId = "AccountId", T::Hash = "Hash")]
+  pub enum Event<T: Config> {
+    /// Proof is created and claimed . \{owner, cid}\
+    ProofCreated(T::AccountId, GenericId),
+    /// Phash is created. \{owner, pHash}\
+    PhashCreated(T::AccountId, T::Hash),
   }
 
-  /// Proof Incoming data
-  #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
-  // #[cfg_attr(feature = "std", derive(Debug))]
-  pub struct ProofData {
-    pub(super) rule_id: GenericId,
-    // which rule is executed
-    prev_id: GenericId,
-    creator: CreatorId,
-    groups: Vec<ForWhat>,
-    // must be the same as for the rule
-    params: Vec<ProofParams>,
-  }
-
-  impl Default for ProofData {
-    fn default() -> Self {
-      ProofData {
-        rule_id: GenericId::default(),
-        prev_id: GenericId::default(),
-        groups: vec![ForWhat::default()],
-        creator: CreatorId::default(),
-        params: vec![],
-      }
-    }
-  }
-
-  /// PoE Proof
-  #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
-  // #[cfg_attr(feature = "std", derive(Debug))]
-  pub struct Proof {
-    pub(super) id: GenericId,
-    // which rule is executed
-    pub(super) data: ProofData,
-  }
-
-  impl Default for Proof {
-    fn default() -> Self {
-      let data = ProofData::default();
-      Proof {
-        id: b"".to_vec(),
-        data,
-      }
-    }
-  }
-
-  /// Proof Info, this is what gets stored
-  #[derive(Default, Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
-  // #[cfg_attr(feature = "std", derive(Debug))]
-  pub struct ProofInfo<Proof, AccountId, BlockNumber> {
-    proof: Proof,
-    account_id: AccountId,
-    block_number: BlockNumber,
-  }
-
-  /// PHash Info, what gets stored
-  #[derive(Encode, Decode, Clone, PartialEq, Default, RuntimeDebug)]
-  // #[cfg_attr(feature = "std", derive(Debug))]
-  pub struct PhashInfo {
-    pub(super) p_hash: Vec<u8>,
-    pub(super) proof_id: GenericId,
+  #[pallet::error]
+  pub enum Error<T> {
+    ///This proof has already been claimed
+    ProofAlreadyClaimed,
+    ///The proof does not exist, so it cannot be revoked
+    NoSuchProof,
+    ///ForWhat mismatch
+    ProofRuleTypeMismatch,
+    ///PHash + ProofId already exist
+    PHashAndProofIdComboAlreadyExist,
   }
 
   #[pallet::hooks]
@@ -206,87 +192,6 @@ pub mod pallet {
       Self::deposit_event(Event::PhashCreated(sender, payload_data_digest));
 
       Ok(().into())
-    }
-  }
-
-  #[pallet::event]
-  #[pallet::generate_deposit(pub(crate) fn deposit_event)]
-  #[pallet::metadata(T::AccountId = "AccountId", T::Hash = "Hash")]
-  pub enum Event<T: Config> {
-    /// Proof is created and claimed . \{owner, cid}\
-    ProofCreated(T::AccountId, GenericId),
-    /// Phash is created. \{owner, pHash}\
-    PhashCreated(T::AccountId, T::Hash),
-  }
-
-  #[pallet::error]
-  pub enum Error<T> {
-    ///Value was None
-    NoneValue,
-    ///Value reached maximum and cannot be incremented further
-    StorageOverflow,
-    ///This proof has already been claimed
-    ProofAlreadyClaimed,
-    ///The proof does not exist, so it cannot be revoked
-    NoSuchProof,
-    ///The proof is claimed by another account, so caller can't revoke it
-    NotProofOwner,
-    ///ForWhat mismatch
-    ProofRuleTypeMismatch,
-    ///Proof Belongs to another account
-    ProofBelongsToAnotherAccount,
-    ///PHash + ProofId already exist
-    PHashAndProofIdComboAlreadyExist,
-  }
-
-  #[pallet::storage]
-  #[pallet::getter(fn p_hashes)]
-  /// Perceptual hash finder hash(phash) : (PerceptualHash, ProofId)
-  pub(super) type PHashes<T: Config> = StorageDoubleMap<
-    _,
-    Blake2_128Concat,
-    T::Hash,
-    Twox64Concat,
-    T::AccountId,
-    PhashInfo,
-    ValueQuery,
-  >;
-
-  #[pallet::storage]
-  #[pallet::getter(fn phash_count)]
-  /// PHashes count
-  pub(super) type PHashCount<T: Config> = StorageValue<_, u128, ValueQuery>;
-
-  #[pallet::storage]
-  #[pallet::getter(fn proofs)]
-  /// PoE Proofs
-  pub type Proofs<T: Config> = StorageDoubleMap<
-    _,
-    Blake2_128Concat,
-    GenericId,
-    Twox64Concat,
-    T::AccountId,
-    ProofInfo<Proof, T::AccountId, T::BlockNumber>,
-    ValueQuery,
-  >;
-
-  #[pallet::storage]
-  #[pallet::getter(fn proofs_count)]
-  /// Proofs count
-  pub(super) type ProofsCount<T: Config> = StorageValue<_, u128, ValueQuery>;
-
-  impl<T: Config> Pallet<T> {
-    fn increase_proof_count() -> u128 {
-      let count = Self::proofs_count();
-      let new_count = &count + 1;
-      <ProofsCount<T>>::put(new_count);
-      new_count
-    }
-    fn increase_phash_count() -> u128 {
-      let count = Self::phash_count();
-      let new_count = &count + 1;
-      <PHashCount<T>>::put(new_count);
-      new_count
     }
   }
 }

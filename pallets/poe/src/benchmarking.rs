@@ -16,7 +16,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-//! Benchmarking setup for Proof of Existence Pallet.
+//! Benchmarking for Proof of Existence Pallet.
 
 #![cfg(feature = "runtime-benchmarks")]
 
