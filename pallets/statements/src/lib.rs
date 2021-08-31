@@ -19,16 +19,19 @@
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use anagolay::{CreatorId, GenericId};
+use anagolay::GenericId;
 
 // use frame_support::debug;
 
 mod benchmarking;
+mod functions;
 mod mock;
 mod tests;
+mod types;
 pub mod weights;
 
 pub use pallet::*;
+use types::{AnagolayClaimType, AnagolayStatement, StatementInfo};
 pub use weights::WeightInfo;
 
 #[frame_support::pallet]
@@ -55,24 +58,10 @@ pub mod pallet {
 
   #[pallet::error]
   pub enum Error<T> {
-    /// Value was None
-    NoneValue,
-    /// Value reached maximum and cannot be incremented further
-    StorageOverflow,
-    /// Copyright already exists
-    CopyrightAlreadyCreated,
-    /// Ownership already exists
-    OwnershipAlreadyCreated,
-    /// Copyright doesn't exits, create one.
-    NoSuchCopyright,
-    /// Copyright doesn't exist
-    CopyrightDoesntExist,
     /// Wrong claim type
     WrongClaimType,
     /// Proof already has this statement
     ProofHasStatement,
-    /// Statement already exist
-    StatementExist,
     /// Statement doesn't exits.
     NoSuchStatement,
     /// Statement has child statement and it cannot be revoked
@@ -144,140 +133,6 @@ pub mod pallet {
   #[pallet::hooks]
   impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {}
 
-  /// Anagolay Signature
-  #[derive(Default, Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
-  pub struct AnagolaySignature {
-    /// signing key in urn/did format 'urn:pgp:9cdf8dd38531511968c8d8cb524036585b62f15b'
-    pub sig_key: Vec<u8>,
-    /// Signature sign(prepared_statement, pvtKey(sigKey)) and encoded using multibase
-    /// https://gitlab.com/sensio_group/sensio-faas/-/blob/master/sp-api/src/plugins/copyright/helpers.ts#L76
-    pub sig: Vec<u8>,
-    /// Content identifier of the sig field -- CID(sig)
-    pub cid: GenericId,
-  }
-
-  /// Anagolay Signatures
-  #[derive(Default, Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
-  pub struct AnagolaySignatures {
-    pub holder: AnagolaySignature,
-    pub issuer: AnagolaySignature,
-  }
-  /// Anagolay Claim Proportion
-  #[derive(Default, Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
-  pub struct Proportion {
-    /// Proportion sign, can be %
-    pub sign: Vec<u8>,
-    pub name: Vec<u8>,
-    pub value: Vec<u8>,
-  }
-  /// Anagolay Validity
-  #[derive(Default, Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
-  pub struct Validity {
-    /// When the validity starts, this should be DATE_TIME
-    pub from: Vec<u8>,
-    /// When validity ends, this is calculate Validity.from + Expiration.value
-    pub until: Vec<u8>,
-  }
-
-  /// Possible Expiration types
-  #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
-  pub enum ExpirationType {
-    Forever,
-    Years,
-    Months,
-    Days,
-    Minutes,
-    Seconds,
-  }
-
-  impl Default for ExpirationType {
-    fn default() -> Self {
-      ExpirationType::Forever
-    }
-  }
-
-  /// Anagolay Claim Expiration
-  #[derive(Default, Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
-  pub struct Expiration {
-    ///Possible Expiration types
-    pub expiration_type: ExpirationType,
-    ///How long is the expiration, if  ExpirationType::FOREVER then this is empty
-    pub value: Vec<u8>,
-  }
-
-  /// Anagolay Claim types
-  #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
-  pub enum AnagolayClaimType {
-    Copyright,
-    Ownership,
-  }
-
-  impl Default for AnagolayClaimType {
-    fn default() -> Self {
-      AnagolayClaimType::Copyright
-    }
-  }
-
-  /// Anagolay Generic Claim
-  #[derive(Default, Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
-  pub struct AnagolayClaim {
-    /// Prev Anagolay Statement id in case this statement is revoked or changed
-    pub prev_id: GenericId,
-    /// PoE id of the record in question.
-    pub poe_id: GenericId,
-    /// Implemented rule
-    pub rule_id: GenericId,
-    /// In which proportion the statement is held
-    pub proportion: Proportion,
-    /// ATM this is the same as poe_id @TODO this should be unique representation of the subject that is NOT poe
-    pub subject_id: GenericId,
-    /// ATM this is the did representation of the substrate based account in format 'did:substrate:5EJA1oSrTx7xYMBerrUHLNktA3P89YHJBeTrevotTQab6gEY/anagolay-network'
-    pub holder: CreatorId,
-    /// ATM this is the did representation of the substrate based account in format 'did:substrate:Hcd78R7frJfUZHsqgpPEBLeiCZxV29uyyyURaPxB71ojNjy/anagolay-network'
-    pub issuer: Vec<u8>,
-    /// Generic type, ATM is Copyright or Ownership
-    pub claim_type: AnagolayClaimType,
-    /// How long this statement is valid
-    pub valid: Validity,
-    /// Setting when the statement should end
-    pub expiration: Expiration,
-    /// What happens after the expiration? this is default rule or smart contract that automatically does stuff,
-    /// like move it to the public domain, transfer to relatives etc... need better definition
-    pub on_expiration: Vec<u8>,
-  }
-
-  /// Copyright data
-  #[derive(Default, Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
-  pub struct StatementData {
-    pub signatures: AnagolaySignatures,
-    pub claim: AnagolayClaim,
-  }
-
-  /// Anagolay copyright statement
-  #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
-  pub struct AnagolayStatement {
-    pub id: GenericId,
-    pub data: StatementData,
-  }
-
-  impl Default for AnagolayStatement {
-    fn default() -> Self {
-      AnagolayStatement {
-        id: b"".to_vec(),
-        data: StatementData::default(),
-      }
-    }
-  }
-
-  /// Statement DB entry
-  #[derive(Default, Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
-  pub struct StatementInfo<AccountId, BlockNumber> {
-    /// Generated statement data
-    pub statement: AnagolayStatement,
-    pub account_id: AccountId,
-    pub block_number: BlockNumber,
-  }
-
   #[pallet::call]
   impl<T: Config> Pallet<T> {
     /// Create Copyright
@@ -308,7 +163,7 @@ pub mod pallet {
       // Do we have such a statement?
       ensure!(
         !Statements::<T>::contains_key(&statement.id, &sender),
-        Error::<T>::CopyrightAlreadyCreated
+        Error::<T>::ProofHasStatement
       );
 
       //@FUCK this needs fixing, it's a work-around for https://gitlab.com/anagolay/node/-/issues/31
@@ -351,7 +206,7 @@ pub mod pallet {
       // Do we have such a statement
       ensure!(
         !Statements::<T>::contains_key(&statement.id, &sender),
-        Error::<T>::OwnershipAlreadyCreated
+        Error::<T>::ProofHasStatement
       );
 
       //@FUCK this needs fixing, it's a work-around for https://gitlab.com/anagolay/node/-/issues/31
@@ -395,115 +250,4 @@ pub mod pallet {
       Ok(().into())
     }
   }
-
-  impl<T: Config> Pallet<T> {
-    /// Decrease the statements count
-    fn decrease_statements_count() {
-      StatementsCount::<T>::mutate(|v| *v -= 1);
-    }
-
-    /// Increase the statements count
-    fn increase_statements_count() {
-      StatementsCount::<T>::mutate(|v| *v += 1);
-    }
-
-    /// Remove the statement from the Storage
-    fn remove_statement(
-      statement_id: GenericId,
-      account_id: &T::AccountId,
-    ) -> Result<bool, Error<T>> {
-      let statement_info: StatementInfo<T::AccountId, T::BlockNumber> =
-        Statements::<T>::get(&statement_id, &account_id);
-      Self::remove_statement_proof_connection(
-        statement_info.statement.data.claim.poe_id.clone(),
-        statement_info.statement.id.clone(),
-      )?;
-      Statements::<T>::remove(&statement_id, &account_id);
-      Self::decrease_statements_count();
-      Ok(true)
-    }
-
-    /// Insert the statement to the Storage
-    fn insert_statement(
-      data: &StatementInfo<T::AccountId, T::BlockNumber>,
-      account_id: &T::AccountId,
-    ) {
-      Statements::<T>::insert(&data.statement.id, &account_id, data.clone());
-      Self::increase_statements_count();
-    }
-
-    ///Build the Statement info, storing to the DB
-    fn build_statement_info(
-      data: &AnagolayStatement,
-      account_id: &T::AccountId,
-      block_number: &T::BlockNumber,
-    ) -> StatementInfo<T::AccountId, T::BlockNumber> {
-      StatementInfo {
-        statement: data.clone(),
-        account_id: account_id.clone(),
-        block_number: *block_number,
-      }
-    }
-
-    /// Remove Statement <-> Proof connection
-    fn remove_statement_proof_connection(
-      poe_id: GenericId,
-      statement_id: GenericId,
-    ) -> Result<bool, Error<T>> {
-      let mut proof_statement_list: Vec<GenericId> = ProofValidStatements::<T>::get(&poe_id);
-
-      match proof_statement_list.binary_search(&statement_id) {
-        // If the search succeeds, we found the Statement <-> Proof removal index,
-        // so the statement_id can be removed from the proof_statement_list
-        Ok(removal_index) => {
-          proof_statement_list.remove(removal_index);
-          ProofValidStatements::<T>::insert(&poe_id, proof_statement_list);
-          Ok(true)
-        }
-        // If the search fails, the caller is not a member of the connection
-        Err(_) => Err(Error::<T>::ProofHasStatement),
-      }
-    }
-    /// Check does the Proof list is empty or not
-    /// @TODO this might not be needed at all
-    fn is_proof_statement_list_empty(statement: &AnagolayStatement) -> Result<bool, Error<T>> {
-      let proof_statement_list: Vec<GenericId> =
-        ProofValidStatements::<T>::get(&statement.data.claim.poe_id);
-
-      if !proof_statement_list.is_empty() {
-        // check here for existence of the statement given the condition where proportion is 100% or less
-        // For now return error since we only can have one statement 100% per proof
-        Err(Error::<T>::ProofHasStatement)
-      } else {
-        // ProofValidStatements::insert(&poe_id, vec![]);
-        Ok(true)
-      }
-    }
-
-    /// Add Statement to the Proof
-    fn add_statement_to_proof(
-      poe_id: GenericId,
-      statement_id: GenericId,
-    ) -> Result<bool, Error<T>> {
-      let mut proof_statement_list: Vec<GenericId> = ProofValidStatements::<T>::get(&poe_id);
-
-      match proof_statement_list.binary_search(&statement_id) {
-        // If the search succeeds, the caller is already a member, so just return
-        Ok(_) => Err(Error::<T>::ProofHasStatement),
-        // If the search fails, the caller is not a member and we learned the index where
-        // they should be inserted
-        Err(index) => {
-          // update the list
-          proof_statement_list.insert(index, statement_id);
-          ProofValidStatements::<T>::insert(poe_id, proof_statement_list);
-          Ok(true)
-        }
-      }
-    }
-  }
-
-  // match values.binary_search(value) {
-  //     Ok(removal_index) =>,
-  //     Err(_) => {} // value not contained.
-  //   }
 }
