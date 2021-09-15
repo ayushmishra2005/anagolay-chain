@@ -91,6 +91,7 @@ system-rpc-runtime-api = { version = '3.0', default-features = false, package = 
 timestamp = { version = '3.0', default-features = false, package = 'pallet-timestamp' }
 transaction-payment = { version = '3.0', default-features = false, package = 'pallet-transaction-payment' }
 transaction-payment-rpc-runtime-api = { version = '3.0', default-features = false, package = 'pallet-transaction-payment-rpc-runtime-api' }
+smallvec = "1.6.1"
 
 an-operations = { path = '../pallets/operations', default-features = false, package = 'an-operations' }
 an-rules = { path = '../pallets/rules', default-features = false, package = 'an-rules' }

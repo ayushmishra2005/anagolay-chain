@@ -18,7 +18,8 @@ use sp_runtime::{
   transaction_validity::{TransactionSource, TransactionValidity},
   ApplyExtrinsicResult, MultiSignature,
 };
-use sp_std::prelude::*;
+use sp_std::{marker::PhantomData, prelude::*};
+
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
@@ -27,13 +28,20 @@ use sp_version::RuntimeVersion;
 pub use balances::Call as BalancesCall;
 pub use frame_support::{
   construct_runtime, parameter_types,
-  traits::{KeyOwnerProofSystem, Randomness},
+  traits::{Get, KeyOwnerProofSystem, Randomness},
   weights::{
     constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
-    IdentityFee, Weight,
+    Weight, WeightToFeeCoefficient, WeightToFeeCoefficients, WeightToFeePolynomial,
   },
   StorageValue,
 };
+
+use smallvec::smallvec;
+use transaction_payment::CurrencyAdapter;
+
+pub mod constants;
+pub use constants::{currency::*, time::*};
+
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 pub use sp_runtime::{Perbill, Permill};
@@ -77,6 +85,9 @@ pub type Hash = sp_core::H256;
 /// Digest item type.
 pub type DigestItem = generic::DigestItem<Hash>;
 
+/// Type used for expressing timestamp.
+pub type Moment = u64;
+
 /// Opaque types. These are used by the CLI to instantiate machinery that don't need to know
 /// the specifics of the runtime. They can then be made to be agnostic over specific formats
 /// of data like extrinsics, allowing for them to continue syncing the network through upgrades
@@ -111,15 +122,6 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
   apis: RUNTIME_API_VERSIONS,
   transaction_version: 1,
 };
-
-pub const MILLISECS_PER_BLOCK: u64 = 6000;
-
-pub const SLOT_DURATION: u64 = MILLISECS_PER_BLOCK;
-
-// These time units are defined in number of blocks.
-pub const MINUTES: BlockNumber = 60_000 / (MILLISECS_PER_BLOCK as BlockNumber);
-pub const HOURS: BlockNumber = MINUTES * 60;
-pub const DAYS: BlockNumber = HOURS * 24;
 
 /// The version information used to identify this runtime when compiled natively.
 #[cfg(feature = "std")]
@@ -219,14 +221,16 @@ parameter_types! {
 
 impl timestamp::Config for Runtime {
   /// A timestamp: milliseconds since the unix epoch.
-  type Moment = u64;
+  type Moment = Moment;
   type OnTimestampSet = Aura;
   type MinimumPeriod = MinimumPeriod;
   type WeightInfo = ();
 }
 
 parameter_types! {
-    pub const ExistentialDeposit: u128 = 500;
+    pub const ExistentialDeposit: u128 = 10 * CENTS;
+    // For weight estimation, we assume that the most locks on an individual account will be 50.
+  // This number may need to be adjusted in the future if this assumption no longer holds true.
     pub const MaxLocks: u32 = 50;
 }
 
@@ -242,15 +246,56 @@ impl balances::Config for Runtime {
   type WeightInfo = balances::weights::SubstrateWeight<Runtime>;
 }
 
+/// Convert from weight to fee via a simple coefficient multiplication. The associated type C
+/// encapsulates an integer constant in units of balance per weight.
+pub struct LinearWeightToFee<C>(PhantomData<C>);
+
+impl<C> WeightToFeePolynomial for LinearWeightToFee<C>
+where
+  C: Get<Balance>,
+{
+  type Balance = Balance;
+
+  fn polynomial() -> WeightToFeeCoefficients<Self::Balance> {
+    let coefficient = WeightToFeeCoefficient {
+      coeff_integer: C::get(),
+      coeff_frac: Perbill::zero(),
+      negative: false,
+      degree: 1,
+    };
+
+    // Return a smallvec of coefficients. Order does not need to match degrees
+    // because each coefficient has an explicit degree annotation.
+    smallvec!(coefficient)
+  }
+}
+
 parameter_types! {
-    pub const TransactionByteFee: Balance = 1;
+    // Establish the byte-fee. It is used in all configurations.
+    // pub const TransactionByteFee: Balance = 1;
+    pub const TransactionByteFee: Balance = 10 * MILLICENTS;
+
+    // @TODO_FEES
+    /// Used with LinearWeightToFee conversion.
+    pub const FeeWeightRatio: u128 = 1;
+
 }
 
 impl transaction_payment::Config for Runtime {
-  type OnChargeTransaction = transaction_payment::CurrencyAdapter<balances::Pallet<Runtime>, ()>;
+  // The asset in which fees will be collected, and what to do with the imbalance.
+  type OnChargeTransaction = CurrencyAdapter<Balances, ()>; // The balances pallet
+
+  // Byte fee is multiplied by the length of the
+  // serialized transaction in bytes
   type TransactionByteFee = TransactionByteFee;
-  type WeightToFee = IdentityFee<Balance>;
+
+  // Convert dispatch weight to a chargeable fee.
+  // type WeightToFee = IdentityFee<Balance>;
+  type WeightToFee = LinearWeightToFee<FeeWeightRatio>;
+
+  //TODO
   type FeeMultiplierUpdate = ();
+  //type FeeMultiplierUpdate = SlowAdjustingFeeUpdate<Self>;
 }
 
 impl pallet_utility::Config for Runtime {
@@ -263,6 +308,9 @@ impl sudo::Config for Runtime {
   type Event = Event;
   type Call = Call;
 }
+
+// Anagolay pallets:
+// ------------------------------------------------------------------------------------------------
 
 impl an_operations::Config for Runtime {
   type Event = Event;
@@ -302,7 +350,6 @@ construct_runtime!(
 
         // Customizations
         Utility: pallet_utility::{Module, Call, Event},
-
 
         // Used for the module anagolay in `./anagolay.rs`
         Operations: an_operations::{Module, Call, Storage, Event<T>},
