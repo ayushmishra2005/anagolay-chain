@@ -31,14 +31,14 @@ pub struct ProofParams {
   v: Vec<u8>,
 }
 
-/// Proof Info, this is what gets stored
-#[derive(Default, Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
-// #[cfg_attr(feature = "std", derive(Debug))]
-pub struct ProofInfo<Proof, AccountId, BlockNumber> {
-  pub proof: Proof,
-  pub account_id: AccountId,
-  pub block_number: BlockNumber,
-}
+// /// Proof Info, this is what gets stored
+// #[derive(Default, Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
+// // #[cfg_attr(feature = "std", derive(Debug))]
+// pub struct ProofInfo<Proof, AccountId, BlockNumber> {
+//   pub proof: Proof,
+//   pub account_id: AccountId,
+//   pub block_number: BlockNumber,
+// }
 
 /// PHash Info, what gets stored
 #[derive(Encode, Decode, Clone, PartialEq, Default, RuntimeDebug)]

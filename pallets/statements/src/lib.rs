@@ -19,7 +19,7 @@
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use anagolay::GenericId;
+use anagolay::{GenericId, StorageInfo};
 
 // use frame_support::debug;
 
@@ -31,7 +31,7 @@ mod types;
 pub mod weights;
 
 pub use pallet::*;
-use types::{AnagolayClaimType, AnagolayStatement, StatementInfo};
+use types::{AnagolayClaimType, AnagolayStatement};
 pub use weights::WeightInfo;
 
 #[frame_support::pallet]
@@ -79,7 +79,7 @@ pub mod pallet {
     GenericId,
     Twox64Concat,
     T::AccountId,
-    StatementInfo<T::AccountId, T::BlockNumber>,
+    StorageInfo<AnagolayStatement, T::AccountId, T::BlockNumber>,
     ValueQuery,
   >;
 

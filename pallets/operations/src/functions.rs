@@ -16,6 +16,7 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 use super::*;
+use anagolay::StorageInfo;
 
 impl<T: Config> Pallet<T> {
   /// Increase the Rule count
@@ -41,8 +42,8 @@ impl<T: Config> Pallet<T> {
     account_id: &T::AccountId,
     block_number: &T::BlockNumber,
   ) {
-    let op_info = OperationInfo {
-      operation: operation.clone(),
+    let op_info = StorageInfo {
+      info: operation.clone(),
       account_id: account_id.clone(),
       block_number: *block_number,
     };

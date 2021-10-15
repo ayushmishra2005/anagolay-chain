@@ -25,9 +25,9 @@ mod mock;
 mod tests;
 mod types;
 pub mod weights;
-use anagolay::GenericId;
+use anagolay::{GenericId, StorageInfo};
 pub use pallet::*;
-use types::{Rule, RuleInfo};
+use types::Rule;
 pub use weights::WeightInfo;
 
 #[frame_support::pallet]
@@ -60,7 +60,7 @@ pub mod pallet {
     GenericId,
     Twox64Concat,
     T::AccountId,
-    RuleInfo<T::AccountId, T::BlockNumber>,
+    StorageInfo<Rule, T::AccountId, T::BlockNumber>,
     ValueQuery,
   >;
 
@@ -107,7 +107,7 @@ pub mod pallet {
       let rule_info = Self::create(&sender, &current_block, &rule);
 
       // deposit the event
-      Self::deposit_event(Event::RuleCreated(sender, rule_info.rule.id));
+      Self::deposit_event(Event::RuleCreated(sender, rule_info.info.id));
 
       Ok(().into())
     }

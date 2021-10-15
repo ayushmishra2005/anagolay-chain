@@ -17,7 +17,7 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 use super::*;
-use anagolay::GenericId;
+use anagolay::{GenericId, StorageInfo};
 use sp_std::vec::Vec;
 
 impl<T: Config> Pallet<T> {
@@ -36,11 +36,11 @@ impl<T: Config> Pallet<T> {
     statement_id: GenericId,
     account_id: &T::AccountId,
   ) -> Result<bool, Error<T>> {
-    let statement_info: StatementInfo<T::AccountId, T::BlockNumber> =
+    let statement_info: StorageInfo<AnagolayStatement, T::AccountId, T::BlockNumber> =
       Statements::<T>::get(&statement_id, &account_id);
     Self::remove_statement_proof_connection(
-      statement_info.statement.data.claim.poe_id.clone(),
-      statement_info.statement.id.clone(),
+      statement_info.info.data.claim.poe_id.clone(),
+      statement_info.info.id.clone(),
     )?;
     Statements::<T>::remove(&statement_id, &account_id);
     Self::decrease_statements_count();
@@ -49,10 +49,10 @@ impl<T: Config> Pallet<T> {
 
   /// Insert the statement to the Storage
   pub fn insert_statement(
-    data: &StatementInfo<T::AccountId, T::BlockNumber>,
+    data: &StorageInfo<AnagolayStatement, T::AccountId, T::BlockNumber>,
     account_id: &T::AccountId,
   ) {
-    Statements::<T>::insert(&data.statement.id, &account_id, data.clone());
+    Statements::<T>::insert(&data.info.id, &account_id, data.clone());
     Self::increase_statements_count();
   }
 
@@ -61,9 +61,9 @@ impl<T: Config> Pallet<T> {
     data: &AnagolayStatement,
     account_id: &T::AccountId,
     block_number: &T::BlockNumber,
-  ) -> StatementInfo<T::AccountId, T::BlockNumber> {
-    StatementInfo {
-      statement: data.clone(),
+  ) -> StorageInfo<AnagolayStatement, T::AccountId, T::BlockNumber> {
+    StorageInfo {
+      info: data.clone(),
       account_id: account_id.clone(),
       block_number: *block_number,
     }

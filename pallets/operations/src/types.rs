@@ -32,14 +32,14 @@ pub struct OperationOutput {
   decoded: Vec<u8>,
 }
 
-/// Operation Info, this is what gets stored
-#[derive(Default, Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
-// #[cfg_attr(feature = "std", derive(Debug))]
-pub struct OperationInfo<A, B> {
-  pub operation: OperationStructure,
-  pub account_id: A,
-  pub block_number: B,
-}
+// /// Operation Info, this is what gets stored
+// #[derive(Default, Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
+// // #[cfg_attr(feature = "std", derive(Debug))]
+// pub struct OperationInfo<A, B> {
+//   pub operation: OperationStructure,
+//   pub account_id: A,
+//   pub block_number: B,
+// }
 
 /// Input params for a generated implementation
 #[derive(Default, Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
@@ -87,9 +87,9 @@ impl Default for OperationData {
   }
 }
 
-/// Operation structure. This contains the Data and the ID which is the CID of the data.
-///
-/// @TODO this can be a generic which also can implement the CID calculation and the verification with encoding. Currently is done in the SDK but we should use the SCALE ( i think ) to encode it or something fast too, JSON is used, need something faster.
+// /// Operation structure. This contains the Data and the ID which is the CID of the data.
+// ///
+// /// @TODO this can be a generic which also can implement the CID calculation and the verification with encoding. Currently is done in the SDK but we should use the SCALE ( i think ) to encode it or something fast too, JSON is used, need something faster.
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
 // #[cfg_attr(feature = "std", derive(Debug))]
 pub struct OperationStructure {

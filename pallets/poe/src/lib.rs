@@ -19,7 +19,7 @@
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use anagolay::GenericId;
+use anagolay::{GenericId, StorageInfo};
 use rules::PutInStorage;
 mod benchmarking;
 mod functions;
@@ -29,7 +29,7 @@ mod types;
 pub mod weights;
 
 pub use pallet::*;
-use types::{PhashInfo, Proof, ProofInfo};
+use types::{PhashInfo, Proof};
 pub use weights::WeightInfo;
 
 #[frame_support::pallet]
@@ -67,7 +67,7 @@ pub mod pallet {
     GenericId,
     Twox64Concat,
     T::AccountId,
-    ProofInfo<Proof, T::AccountId, T::BlockNumber>,
+    StorageInfo<Proof, T::AccountId, T::BlockNumber>,
     ValueQuery,
   >;
 
@@ -136,7 +136,7 @@ pub mod pallet {
       // ensure!(&rule_record, Error::<T>::NoSuchRule);
 
       // The types must match
-      if proof.data.groups != rule_record.rule.data.groups {
+      if proof.data.groups != rule_record.info.data.groups {
         ensure!(false, Error::<T>::ProofRuleTypeMismatch);
       }
 
@@ -146,13 +146,13 @@ pub mod pallet {
         Error::<T>::ProofAlreadyClaimed
       );
 
-      let proof_info = ProofInfo {
-        proof: proof.clone(),
+      let proof_info = StorageInfo {
+        info: proof.clone(),
         account_id: sender.clone(),
         block_number: <frame_system::Pallet<T>>::block_number(), // Call the `system` pallet to get the current block number
       };
 
-      Proofs::<T>::insert(&proof_id, &sender, proof_info.clone());
+      Proofs::<T>::insert(&proof_id, &sender, proof_info);
 
       Self::increase_proof_count();
 

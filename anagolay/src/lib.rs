@@ -120,3 +120,19 @@ impl Default for DefaultValues {
     }
   }
 }
+
+/// Info, this is what gets stored
+#[derive(Default, Encode, Decode, Clone, PartialEq, Eq)]
+// #[cfg_attr(feature = "std", derive(Debug))]
+pub struct StorageInfo<T, A, B> {
+  pub info: T,
+  pub account_id: A,
+  pub block_number: B,
+}
+
+// #[derive(Encode, Decode, Clone, PartialEq, Eq)]
+// // #[cfg_attr(feature = "std", derive(Debug))]
+// pub struct AnagolayStructure<T> {
+//   pub id: GenericId,
+//   pub data: Box<T>,
+// }
