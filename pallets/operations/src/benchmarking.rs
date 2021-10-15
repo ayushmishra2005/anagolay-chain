@@ -34,7 +34,7 @@ benchmarks! {
     let caller: T::AccountId = whitelisted_caller();
     let op = OperationStructure {
       id: vec![1],
-      data: OperationData::default()
+      data: Box::new(OperationData::default())
     };
   }: _(RawOrigin::Signed(caller), op)
 }
