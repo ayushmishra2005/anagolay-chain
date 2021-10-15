@@ -21,15 +21,6 @@ use codec::{Decode, Encode};
 use sp_runtime::RuntimeDebug;
 use sp_std::{clone::Clone, default::Default, vec, vec::Vec};
 
-// /// Rule Info, what gets stored
-// #[derive(Default, Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
-// // #[cfg_attr(feature = "std", derive(Debug))]
-// pub struct RuleInfo<A, B> {
-//   pub rule: Rule,
-//   pub account_id: A,
-//   pub block_number: B,
-// }
-
 /// Rule which must be applied
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
 // #[cfg_attr(feature = "std", derive(Debug))]

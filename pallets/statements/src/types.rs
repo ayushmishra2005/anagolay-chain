@@ -145,12 +145,3 @@ impl Default for AnagolayStatement {
     }
   }
 }
-
-// /// Statement DB entry
-// #[derive(Default, Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
-// pub struct StatementInfo<AccountId, BlockNumber> {
-//   /// Generated statement data
-//   pub statement: AnagolayStatement,
-//   pub account_id: AccountId,
-//   pub block_number: BlockNumber,
-// }

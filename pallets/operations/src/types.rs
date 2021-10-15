@@ -32,15 +32,6 @@ pub struct OperationOutput {
   decoded: Vec<u8>,
 }
 
-// /// Operation Info, this is what gets stored
-// #[derive(Default, Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
-// // #[cfg_attr(feature = "std", derive(Debug))]
-// pub struct OperationInfo<A, B> {
-//   pub operation: OperationStructure,
-//   pub account_id: A,
-//   pub block_number: B,
-// }
-
 /// Input params for a generated implementation
 #[derive(Default, Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
 // #[cfg_attr(feature = "std", derive(Debug))]
