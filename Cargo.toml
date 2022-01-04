@@ -1,7 +1,7 @@
 [workspace]
 members = [
   'node',
-  'anagolay',
+  'pallets/anagolay',
   'pallets/operations',
   'pallets/statements',
   'pallets/rules',

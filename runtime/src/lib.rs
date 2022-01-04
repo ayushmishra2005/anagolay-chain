@@ -47,6 +47,9 @@ pub use sp_runtime::BuildStorage;
 pub use sp_runtime::{Perbill, Permill};
 pub use timestamp::Call as TimestampCall;
 
+/// Importing a anagolay pallet
+pub use anagolay;
+
 /// Importing a operations pallet
 pub use an_operations;
 
@@ -311,6 +314,9 @@ impl sudo::Config for Runtime {
 
 // Anagolay pallets:
 // ------------------------------------------------------------------------------------------------
+impl anagolay::Config for Runtime {
+  type Event = Event;
+}
 
 impl an_operations::Config for Runtime {
   type Event = Event;
@@ -352,6 +358,7 @@ construct_runtime!(
         Utility: pallet_utility::{Module, Call, Event},
 
         // Used for the module anagolay in `./anagolay.rs`
+        Anagolay: anagolay::{Module, Call, Storage, Event<T>},
         Operations: an_operations::{Module, Call, Storage, Event<T>},
         Statements: an_statements::{Module, Call, Storage, Event<T>},
         Rules: an_rules::{Module, Call, Storage, Event<T>},
