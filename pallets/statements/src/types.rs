@@ -16,7 +16,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use anagolay::{CreatorId, GenericId};
+use anagolay::{
+  AnagolayStructure, AnagolayStructureData, AnagolayStructureExtra, CreatorId, GenericId,
+};
 use codec::{Decode, Encode};
 use sp_runtime::RuntimeDebug;
 use sp_std::{clone::Clone, default::Default, vec::Vec};
@@ -129,19 +131,10 @@ pub struct StatementData {
   pub signatures: AnagolaySignatures,
   pub claim: AnagolayClaim,
 }
+impl AnagolayStructureData for StatementData {}
 
-/// Anagolay copyright statement
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
-pub struct AnagolayStatement {
-  pub id: GenericId,
-  pub data: StatementData,
-}
+pub struct StatementExtra {}
+impl AnagolayStructureExtra for StatementExtra {}
 
-impl Default for AnagolayStatement {
-  fn default() -> Self {
-    AnagolayStatement {
-      id: b"".to_vec(),
-      data: StatementData::default(),
-    }
-  }
-}
+pub type AnagolayStatement = AnagolayStructure<StatementData, StatementExtra>;

@@ -19,7 +19,7 @@
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use anagolay::{GenericId, StorageInfo};
+use anagolay::{AnagolayRecord, GenericId};
 
 // use frame_support::debug;
 mod benchmarking;
@@ -30,12 +30,12 @@ mod types;
 pub mod weights;
 
 pub use pallet::*;
-use types::OperationStructure;
 pub use weights::WeightInfo;
 
 #[frame_support::pallet]
 pub mod pallet {
   use super::*;
+  use crate::types::Operation;
   use frame_support::pallet_prelude::*;
   use frame_system::pallet_prelude::*;
 
@@ -61,7 +61,7 @@ pub mod pallet {
     GenericId,
     Twox64Concat,
     T::AccountId,
-    StorageInfo<OperationStructure, T::AccountId, T::BlockNumber>,
+    AnagolayRecord<Operation, T::AccountId, T::BlockNumber>,
     ValueQuery,
   >;
 
@@ -91,10 +91,7 @@ pub mod pallet {
   impl<T: Config> Pallet<T> {
     #[pallet::weight(<T as Config>::WeightInfo::create())]
     /// Create Operation
-    pub fn create(
-      origin: OriginFor<T>,
-      operation: OperationStructure,
-    ) -> DispatchResultWithPostInfo {
+    pub fn create(origin: OriginFor<T>, operation: Operation) -> DispatchResultWithPostInfo {
       let sender = ensure_signed(origin.clone())?;
 
       let current_block = <frame_system::Pallet<T>>::block_number();

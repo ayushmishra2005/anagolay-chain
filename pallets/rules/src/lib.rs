@@ -25,14 +25,14 @@ mod mock;
 mod tests;
 mod types;
 pub mod weights;
-use anagolay::{GenericId, StorageInfo};
+use anagolay::{AnagolayRecord, GenericId};
 pub use pallet::*;
-use types::Rule;
 pub use weights::WeightInfo;
 
 #[frame_support::pallet]
 pub mod pallet {
   use super::*;
+  use crate::types::Rule;
   use frame_support::pallet_prelude::*;
   use frame_system::pallet_prelude::*;
 
@@ -60,7 +60,7 @@ pub mod pallet {
     GenericId,
     Twox64Concat,
     T::AccountId,
-    StorageInfo<Rule, T::AccountId, T::BlockNumber>,
+    AnagolayRecord<Rule, T::AccountId, T::BlockNumber>,
     ValueQuery,
   >;
 

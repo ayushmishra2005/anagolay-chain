@@ -18,7 +18,9 @@
 
 // use super::*;
 
-use anagolay::{ForWhat, GenericId};
+use anagolay::{
+  AnagolayStructure, AnagolayStructureData, AnagolayStructureExtra, ForWhat, GenericId,
+};
 use codec::{Decode, Encode};
 use sp_runtime::RuntimeDebug;
 use sp_std::{clone::Clone, default::Default, vec, vec::Vec};
@@ -59,8 +61,14 @@ pub struct OperationData {
   /// this is the sum of all ops and the ops of the ops. tells how many operations this operation has. Based on this number we will decide which op is going to be executed first. This also tells which op has the longest chain or the deepest child op
   priority: u32,
   /// you can use the ops to build more complex rule and more complex op
-  ops: Vec<OperationStructure>,
+  ops: Vec<Operation>,
 }
+
+impl AnagolayStructureData for OperationData {}
+
+#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
+pub struct OperationExtra {}
+impl AnagolayStructureExtra for OperationExtra {}
 
 impl Default for OperationData {
   fn default() -> Self {
@@ -78,21 +86,4 @@ impl Default for OperationData {
   }
 }
 
-// /// Operation structure. This contains the Data and the ID which is the CID of the data.
-// ///
-// /// @TODO this can be a generic which also can implement the CID calculation and the verification with encoding. Currently is done in the SDK but we should use the SCALE ( i think ) to encode it or something fast too, JSON is used, need something faster.
-#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
-// #[cfg_attr(feature = "std", derive(Debug))]
-pub struct OperationStructure {
-  pub id: GenericId,
-  pub data: OperationData,
-}
-
-impl Default for OperationStructure {
-  fn default() -> Self {
-    OperationStructure {
-      id: b"".to_vec(),
-      data: OperationData::default(),
-    }
-  }
-}
+pub type Operation = AnagolayStructure<OperationData, OperationExtra>;

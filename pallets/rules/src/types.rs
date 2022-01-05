@@ -16,27 +16,12 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use anagolay::{CreatorId, ForWhat, GenericId};
+use anagolay::{
+  AnagolayStructure, AnagolayStructureData, AnagolayStructureExtra, CreatorId, ForWhat, GenericId,
+};
 use codec::{Decode, Encode};
 use sp_runtime::RuntimeDebug;
 use sp_std::{clone::Clone, default::Default, vec, vec::Vec};
-
-/// Rule which must be applied
-#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
-// #[cfg_attr(feature = "std", derive(Debug))]
-pub struct Rule {
-  pub id: GenericId,
-  pub data: RuleData,
-}
-
-impl Default for Rule {
-  fn default() -> Self {
-    Rule {
-      id: b"".to_vec(),
-      data: RuleData::default(),
-    }
-  }
-}
 
 ///OperationReference by id instead of full
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
@@ -61,6 +46,11 @@ pub struct RuleData {
   pub parent_id: GenericId,
   pub ops: Vec<OperationReference>,
 }
+impl AnagolayStructureData for RuleData {}
+
+#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
+pub struct RuleExtra {}
+impl AnagolayStructureExtra for RuleExtra {}
 
 impl Default for RuleData {
   fn default() -> Self {
@@ -75,3 +65,5 @@ impl Default for RuleData {
     }
   }
 }
+
+pub type Rule = AnagolayStructure<RuleData, RuleExtra>;

@@ -19,7 +19,7 @@
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use anagolay::{GenericId, StorageInfo};
+use anagolay::{AnagolayRecord, GenericId};
 
 // use frame_support::debug;
 
@@ -31,12 +31,12 @@ mod types;
 pub mod weights;
 
 pub use pallet::*;
-use types::{AnagolayClaimType, AnagolayStatement};
 pub use weights::WeightInfo;
 
 #[frame_support::pallet]
 pub mod pallet {
   use super::*;
+  use crate::types::{AnagolayClaimType, AnagolayStatement};
   use frame_support::pallet_prelude::*;
   use frame_system::pallet_prelude::*;
   use sp_std::vec::Vec;
@@ -79,7 +79,7 @@ pub mod pallet {
     GenericId,
     Twox64Concat,
     T::AccountId,
-    StorageInfo<AnagolayStatement, T::AccountId, T::BlockNumber>,
+    AnagolayRecord<AnagolayStatement, T::AccountId, T::BlockNumber>,
     ValueQuery,
   >;
 
@@ -98,8 +98,8 @@ pub mod pallet {
   /// const bStatement = {
   ///   //  ... normal as the rest,
   ///   prev_id: aStatement.id
-  /// }
-  /// ```
+  /// }```
+
   /// so this will be a map of bStatement.GenericId => aStatement.GenericId
   /// And now if we try to revoke the `aStatement` it will fail,
   /// because it is the part of the `bStatement`

@@ -23,7 +23,6 @@ std = [
   "sp-io/std",
   'anagolay/std',
   'an-cid/std',
-
 ]
 runtime-benchmarks = [
   'frame-benchmarking',

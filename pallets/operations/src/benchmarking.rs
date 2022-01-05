@@ -32,7 +32,7 @@ use crate::Pallet as Operations;
 benchmarks! {
   create {
     let caller: T::AccountId = whitelisted_caller();
-    let op = OperationStructure {
+    let op = Operation {
       id: vec![1],
       data: OperationData::default()
     };

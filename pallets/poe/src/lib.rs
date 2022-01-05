@@ -19,7 +19,7 @@
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use anagolay::{GenericId, StorageInfo};
+use anagolay::{AnagolayRecord, GenericId};
 use rules::PutInStorage;
 mod benchmarking;
 mod functions;
@@ -67,7 +67,7 @@ pub mod pallet {
     GenericId,
     Twox64Concat,
     T::AccountId,
-    StorageInfo<Proof, T::AccountId, T::BlockNumber>,
+    AnagolayRecord<Proof, T::AccountId, T::BlockNumber>,
     ValueQuery,
   >;
 
@@ -146,7 +146,7 @@ pub mod pallet {
         Error::<T>::ProofAlreadyClaimed
       );
 
-      let proof_info = StorageInfo {
+      let proof_info = AnagolayRecord {
         info: proof.clone(),
         account_id: sender.clone(),
         block_number: <frame_system::Pallet<T>>::block_number(), // Call the `system` pallet to get the current block number

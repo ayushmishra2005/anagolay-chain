@@ -16,7 +16,8 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 use super::*;
-use anagolay::StorageInfo;
+use crate::types::Operation;
+use anagolay::AnagolayRecord;
 
 impl<T: Config> Pallet<T> {
   /// Increase the Rule count
@@ -38,11 +39,11 @@ impl<T: Config> Pallet<T> {
   ///
   /// Does no checks.
   pub fn do_insert_operation(
-    operation: &OperationStructure,
+    operation: &Operation,
     account_id: &T::AccountId,
     block_number: &T::BlockNumber,
   ) {
-    let op_info = StorageInfo {
+    let op_info = AnagolayRecord {
       info: operation.clone(),
       account_id: account_id.clone(),
       block_number: *block_number,

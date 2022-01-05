@@ -39,7 +39,7 @@ fn proof_create_default() {
 
     let r_id = b"bafk".to_vec();
     let pd = build_default_proof(r_id);
-    let res = TestPoe::create_proof(Origin::signed(1), pd.clone());
+    let res = TestPoe::create_proof(mock::Origin::signed(1), pd.clone());
     assert_ok!(res);
   });
 }
@@ -48,19 +48,19 @@ fn proof_error_on_duplicate() {
   new_test_ext().execute_with(|| {
     // // todo create default rule, figure out better way
     // let r = create_default_rule();
-    // let res = TestPoe::create_rule(Origin::signed(1), r.clone());
+    // let res = TestPoe::create_rule(mock::Origin::signed(1), r.clone());
     // assert_ok!(res);
     // // todo create default rule, figure out better way
 
     // create the proof
     let r_id = b"bafk".to_vec();
     let pd = build_default_proof(r_id);
-    let res1 = TestPoe::create_proof(Origin::signed(1), pd.clone());
+    let res1 = TestPoe::create_proof(mock::Origin::signed(1), pd.clone());
 
     assert_ok!(res1);
 
     // create the proof AGAIN
-    let res2 = TestPoe::create_proof(Origin::signed(1), pd.clone());
+    let res2 = TestPoe::create_proof(mock::Origin::signed(1), pd.clone());
 
     assert_noop!(res2, Error::<Test>::ProofAlreadyClaimed);
   });
@@ -71,12 +71,12 @@ fn phash_save_phash() {
   new_test_ext().execute_with(|| {
     // // todo create default rule, figure out better way
     // let r = create_default_rule();
-    // let res = TestPoe::create_rule(Origin::signed(1), r.clone());
+    // let res = TestPoe::create_rule(mock::Origin::signed(1), r.clone());
     // assert_ok!(res);
     // // todo create default rule, figure out better way
     let r_id = b"bafk".to_vec();
     let pd = build_default_proof(r_id);
-    let res = TestPoe::create_proof(Origin::signed(1), pd.clone());
+    let res = TestPoe::create_proof(mock::Origin::signed(1), pd.clone());
     assert_ok!(res);
 
     let phash = PERCEPTUAL_HASH.to_vec();
@@ -85,7 +85,7 @@ fn phash_save_phash() {
       proof_id: pd.id.clone(),
     };
 
-    let res = TestPoe::save_phash(Origin::signed(1), p_hash_payload);
+    let res = TestPoe::save_phash(mock::Origin::signed(1), p_hash_payload);
     assert_ok!(res);
   });
 }
@@ -94,12 +94,12 @@ fn phash_save_phash_error_on_duplicate() {
   new_test_ext().execute_with(|| {
     // // todo create default rule, figure out better way
     // let r = create_default_rule();
-    // let res = TestPoe::create_rule(Origin::signed(1), r.clone());
+    // let res = TestPoe::create_rule(mock::Origin::signed(1), r.clone());
     // assert_ok!(res);
     // // todo create default rule, figure out better way
     let r_id = b"bafk".to_vec();
     let pd = build_default_proof(r_id);
-    let res = TestPoe::create_proof(Origin::signed(1), pd.clone());
+    let res = TestPoe::create_proof(mock::Origin::signed(1), pd.clone());
     assert_ok!(res);
 
     let phash = PERCEPTUAL_HASH.to_vec();
@@ -109,10 +109,10 @@ fn phash_save_phash_error_on_duplicate() {
       proof_id: pd.id.clone(),
     };
 
-    let res = TestPoe::save_phash(Origin::signed(1), p_hash_payload.clone());
+    let res = TestPoe::save_phash(mock::Origin::signed(1), p_hash_payload.clone());
     assert_ok!(res);
 
-    let res2 = TestPoe::save_phash(Origin::signed(1), p_hash_payload.clone());
+    let res2 = TestPoe::save_phash(mock::Origin::signed(1), p_hash_payload.clone());
     assert_noop!(res2, Error::<Test>::PHashAndProofIdComboAlreadyExist);
   });
 }
@@ -128,7 +128,7 @@ fn phash_save_phash_error_no_proof() {
         proof_id: proof_id.clone(),
         };
 
-        let res = TestPoe::save_phash(Origin::signed(1), p_hash_payload);
+        let res = TestPoe::save_phash(mock::Origin::signed(1), p_hash_payload);
         assert_noop!(res, Error::<Test>::NoSuchProof);
     });
 }

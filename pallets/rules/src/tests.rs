@@ -21,13 +21,14 @@
 #![cfg(test)]
 
 use super::{mock::*, *};
+use crate::types::Rule;
 use frame_support::{assert_noop, assert_ok};
 
 #[test]
 fn rule_create_default() {
   new_test_ext().execute_with(|| {
     let rd = Rule::default();
-    let res = TestRules::create_rule(Origin::signed(1), rd.clone());
+    let res = TestRules::create_rule(mock::Origin::signed(1), rd.clone());
     assert_ok!(res);
   });
 }
@@ -35,10 +36,10 @@ fn rule_create_default() {
 fn rule_error_on_duplicate() {
   new_test_ext().execute_with(|| {
     let rd = Rule::default();
-    let res1 = TestRules::create_rule(Origin::signed(1), rd.clone());
+    let res1 = TestRules::create_rule(mock::Origin::signed(1), rd.clone());
     assert_ok!(res1);
 
-    let res2 = TestRules::create_rule(Origin::signed(1), rd.clone());
+    let res2 = TestRules::create_rule(mock::Origin::signed(1), rd.clone());
     assert_noop!(res2, Error::<Test>::RuleAlreadyCreated);
   });
 }

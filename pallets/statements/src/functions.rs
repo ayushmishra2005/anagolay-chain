@@ -17,7 +17,8 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 use super::*;
-use anagolay::{GenericId, StorageInfo};
+use crate::types::AnagolayStatement;
+use anagolay::{AnagolayRecord, GenericId};
 use sp_std::vec::Vec;
 
 impl<T: Config> Pallet<T> {
@@ -36,7 +37,7 @@ impl<T: Config> Pallet<T> {
     statement_id: GenericId,
     account_id: &T::AccountId,
   ) -> Result<bool, Error<T>> {
-    let statement_info: StorageInfo<AnagolayStatement, T::AccountId, T::BlockNumber> =
+    let statement_info: AnagolayRecord<AnagolayStatement, T::AccountId, T::BlockNumber> =
       Statements::<T>::get(&statement_id, &account_id);
     Self::remove_statement_proof_connection(
       statement_info.info.data.claim.poe_id.clone(),
@@ -49,7 +50,7 @@ impl<T: Config> Pallet<T> {
 
   /// Insert the statement to the Storage
   pub fn insert_statement(
-    data: &StorageInfo<AnagolayStatement, T::AccountId, T::BlockNumber>,
+    data: &AnagolayRecord<AnagolayStatement, T::AccountId, T::BlockNumber>,
     account_id: &T::AccountId,
   ) {
     Statements::<T>::insert(&data.info.id, &account_id, data.clone());
@@ -61,8 +62,8 @@ impl<T: Config> Pallet<T> {
     data: &AnagolayStatement,
     account_id: &T::AccountId,
     block_number: &T::BlockNumber,
-  ) -> StorageInfo<AnagolayStatement, T::AccountId, T::BlockNumber> {
-    StorageInfo {
+  ) -> AnagolayRecord<AnagolayStatement, T::AccountId, T::BlockNumber> {
+    AnagolayRecord {
       info: data.clone(),
       account_id: account_id.clone(),
       block_number: *block_number,

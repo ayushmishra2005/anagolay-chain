@@ -16,7 +16,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use anagolay::{CreatorId, ForWhat, GenericId};
+use anagolay::{
+  AnagolayStructure, AnagolayStructureData, AnagolayStructureExtra, CreatorId, ForWhat, GenericId,
+};
 use codec::{Decode, Encode};
 use sp_runtime::RuntimeDebug;
 use sp_std::{clone::Clone, default::Default, vec, vec::Vec};
@@ -52,6 +54,8 @@ pub struct ProofData {
   params: Vec<ProofParams>,
 }
 
+impl AnagolayStructureData for ProofData {}
+
 impl Default for ProofData {
   fn default() -> Self {
     ProofData {
@@ -64,21 +68,9 @@ impl Default for ProofData {
   }
 }
 
-/// PoE Proof
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
-// #[cfg_attr(feature = "std", derive(Debug))]
-pub struct Proof {
-  pub id: GenericId,
-  // which rule is executed
-  pub data: ProofData,
-}
+pub struct ProofExtra {}
+impl AnagolayStructureExtra for ProofExtra {}
 
-impl Default for Proof {
-  fn default() -> Self {
-    let data = ProofData::default();
-    Proof {
-      id: b"".to_vec(),
-      data,
-    }
-  }
-}
+/// PoE Proof
+pub type Proof = AnagolayStructure<ProofData, ProofExtra>;
