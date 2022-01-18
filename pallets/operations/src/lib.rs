@@ -35,8 +35,8 @@ pub use weights::WeightInfo;
 #[frame_support::pallet]
 pub mod pallet {
   use super::*;
-  use crate::types::Operation;
-  use frame_support::pallet_prelude::*;
+  use crate::types::{Operation, OperationVersion};
+  use frame_support::{pallet_prelude::*, traits::UnixTime};
   use frame_system::pallet_prelude::*;
 
   #[pallet::pallet]
@@ -50,6 +50,9 @@ pub mod pallet {
 
     /// Weight information for extrinsics for this pallet.
     type WeightInfo: WeightInfo;
+
+    /// Timestamps provider
+    type TimeProvider: UnixTime;
   }
 
   #[pallet::storage]
@@ -66,9 +69,37 @@ pub mod pallet {
   >;
 
   #[pallet::storage]
+  #[pallet::getter(fn operation_version)]
+  /// Operation Version storage. Map storage where index is `OperationId`
+  pub type OperationVersions<T: Config> =
+    StorageMap<_, Blake2_128Concat, GenericId, Vec<GenericId>, ValueQuery>;
+
+  #[pallet::storage]
+  #[pallet::getter(fn version)]
+  /// Operation Version storage. Map storage where index is `OperationId`
+  pub type Versions<T: Config> = StorageMap<
+    _,
+    Blake2_128Concat,
+    GenericId,
+    AnagolayRecord<OperationVersion, T::AccountId, T::BlockNumber>,
+    ValueQuery,
+  >;
+
+  #[pallet::storage]
+  #[pallet::getter(fn manifest)]
+  /// Manifests storage. Double map storage where the index is `[IPFSCid, OperationId]`.
+  pub type Manifests<T: Config> =
+    StorageDoubleMap<_, Blake2_128Concat, GenericId, Twox64Concat, GenericId, Vec<u8>, ValueQuery>;
+
+  #[pallet::storage]
   #[pallet::getter(fn operation_count)]
-  /// Total amount of the stored operations
+  /// Total amount of the stored Operations
   pub type OperationCount<T: Config> = StorageValue<_, u64, ValueQuery>;
+
+  #[pallet::storage]
+  #[pallet::getter(fn version_count)]
+  /// Total amount of the stored Operation Versions
+  pub type VersionCount<T: Config> = StorageValue<_, u64, ValueQuery>;
 
   #[pallet::event]
   #[pallet::generate_deposit(pub(crate) fn deposit_event)]
@@ -106,6 +137,14 @@ pub mod pallet {
       // Emit an event when operation is created
       Self::deposit_event(Event::OperationCreated(sender, operation.id.clone()));
 
+      Ok(().into())
+    }
+
+    /// Approve Operation Version
+    pub fn version_approve(
+      origin: OriginFor<T>,
+      operation: Operation,
+    ) -> DispatchResultWithPostInfo {
       Ok(().into())
     }
   }

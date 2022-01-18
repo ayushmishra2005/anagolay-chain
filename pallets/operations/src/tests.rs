@@ -27,7 +27,7 @@ use frame_support::{assert_noop, assert_ok};
 fn operations_create_operation() {
   new_test_ext().execute_with(|| {
     let op = Operation::default();
-    let res = OperationTest::create(Origin::signed(1), op.clone());
+    let res = OperationTest::create(mock::Origin::signed(1), op.clone());
     assert_ok!(res);
   });
 }
@@ -35,11 +35,11 @@ fn operations_create_operation() {
 fn operations_create_operation_error_on_duplicate() {
   new_test_ext().execute_with(|| {
     let op = Operation::default();
-    let res_first = OperationTest::create(Origin::signed(1), op.clone());
+    let res_first = OperationTest::create(mock::Origin::signed(1), op.clone());
     assert_ok!(res_first);
 
     let op = Operation::default();
-    let res_duplicate = OperationTest::create(Origin::signed(1), op.clone());
+    let res_duplicate = OperationTest::create(mock::Origin::signed(1), op.clone());
     assert_noop!(res_duplicate, Error::<Test>::OperationAlreadyExists);
   });
 }

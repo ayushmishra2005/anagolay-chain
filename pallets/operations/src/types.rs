@@ -16,52 +16,52 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
+use std::collections::BTreeMap;
 // use super::*;
-
 use anagolay::{
-  AnagolayStructure, AnagolayStructureData, AnagolayStructureExtra, ForWhat, GenericId,
+  AnagolayStructure, AnagolayStructureData, AnagolayStructureExtra, ForWhat, GenericId, Text,
 };
 use codec::{Decode, Encode};
 use sp_runtime::RuntimeDebug;
 use sp_std::{clone::Clone, default::Default, vec, vec::Vec};
 
-///Operation output definition, more info here https://gitlab.com/anagolay/node/-/issues/27
-#[derive(Default, Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
-pub struct OperationOutput {
-  desc: Vec<u8>,
-  ///Any valid type from the chain, written as string and converted to the appropriate type in the implementation
-  output: Vec<u8>,
-  decoded: Vec<u8>,
-}
-
-/// Input params for a generated implementation
-#[derive(Default, Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
-// #[cfg_attr(feature = "std", derive(Debug))]
-pub struct CustomInputParam {
-  ///  'AnByteArray' | 'ProofParams[]' | 'AnBoolean'
-  data: Vec<u8>,
-  /// The real data type check the outputDecoded in anagolay SDK, for more info check the https://gitlab.com/anagolay/node/-/issues/27
-  decoded: Vec<u8>,
-}
+/// Textual representation of a type
+pub type TypeName = Vec<u8>;
 
 /// Operation structure. This contains all the needed parameters which define the operation.
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
-// #[cfg_attr(feature = "std", derive(Debug))]
 pub struct OperationData {
   /// max 128(0.12kb) characters, slugify to use _
-  name: Vec<u8>,
+  name: Text,
   /// max 512(0.5kb) or 1024(1kb) chars, can be markdown but not html
-  desc: Vec<u8>,
-  /// what operation accepts in the implementation. these are the params of the function with the types
-  input: Vec<CustomInputParam>,
-  output: OperationOutput,
-  hashing_op: GenericId,
-  enc_op: GenericId,
+  description: Text,
+  /// What operation accepts in the implementation. these are the params of the function with the types
+  input: Vec<TypeName>,
+  /// A map where keys are names of configuration parameters and values are collections of strings representing allowed values
+  config: BTreeMap<Text, Vec<Text>>,
+  /// A switch used to generate the Workflow segments  
   groups: Vec<ForWhat>,
-  /// this is the sum of all ops and the ops of the ops. tells how many operations this operation has. Based on this number we will decide which op is going to be executed first. This also tells which op has the longest chain or the deepest child op
-  priority: u32,
-  /// you can use the ops to build more complex rule and more complex op
-  ops: Vec<Operation>,
+  /// Data type name defining the operation output
+  output: TypeName,
+  /// The fully qualified URL for the repository, this can be any public repo URL
+  repository: Text,
+  /// Short name of the license, like "Apache-2.0"
+  license: Text,
+}
+
+impl Default for OperationData {
+  fn default() -> Self {
+    OperationData {
+      name: vec![],
+      description: vec![],
+      input: vec![],
+      config: BTreeMap::new(),
+      groups: vec![],
+      output: vec![],
+      repository: vec![],
+      license: vec![],
+    }
+  }
 }
 
 impl AnagolayStructureData for OperationData {}
@@ -70,20 +70,42 @@ impl AnagolayStructureData for OperationData {}
 pub struct OperationExtra {}
 impl AnagolayStructureExtra for OperationExtra {}
 
-impl Default for OperationData {
+pub type Operation = AnagolayStructure<OperationData, OperationExtra>;
+
+pub enum PackageType {
+  Crate,
+  Wasm,
+  Esm,
+}
+
+#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
+pub struct OperationVersionPackage {
+  package_type: PackageType,
+  file_url: Text,
+  ipfs_cid: GenericId,
+}
+
+/// Operation Version structure. This contains all the needed parameters which define the operation version.
+#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
+pub struct OperationVersionData {
+  operation_id: GenericId,
+  parent_id: GenericId,
+  rehosted_repo: Text,
+  packages: Vec<OperationVersionPackage>,
+}
+
+impl Default for OperationVersionData {
   fn default() -> Self {
-    OperationData {
-      name: b"".to_vec(),
-      desc: b"".to_vec(),
-      input: vec![],
-      output: OperationOutput::default(),
-      hashing_op: b"an_cid".to_vec(),
-      enc_op: b"an_enc_hex".to_vec(),
-      groups: vec![ForWhat::SYS],
-      priority: 0,
-      ops: vec![],
-    }
+    OperationVersionData
   }
 }
 
-pub type Operation = AnagolayStructure<OperationData, OperationExtra>;
+impl AnagolayStructureData for OperationVersionData {}
+
+#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
+pub struct OperationVersionExtra {
+  created_at: u64,
+}
+impl AnagolayStructureExtra for OperationVersionExtra {}
+
+pub type OperationVersion = AnagolayStructure<OperationVersionData, OperationVersionExtra>;
