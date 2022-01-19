@@ -136,7 +136,7 @@ pub mod pallet {
       // ensure!(&rule_record, Error::<T>::NoSuchRule);
 
       // The types must match
-      if proof.data.groups != rule_record.info.data.groups {
+      if proof.data.groups != rule_record.record.data.groups {
         ensure!(false, Error::<T>::ProofRuleTypeMismatch);
       }
 
@@ -147,7 +147,7 @@ pub mod pallet {
       );
 
       let proof_info = AnagolayRecord {
-        info: proof.clone(),
+        record: proof.clone(),
         account_id: sender.clone(),
         block_number: <frame_system::Pallet<T>>::block_number(), // Call the `system` pallet to get the current block number
       };

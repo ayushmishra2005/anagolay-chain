@@ -22,7 +22,6 @@
 
 use super::{mock::*, *};
 use crate::types::{AnagolayClaimType, AnagolayStatement};
-use an_cid::an_cid;
 use codec::Encode;
 use frame_support::{assert_noop, assert_ok};
 
@@ -104,15 +103,6 @@ fn statements_create_copyright_wrong_claim_type() {
 
     let res = TestStatements::create_copyright(mock::Origin::signed(1), r.clone());
     assert_noop!(res, Error::<Test>::WrongClaimType);
-  });
-}
-
-#[test]
-fn statements_cid() {
-  new_test_ext().execute_with(|| {
-    let r = b"that is f... weird".to_vec();
-    let cid = an_cid(r.clone().encode());
-    println!("CID {:?}", cid);
   });
 }
 

@@ -16,14 +16,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use std::collections::BTreeMap;
 // use super::*;
 use anagolay::{
   AnagolayStructure, AnagolayStructureData, AnagolayStructureExtra, ForWhat, GenericId, Text,
 };
 use codec::{Decode, Encode};
 use sp_runtime::RuntimeDebug;
-use sp_std::{clone::Clone, default::Default, vec, vec::Vec};
+use sp_std::{clone::Clone, collections::btree_map::BTreeMap, default::Default, vec, vec::Vec};
 
 /// Textual representation of a type
 pub type TypeName = Vec<u8>;
@@ -72,6 +71,7 @@ impl AnagolayStructureExtra for OperationExtra {}
 
 pub type Operation = AnagolayStructure<OperationData, OperationExtra>;
 
+#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
 pub enum PackageType {
   Crate,
   Wasm,
@@ -80,23 +80,28 @@ pub enum PackageType {
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
 pub struct OperationVersionPackage {
-  package_type: PackageType,
-  file_url: Text,
-  ipfs_cid: GenericId,
+  pub package_type: PackageType,
+  pub file_url: Text,
+  pub ipfs_cid: GenericId,
 }
 
 /// Operation Version structure. This contains all the needed parameters which define the operation version.
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
 pub struct OperationVersionData {
-  operation_id: GenericId,
-  parent_id: GenericId,
-  rehosted_repo: Text,
-  packages: Vec<OperationVersionPackage>,
+  pub operation_id: GenericId,
+  pub parent_id: GenericId,
+  pub rehosted_repo: Text,
+  pub packages: Vec<OperationVersionPackage>,
 }
 
 impl Default for OperationVersionData {
   fn default() -> Self {
-    OperationVersionData
+    OperationVersionData {
+      operation_id: vec![],
+      parent_id: vec![],
+      rehosted_repo: vec![],
+      packages: vec![],
+    }
   }
 }
 
@@ -104,7 +109,7 @@ impl AnagolayStructureData for OperationVersionData {}
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
 pub struct OperationVersionExtra {
-  created_at: u64,
+  pub created_at: u128,
 }
 impl AnagolayStructureExtra for OperationVersionExtra {}
 

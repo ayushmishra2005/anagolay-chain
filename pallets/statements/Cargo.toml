@@ -22,7 +22,6 @@ std = [
   'sp-std/std',
   "sp-io/std",
   'anagolay/std',
-  'an-cid/std',
 ]
 runtime-benchmarks = [
   'frame-benchmarking',
@@ -45,4 +44,3 @@ sp-runtime = { version = '3.0', default-features = false }
 sp-std = { version = '3.0', default-features = false }
 
 anagolay = { path = '../anagolay', default-features = false, package = 'pallet-anagolay' }
-an-cid = { path = '../../operations/an-cid', default-features = false }

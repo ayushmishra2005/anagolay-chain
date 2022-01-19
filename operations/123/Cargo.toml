@@ -1,6 +1,0 @@
-[package]
-name = "an-123"
-version = "0.1.0"
-authors = ['did:substrate:GHm6gp6khjcxQvnbnSsHdYejsFK1nNVxcGyGAsbDfsymtLr']
-edition = "2018"
-license-file = "./LICENSE"

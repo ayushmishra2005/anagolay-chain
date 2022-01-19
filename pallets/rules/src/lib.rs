@@ -107,7 +107,7 @@ pub mod pallet {
       let rule_info = Self::create(&sender, &current_block, &rule);
 
       // deposit the event
-      Self::deposit_event(Event::RuleCreated(sender, rule_info.info.id));
+      Self::deposit_event(Event::RuleCreated(sender, rule_info.record.id));
 
       Ok(().into())
     }

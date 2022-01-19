@@ -22,12 +22,13 @@
 
 use crate as operations;
 use crate::Config;
-use frame_support::parameter_types;
+use frame_support::{parameter_types, traits::UnixTime};
 use sp_core::H256;
 use sp_runtime::{
   testing::Header,
   traits::{BlakeTwo256, IdentityLookup},
 };
+use std::time::Duration;
 
 use frame_system as system;
 
@@ -76,9 +77,18 @@ impl frame_system::Config for Test {
   type SS58Prefix = SS58Prefix;
 }
 
+pub struct MockTime {}
+
+impl UnixTime for MockTime {
+  fn now() -> Duration {
+    core::time::Duration::from_millis(1000)
+  }
+}
+
 impl Config for Test {
   type Event = ();
   type WeightInfo = crate::weights::AnagolayWeight<Test>;
+  type TimeProvider = MockTime;
 }
 
 // Build genesis storage according to the mock runtime.

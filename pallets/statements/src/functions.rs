@@ -40,8 +40,8 @@ impl<T: Config> Pallet<T> {
     let statement_info: AnagolayRecord<AnagolayStatement, T::AccountId, T::BlockNumber> =
       Statements::<T>::get(&statement_id, &account_id);
     Self::remove_statement_proof_connection(
-      statement_info.info.data.claim.poe_id.clone(),
-      statement_info.info.id.clone(),
+      statement_info.record.data.claim.poe_id.clone(),
+      statement_info.record.id.clone(),
     )?;
     Statements::<T>::remove(&statement_id, &account_id);
     Self::decrease_statements_count();
@@ -53,7 +53,7 @@ impl<T: Config> Pallet<T> {
     data: &AnagolayRecord<AnagolayStatement, T::AccountId, T::BlockNumber>,
     account_id: &T::AccountId,
   ) {
-    Statements::<T>::insert(&data.info.id, &account_id, data.clone());
+    Statements::<T>::insert(&data.record.id, &account_id, data.clone());
     Self::increase_statements_count();
   }
 
@@ -64,7 +64,7 @@ impl<T: Config> Pallet<T> {
     block_number: &T::BlockNumber,
   ) -> AnagolayRecord<AnagolayStatement, T::AccountId, T::BlockNumber> {
     AnagolayRecord {
-      info: data.clone(),
+      record: data.clone(),
       account_id: account_id.clone(),
       block_number: *block_number,
     }

@@ -321,6 +321,7 @@ impl anagolay::Config for Runtime {
 impl an_operations::Config for Runtime {
   type Event = Event;
   type WeightInfo = an_operations::weights::AnagolayWeight<Runtime>;
+  type TimeProvider = timestamp::Pallet<Runtime>;
 }
 
 impl an_statements::Config for Runtime {

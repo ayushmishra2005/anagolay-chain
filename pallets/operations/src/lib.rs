@@ -20,6 +20,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use anagolay::{AnagolayRecord, GenericId};
+use sp_std::vec::Vec;
 
 // use frame_support::debug;
 mod benchmarking;
@@ -35,7 +36,8 @@ pub use weights::WeightInfo;
 #[frame_support::pallet]
 pub mod pallet {
   use super::*;
-  use crate::types::{Operation, OperationVersion};
+  use crate::types::{Operation, OperationVersion, OperationVersionData, OperationVersionExtra};
+  use anagolay::AnagolayStructureData;
   use frame_support::{pallet_prelude::*, traits::UnixTime};
   use frame_system::pallet_prelude::*;
 
@@ -57,13 +59,13 @@ pub mod pallet {
 
   #[pallet::storage]
   #[pallet::getter(fn operation)]
-  /// Operations storage. Double map storage where the index is `[OperationId, OwnerAccountId]`.
+  /// Operations storage. Double map storage where the index is `[OwnerAccountId, OperationId]`.
   pub type Operations<T: Config> = StorageDoubleMap<
     _,
     Blake2_128Concat,
-    GenericId,
-    Twox64Concat,
     T::AccountId,
+    Twox64Concat,
+    GenericId,
     AnagolayRecord<Operation, T::AccountId, T::BlockNumber>,
     ValueQuery,
   >;
@@ -96,54 +98,133 @@ pub mod pallet {
   /// Total amount of the stored Operations
   pub type OperationCount<T: Config> = StorageValue<_, u64, ValueQuery>;
 
-  #[pallet::storage]
-  #[pallet::getter(fn version_count)]
-  /// Total amount of the stored Operation Versions
-  pub type VersionCount<T: Config> = StorageValue<_, u64, ValueQuery>;
-
   #[pallet::event]
   #[pallet::generate_deposit(pub(crate) fn deposit_event)]
   #[pallet::metadata(T::AccountId = "AccountId")]
   pub enum Event<T: Config> {
     /// Operation Created. \[ who, OperationId \]
     OperationCreated(T::AccountId, GenericId),
+    /// Operation Updated. \[ who, OperationId \]
+    OperationUpdated(T::AccountId, GenericId),
   }
 
   #[pallet::error]
   pub enum Error<T> {
-    /// Operation Already exists
+    /// Operation already exists when creating an Operation
     OperationAlreadyExists,
+    /// Operation does not exist when updating an Operation
+    OperationDoesNotExists,
+    /// Operation Version already exists when creating an Operation Version
+    OperationVersionAlreadyExists,
+    /// Operation Version package already exists when creating an Operation Version
+    OperationVersionPackageAlreadyExists,
   }
 
   #[pallet::hooks]
   impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {}
 
+  fn mock_new_operation_version<T: Config>(
+    operation: &Operation
+  ) -> OperationVersion {
+    // TODO: real op ver creation goes here
+    let mut op_ver = OperationVersion {
+      id: Vec::new(),
+      data: OperationVersionData {
+        operation_id: operation.id.clone(),
+        ..OperationVersionData::default()
+      },
+      extra: Some(OperationVersionExtra {
+        created_at: T::TimeProvider::now().as_millis(),
+      }),
+    };
+    op_ver.id = op_ver.data.to_cid();
+    op_ver
+  }
+
   #[pallet::call]
   impl<T: Config> Pallet<T> {
-    #[pallet::weight(<T as Config>::WeightInfo::create())]
-    /// Create Operation
-    pub fn create(origin: OriginFor<T>, operation: Operation) -> DispatchResultWithPostInfo {
+    #[pallet::weight(<T as Config>::WeightInfo::create_manifest())]
+    /// Create Operation manifest
+    pub fn create_manifest(
+      origin: OriginFor<T>,
+      operation: Operation,
+    ) -> DispatchResultWithPostInfo {
       let sender = ensure_signed(origin.clone())?;
+
+      let operation = Operation {
+        id: operation.data.to_cid(),
+        ..operation
+      };
+
+      ensure!(
+        !Operations::<T>::contains_key(&sender, &operation.id),
+        Error::<T>::OperationAlreadyExists
+      );
+      ensure!(
+        OperationVersions::<T>::get(&operation.id).is_empty(),
+        Error::<T>::OperationVersionAlreadyExists
+      );
 
       let current_block = <frame_system::Pallet<T>>::block_number();
 
-      ensure!(
-        !Operations::<T>::contains_key(&operation.id, &sender),
-        Error::<T>::OperationAlreadyExists
-      );
+      Self::do_create_operation(&operation, &sender, current_block);
 
-      Self::do_insert_operation(&operation, &sender, &current_block);
+      let operation_version = mock_new_operation_version::<T>(&operation);
 
-      // Emit an event when operation is created
+      Self::create_initial_version(origin, operation_version)?;
+
       Self::deposit_event(Event::OperationCreated(sender, operation.id.clone()));
 
       Ok(().into())
     }
 
-    /// Approve Operation Version
-    pub fn version_approve(
+    #[pallet::weight(<T as Config>::WeightInfo::create_initial_version())]
+    /// Create initial Operation Version.
+    pub fn create_initial_version(
       origin: OriginFor<T>,
-      operation: Operation,
+      operation_version: OperationVersion,
+    ) -> DispatchResultWithPostInfo {
+      let sender = ensure_signed(origin.clone())?;
+
+      let operation_id = &operation_version.data.operation_id;
+      ensure!(
+        Operations::<T>::contains_key(&sender, operation_id),
+        Error::<T>::OperationDoesNotExists
+      );
+      ensure!(
+        OperationVersions::<T>::get(operation_id).is_empty(),
+        Error::<T>::OperationVersionAlreadyExists
+      );
+      ensure!(
+        Versions::<T>::get(operation_id)
+          .record
+          .data
+          .packages
+          .iter()
+          .find(|package| operation_version
+            .data
+            .packages
+            .iter()
+            .find(|new_package| package.ipfs_cid == new_package.ipfs_cid)
+            .is_none())
+          .is_none(),
+        Error::<T>::OperationVersionPackageAlreadyExists
+      );
+
+      let current_block = <frame_system::Pallet<T>>::block_number();
+
+      Self::do_create_operation_version(&operation_version, &sender, current_block);
+
+      Self::deposit_event(Event::OperationUpdated(sender, operation_id.clone()));
+
+      Ok(().into())
+    }
+
+    /// Approve Operation Version
+    #[pallet::weight(<T as Config>::WeightInfo::version_approve())]
+    pub fn version_approve(
+      _origin: OriginFor<T>,
+      _operation: Operation,
     ) -> DispatchResultWithPostInfo {
       Ok(().into())
     }

@@ -44,7 +44,7 @@ impl<T: Config> Pallet<T> {
     rule: &Rule,
   ) -> AnagolayRecord<Rule, T::AccountId, T::BlockNumber> {
     let rule_info = AnagolayRecord {
-      info: rule.clone(),
+      record: rule.clone(),
       account_id: account_id.clone(),
       block_number: *block_number,
     };

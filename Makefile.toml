@@ -24,9 +24,14 @@ command = "cargo"
 args = ["check"]
 
 [tasks.clean]
-description = "Remove generated artifacts, namely `anagolay`."
+description = "Remove generated artifact `anagolay`."
 command = "cargo"
 args = ["clean", "-p", "anagolay"]
+
+[tasks.clean-all]
+description = "Remove generated artifacts."
+command = "cargo"
+args = ["clean"]
 
 [tasks.build]
 description = "Compile the Anagolay runtime in debug mode. Accepts any valid build arguments."
