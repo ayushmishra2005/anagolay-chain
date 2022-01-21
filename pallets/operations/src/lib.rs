@@ -19,7 +19,7 @@
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use anagolay::{AnagolayRecord, GenericId};
+use anagolay::GenericId;
 use sp_std::vec::Vec;
 
 // use frame_support::debug;
@@ -36,7 +36,10 @@ pub use weights::WeightInfo;
 #[frame_support::pallet]
 pub mod pallet {
   use super::*;
-  use crate::types::{Operation, OperationVersion, OperationVersionData, OperationVersionExtra};
+  use crate::types::{
+    Operation, OperationRecord, OperationVersion, OperationVersionData, OperationVersionExtra,
+    OperationVersionRecord,
+  };
   use anagolay::AnagolayStructureData;
   use frame_support::{pallet_prelude::*, traits::UnixTime};
   use frame_system::pallet_prelude::*;
@@ -66,7 +69,7 @@ pub mod pallet {
     T::AccountId,
     Twox64Concat,
     GenericId,
-    AnagolayRecord<Operation, T::AccountId, T::BlockNumber>,
+    OperationRecord<T>,
     ValueQuery,
   >;
 
@@ -79,13 +82,8 @@ pub mod pallet {
   #[pallet::storage]
   #[pallet::getter(fn version)]
   /// Operation Version storage. Map storage where index is `OperationId`
-  pub type Versions<T: Config> = StorageMap<
-    _,
-    Blake2_128Concat,
-    GenericId,
-    AnagolayRecord<OperationVersion, T::AccountId, T::BlockNumber>,
-    ValueQuery,
-  >;
+  pub type Versions<T: Config> =
+    StorageMap<_, Blake2_128Concat, GenericId, OperationVersionRecord<T>, ValueQuery>;
 
   #[pallet::storage]
   #[pallet::getter(fn manifest)]
@@ -105,7 +103,7 @@ pub mod pallet {
     /// Operation Created. \[ who, OperationId \]
     OperationCreated(T::AccountId, GenericId),
     /// Operation Updated. \[ who, OperationId \]
-    OperationUpdated(T::AccountId, GenericId),
+    OperationVersionCreated(T::AccountId, GenericId),
   }
 
   #[pallet::error]
@@ -123,9 +121,7 @@ pub mod pallet {
   #[pallet::hooks]
   impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {}
 
-  fn mock_new_operation_version<T: Config>(
-    operation: &Operation
-  ) -> OperationVersion {
+  fn mock_new_operation_version<T: Config>(operation: &Operation) -> OperationVersion {
     // TODO: real op ver creation goes here
     let mut op_ver = OperationVersion {
       id: Vec::new(),
@@ -215,7 +211,7 @@ pub mod pallet {
 
       Self::do_create_operation_version(&operation_version, &sender, current_block);
 
-      Self::deposit_event(Event::OperationUpdated(sender, operation_id.clone()));
+      Self::deposit_event(Event::OperationVersionCreated(sender, operation_id.clone()));
 
       Ok(().into())
     }

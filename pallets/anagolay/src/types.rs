@@ -12,7 +12,7 @@ pub type GenericId = Vec<u8>;
 pub type CreatorId = Vec<u8>;
 
 /// Alias for string
-pub type Text = Vec<u8>;
+pub type Characters = Vec<u8>;
 
 /// List of equipment that needs rules generated
 #[derive(Encode, Decode, Clone, PartialEq, Eq, Ord, PartialOrd, Debug)]

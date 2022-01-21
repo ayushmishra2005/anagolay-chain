@@ -16,8 +16,7 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 use super::*;
-use crate::types::Rule;
-use anagolay::AnagolayRecord;
+use crate::types::{Rule, RuleRecord};
 
 impl<T: Config> Pallet<T> {
   /// Increase the Rule count
@@ -42,8 +41,8 @@ impl<T: Config> Pallet<T> {
     account_id: &T::AccountId,
     block_number: &T::BlockNumber,
     rule: &Rule,
-  ) -> AnagolayRecord<Rule, T::AccountId, T::BlockNumber> {
-    let rule_info = AnagolayRecord {
+  ) -> RuleRecord<T> {
+    let rule_info = RuleRecord::<T> {
       record: rule.clone(),
       account_id: account_id.clone(),
       block_number: *block_number,

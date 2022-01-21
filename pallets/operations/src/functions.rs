@@ -16,8 +16,7 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 use super::*;
-use crate::types::{Operation, OperationVersion};
-use anagolay::AnagolayRecord;
+use crate::types::{Operation, OperationRecord, OperationVersion, OperationVersionRecord};
 
 impl<T: Config> Pallet<T> {
   /// Increase the Operation count
@@ -46,7 +45,7 @@ impl<T: Config> Pallet<T> {
     account_id: &T::AccountId,
     block_number: T::BlockNumber,
   ) {
-    let record = AnagolayRecord {
+    let record = OperationRecord::<T> {
       record: operation.clone(),
       account_id: account_id.clone(),
       block_number,
@@ -70,7 +69,7 @@ impl<T: Config> Pallet<T> {
     account_id: &T::AccountId,
     block_number: T::BlockNumber,
   ) {
-    let record = AnagolayRecord {
+    let record = OperationVersionRecord::<T> {
       record: operation_version.clone(),
       account_id: account_id.clone(),
       block_number,

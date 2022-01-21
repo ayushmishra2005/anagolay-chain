@@ -19,7 +19,7 @@
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use anagolay::{AnagolayRecord, GenericId};
+use anagolay::GenericId;
 use rules::PutInStorage;
 mod benchmarking;
 mod functions;
@@ -35,6 +35,7 @@ pub use weights::WeightInfo;
 #[frame_support::pallet]
 pub mod pallet {
   use super::*;
+  use crate::types::ProofRecord;
   use frame_support::pallet_prelude::*;
   use frame_system::pallet_prelude::*;
   use sp_runtime::traits::Hash;
@@ -67,7 +68,7 @@ pub mod pallet {
     GenericId,
     Twox64Concat,
     T::AccountId,
-    AnagolayRecord<Proof, T::AccountId, T::BlockNumber>,
+    ProofRecord<T>,
     ValueQuery,
   >;
 
@@ -146,7 +147,7 @@ pub mod pallet {
         Error::<T>::ProofAlreadyClaimed
       );
 
-      let proof_info = AnagolayRecord {
+      let proof_info = ProofRecord::<T> {
         record: proof.clone(),
         account_id: sender.clone(),
         block_number: <frame_system::Pallet<T>>::block_number(), // Call the `system` pallet to get the current block number

@@ -17,7 +17,8 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 use anagolay::{
-  AnagolayStructure, AnagolayStructureData, AnagolayStructureExtra, CreatorId, GenericId,
+  AnagolayRecord, AnagolayStructure, AnagolayStructureData, AnagolayStructureExtra, CreatorId,
+  GenericId,
 };
 use codec::{Decode, Encode};
 use sp_runtime::RuntimeDebug;
@@ -138,3 +139,8 @@ pub struct StatementExtra {}
 impl AnagolayStructureExtra for StatementExtra {}
 
 pub type AnagolayStatement = AnagolayStructure<StatementData, StatementExtra>;
+pub type AnagolayStatementRecord<T> = AnagolayRecord<
+  AnagolayStatement,
+  <T as frame_system::Config>::AccountId,
+  <T as frame_system::Config>::BlockNumber,
+>;

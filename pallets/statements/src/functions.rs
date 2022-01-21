@@ -17,7 +17,7 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 use super::*;
-use crate::types::AnagolayStatement;
+use crate::types::{AnagolayStatement, AnagolayStatementRecord};
 use anagolay::{AnagolayRecord, GenericId};
 use sp_std::vec::Vec;
 
@@ -37,7 +37,7 @@ impl<T: Config> Pallet<T> {
     statement_id: GenericId,
     account_id: &T::AccountId,
   ) -> Result<bool, Error<T>> {
-    let statement_info: AnagolayRecord<AnagolayStatement, T::AccountId, T::BlockNumber> =
+    let statement_info: AnagolayStatementRecord<T> =
       Statements::<T>::get(&statement_id, &account_id);
     Self::remove_statement_proof_connection(
       statement_info.record.data.claim.poe_id.clone(),
@@ -62,8 +62,8 @@ impl<T: Config> Pallet<T> {
     data: &AnagolayStatement,
     account_id: &T::AccountId,
     block_number: &T::BlockNumber,
-  ) -> AnagolayRecord<AnagolayStatement, T::AccountId, T::BlockNumber> {
-    AnagolayRecord {
+  ) -> AnagolayStatementRecord<T> {
+    AnagolayStatementRecord::<T> {
       record: data.clone(),
       account_id: account_id.clone(),
       block_number: *block_number,

@@ -17,7 +17,8 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 use anagolay::{
-  AnagolayStructure, AnagolayStructureData, AnagolayStructureExtra, CreatorId, ForWhat, GenericId,
+  AnagolayRecord, AnagolayStructure, AnagolayStructureData, AnagolayStructureExtra, CreatorId,
+  ForWhat, GenericId,
 };
 use codec::{Decode, Encode};
 use sp_runtime::RuntimeDebug;
@@ -74,3 +75,8 @@ impl AnagolayStructureExtra for ProofExtra {}
 
 /// PoE Proof
 pub type Proof = AnagolayStructure<ProofData, ProofExtra>;
+pub type ProofRecord<T> = AnagolayRecord<
+  Proof,
+  <T as frame_system::Config>::AccountId,
+  <T as frame_system::Config>::BlockNumber,
+>;

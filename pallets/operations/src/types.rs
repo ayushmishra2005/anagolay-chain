@@ -18,7 +18,8 @@
 
 // use super::*;
 use anagolay::{
-  AnagolayStructure, AnagolayStructureData, AnagolayStructureExtra, ForWhat, GenericId, Text,
+  AnagolayRecord, AnagolayStructure, AnagolayStructureData, AnagolayStructureExtra, Characters,
+  ForWhat, GenericId,
 };
 use codec::{Decode, Encode};
 use sp_runtime::RuntimeDebug;
@@ -31,21 +32,21 @@ pub type TypeName = Vec<u8>;
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
 pub struct OperationData {
   /// max 128(0.12kb) characters, slugify to use _
-  name: Text,
+  name: Characters,
   /// max 512(0.5kb) or 1024(1kb) chars, can be markdown but not html
-  description: Text,
+  description: Characters,
   /// What operation accepts in the implementation. these are the params of the function with the types
   input: Vec<TypeName>,
   /// A map where keys are names of configuration parameters and values are collections of strings representing allowed values
-  config: BTreeMap<Text, Vec<Text>>,
+  config: BTreeMap<Characters, Vec<Characters>>,
   /// A switch used to generate the Workflow segments  
   groups: Vec<ForWhat>,
   /// Data type name defining the operation output
   output: TypeName,
   /// The fully qualified URL for the repository, this can be any public repo URL
-  repository: Text,
+  repository: Characters,
   /// Short name of the license, like "Apache-2.0"
-  license: Text,
+  license: Characters,
 }
 
 impl Default for OperationData {
@@ -70,6 +71,11 @@ pub struct OperationExtra {}
 impl AnagolayStructureExtra for OperationExtra {}
 
 pub type Operation = AnagolayStructure<OperationData, OperationExtra>;
+pub type OperationVersionRecord<T> = AnagolayRecord<
+  OperationVersion,
+  <T as frame_system::Config>::AccountId,
+  <T as frame_system::Config>::BlockNumber,
+>;
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
 pub enum PackageType {
@@ -81,7 +87,7 @@ pub enum PackageType {
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
 pub struct OperationVersionPackage {
   pub package_type: PackageType,
-  pub file_url: Text,
+  pub file_url: Characters,
   pub ipfs_cid: GenericId,
 }
 
@@ -90,7 +96,7 @@ pub struct OperationVersionPackage {
 pub struct OperationVersionData {
   pub operation_id: GenericId,
   pub parent_id: GenericId,
-  pub rehosted_repo: Text,
+  pub rehosted_repo: Characters,
   pub packages: Vec<OperationVersionPackage>,
 }
 
@@ -114,3 +120,8 @@ pub struct OperationVersionExtra {
 impl AnagolayStructureExtra for OperationVersionExtra {}
 
 pub type OperationVersion = AnagolayStructure<OperationVersionData, OperationVersionExtra>;
+pub type OperationRecord<T> = AnagolayRecord<
+  Operation,
+  <T as frame_system::Config>::AccountId,
+  <T as frame_system::Config>::BlockNumber,
+>;
