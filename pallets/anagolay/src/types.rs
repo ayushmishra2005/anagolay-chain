@@ -115,7 +115,38 @@ pub struct AnagolayRecord<T, A, B> {
   pub block_number: B,
 }
 
+/// The trait for the data field of an Anagolay entity.
 pub trait AnagolayStructureData: Default + Encode + Clone + PartialEq + Eq {
+  /// Computes cid of the data, after encoding it using parity SCALE codec
+  ///
+  /// # Examples
+  ///
+  /// ```
+  /// use codec::{Decode, Encode};
+  /// use pallet_anagolay::{AnagolayStructureData, AnagolayStructureExtra};
+  ///
+  /// #[derive(Encode, Decode, Clone, PartialEq, Eq)]
+  /// struct EntityData {
+  ///   text: Vec<u8>
+  /// };
+  ///
+  /// impl Default for EntityData {
+  ///   fn default() -> Self {
+  ///     EntityData {
+  ///       text: b"".to_vec()
+  ///     }
+  ///   }
+  /// }
+  ///
+  /// impl AnagolayStructureData for EntityData {}
+  ///
+  /// let entity = EntityData {
+  ///   text: b"hello".to_vec()
+  /// };
+  ///
+  /// assert_eq!(b"bafkr4iac2luovbttsv5iftbg2zl4okalixafa2vjwtbmf6exgwiuvukhmi".to_vec(), entity.to_cid());
+  ///
+  /// ```
   fn to_cid(&self) -> Vec<u8> {
     let hash = MultihashGeneric::wrap(
       Code::Blake3_256.into(),
@@ -155,8 +186,10 @@ pub trait AnagolayStructureData: Default + Encode + Clone + PartialEq + Eq {
   }
 }
 
+/// The trait for the extra field of an Anagolay entity
 pub trait AnagolayStructureExtra: Clone + PartialEq + Eq {}
 
+/// Generic structure representing an Anagolay entity
 #[derive(Encode, Decode, Clone, PartialEq, Eq, Debug)]
 pub struct AnagolayStructure<T: AnagolayStructureData, U: AnagolayStructureExtra> {
   pub id: GenericId,
@@ -170,6 +203,67 @@ impl<T: AnagolayStructureData, U: AnagolayStructureExtra> Default for AnagolaySt
       id: b"".to_vec(),
       data: T::default(),
       extra: None,
+    }
+  }
+}
+
+impl<T: AnagolayStructureData, U: AnagolayStructureExtra> AnagolayStructure<T, U> {
+  /// Produces an Anagolay entity with no extra information
+  pub fn new(data: T) -> Self {
+    AnagolayStructure {
+      id: data.to_cid(),
+      data,
+      extra: None,
+    }
+  }
+
+  /// Produces an Anagolay entity with some extra information
+  ///
+  /// # Examples
+  ///
+  /// ```
+  /// use codec::{Decode, Encode};
+  /// use pallet_anagolay::{AnagolayStructure, AnagolayStructureData, AnagolayStructureExtra};
+  ///
+  /// #[derive(Encode, Decode, Clone, PartialEq, Eq)]
+  /// struct EntityData {
+  ///   text: Vec<u8>
+  /// };
+  ///
+  /// impl Default for EntityData {
+  ///   fn default() -> Self {
+  ///     EntityData {
+  ///       text: b"".to_vec()
+  ///     }
+  ///   }
+  /// }
+  ///
+  /// impl AnagolayStructureData for EntityData {}
+  ///
+  /// #[derive(Encode, Decode, Clone, PartialEq, Eq)]
+  /// struct EntityExtra {
+  ///   created_at: u64
+  /// };
+  ///
+  /// impl AnagolayStructureExtra for EntityExtra {}
+  ///
+  /// type Entity = AnagolayStructure<EntityData, EntityExtra>;
+  ///
+  /// let entity = Entity::new_with_extra(EntityData {
+  ///   text: b"hello".to_vec()
+  /// }, EntityExtra {
+  ///   created_at: 0
+  /// });
+  ///
+  /// assert_eq!(b"hello".to_vec(), entity.data.text);
+  /// assert!(entity.extra.is_some());
+  /// assert_eq!(0, entity.extra.unwrap().created_at);
+  ///
+  pub fn new_with_extra(data: T, extra: U) -> Self {
+    AnagolayStructure {
+      id: data.to_cid(),
+      data,
+      extra: Some(extra),
     }
   }
 }

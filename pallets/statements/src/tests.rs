@@ -1,6 +1,6 @@
 // This file is part of Anagolay Foundation.
 
-// Copyright (C) 2019-2021 Anagolay Foundation.
+// Copyright (C) 2019-2022 Anagolay Foundation.
 // SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 
 // This program is free software: you can redistribute it and/or modify
@@ -22,7 +22,6 @@
 
 use super::{mock::*, *};
 use crate::types::{AnagolayClaimType, AnagolayStatement};
-use codec::Encode;
 use frame_support::{assert_noop, assert_ok};
 
 #[test]

@@ -314,9 +314,7 @@ impl sudo::Config for Runtime {
 
 // Anagolay pallets:
 // ------------------------------------------------------------------------------------------------
-impl anagolay::Config for Runtime {
-  type Event = Event;
-}
+impl anagolay::Config for Runtime {}
 
 impl an_operations::Config for Runtime {
   type Event = Event;
@@ -358,8 +356,8 @@ construct_runtime!(
         // Customizations
         Utility: pallet_utility::{Module, Call, Event},
 
-        // Used for the module anagolay in `./anagolay.rs`
-        Anagolay: anagolay::{Module, Call, Storage, Event<T>},
+        // Used for the module anagolay
+        Anagolay: anagolay::{Module},
         Operations: an_operations::{Module, Call, Storage, Event<T>},
         Statements: an_statements::{Module, Call, Storage, Event<T>},
         Rules: an_rules::{Module, Call, Storage, Event<T>},

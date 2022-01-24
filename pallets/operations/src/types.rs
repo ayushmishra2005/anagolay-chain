@@ -1,6 +1,6 @@
 // This file is part of Anagolay Foundation.
 
-// Copyright (C) 2019-2021 Anagolay Foundation.
+// Copyright (C) 2019-2022 Anagolay Foundation.
 // SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 
 // This program is free software: you can redistribute it and/or modify
@@ -96,7 +96,7 @@ pub struct OperationVersionPackage {
 pub struct OperationVersionData {
   pub operation_id: GenericId,
   pub parent_id: GenericId,
-  pub rehosted_repo: Characters,
+  pub rehosted_repo_id: GenericId,
   pub packages: Vec<OperationVersionPackage>,
 }
 
@@ -105,7 +105,7 @@ impl Default for OperationVersionData {
     OperationVersionData {
       operation_id: vec![],
       parent_id: vec![],
-      rehosted_repo: vec![],
+      rehosted_repo_id: vec![],
       packages: vec![],
     }
   }
@@ -115,7 +115,7 @@ impl AnagolayStructureData for OperationVersionData {}
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
 pub struct OperationVersionExtra {
-  pub created_at: u128,
+  pub created_at: u64,
 }
 impl AnagolayStructureExtra for OperationVersionExtra {}
 

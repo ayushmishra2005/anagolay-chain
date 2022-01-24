@@ -1,5 +1,5 @@
 // This file is part of Anagolay Foundation.
-// Copyright (C) 2019-2021 Anagolay Foundation.
+// Copyright (C) 2019-2022 Anagolay Foundation.
 // SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 
 // This program is free software: you can redistribute it and/or modify
@@ -77,7 +77,7 @@ impl<T: Config> Pallet<T> {
     let operation_id = &operation_version.data.operation_id;
     Versions::<T>::insert(operation_id.clone(), record);
     let mut versions = OperationVersions::<T>::get(operation_id);
-    versions.push(operation_id.clone());
+    versions.push(operation_version.id.clone());
     OperationVersions::<T>::insert(operation_id.clone(), versions);
   }
 }

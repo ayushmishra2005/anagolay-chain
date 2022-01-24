@@ -1,6 +1,6 @@
 // This file is part of Anagolay Foundation.
 
-// Copyright (C) 2019-2021 Anagolay Foundation.
+// Copyright (C) 2019-2022 Anagolay Foundation.
 // SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 
 // This program is free software: you can redistribute it and/or modify
@@ -28,7 +28,7 @@ use frame_support::{assert_noop, assert_ok};
 fn operations_create_manifest() {
   new_test_ext().execute_with(|| {
     let op = Operation::default();
-    let res = OperationTest::create_manifest(mock::Origin::signed(1), op.clone());
+    let res = OperationTest::create_manifest(mock::Origin::signed(1), op.data.clone());
     assert_ok!(res);
   });
 }
@@ -37,10 +37,10 @@ fn operations_create_manifest() {
 fn operations_create_manifest_error_on_duplicate_operation() {
   new_test_ext().execute_with(|| {
     let op = Operation::default();
-    let res = OperationTest::create_manifest(mock::Origin::signed(1), op.clone());
+    let res = OperationTest::create_manifest(mock::Origin::signed(1), op.data.clone());
     assert_ok!(res);
 
-    let res = OperationTest::create_manifest(mock::Origin::signed(1), op.clone());
+    let res = OperationTest::create_manifest(mock::Origin::signed(1), op.data.clone());
     assert_noop!(res, Error::<Test>::OperationAlreadyExists);
   });
 }
@@ -49,7 +49,7 @@ fn operations_create_manifest_error_on_duplicate_operation() {
 fn operations_create_initial_version_error_on_nonexistent_operation() {
   new_test_ext().execute_with(|| {
     let op_ver = OperationVersion::default();
-    let res = OperationTest::create_initial_version(mock::Origin::signed(1), op_ver.clone());
+    let res = OperationTest::create_initial_version(mock::Origin::signed(1), op_ver.data.clone());
     assert_noop!(res, Error::<Test>::OperationDoesNotExists);
   });
 }
@@ -58,12 +58,12 @@ fn operations_create_initial_version_error_on_nonexistent_operation() {
 fn operations_create_initial_version_error_on_duplicate_version() {
   new_test_ext().execute_with(|| {
     let op = Operation::default();
-    let res = OperationTest::create_manifest(mock::Origin::signed(1), op.clone());
+    let res = OperationTest::create_manifest(mock::Origin::signed(1), op.data.clone());
     assert_ok!(res);
 
     let mut op_ver = OperationVersion::default();
     op_ver.data.operation_id = op.data.to_cid();
-    let res = OperationTest::create_initial_version(mock::Origin::signed(1), op_ver);
+    let res = OperationTest::create_initial_version(mock::Origin::signed(1), op_ver.data);
     assert_noop!(res, Error::<Test>::OperationVersionAlreadyExists);
   });
 }

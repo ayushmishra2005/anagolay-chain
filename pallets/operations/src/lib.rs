@@ -1,6 +1,6 @@
 // This file is part of Anagolay Foundation.
 
-// Copyright (C) 2019-2021 Anagolay Foundation.
+// Copyright (C) 2019-2022 Anagolay Foundation.
 // SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 
 // This program is free software: you can redistribute it and/or modify
@@ -15,6 +15,13 @@
 
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
+
+//! an_operations pallet is the interface for the creation and management of Operations.
+//! Operation is an abstraction that represents one task in a sequence of tasks, a Workflow.
+//! Every operation has a minimum of one Version which is created when the Operation is created.
+//! Each Version contains all the information needed to execute it, download it,
+//! and chain it in the Workflow.
+//! The pallet also deals with creation and approval of Operation Versions.
 
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
@@ -37,10 +44,9 @@ pub use weights::WeightInfo;
 pub mod pallet {
   use super::*;
   use crate::types::{
-    Operation, OperationRecord, OperationVersion, OperationVersionData, OperationVersionExtra,
-    OperationVersionRecord,
+    Operation, OperationData, OperationRecord, OperationVersion, OperationVersionData,
+    OperationVersionExtra, OperationVersionRecord,
   };
-  use anagolay::AnagolayStructureData;
   use frame_support::{pallet_prelude::*, traits::UnixTime};
   use frame_system::pallet_prelude::*;
 
@@ -49,6 +55,7 @@ pub mod pallet {
   pub struct Pallet<T>(_);
 
   #[pallet::config]
+  /// Config of the operations pallet
   pub trait Config: frame_system::Config {
     /// The overarching event type.
     type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
@@ -62,7 +69,7 @@ pub mod pallet {
 
   #[pallet::storage]
   #[pallet::getter(fn operation)]
-  /// Operations storage. Double map storage where the index is `[OwnerAccountId, OperationId]`.
+  /// Operations storage. Double map storage where the index is the tuple Account id and Operation id.
   pub type Operations<T: Config> = StorageDoubleMap<
     _,
     Blake2_128Concat,
@@ -75,21 +82,15 @@ pub mod pallet {
 
   #[pallet::storage]
   #[pallet::getter(fn operation_version)]
-  /// Operation Version storage. Map storage where index is `OperationId`
+  /// Operation Version storage. Map storage where index is Operation id and values are collections of Operation Version ids
   pub type OperationVersions<T: Config> =
     StorageMap<_, Blake2_128Concat, GenericId, Vec<GenericId>, ValueQuery>;
 
   #[pallet::storage]
   #[pallet::getter(fn version)]
-  /// Operation Version storage. Map storage where index is `OperationId`
+  /// Operation Version storage. Map storage where index is Operation Version id and values are Operation Version Records`
   pub type Versions<T: Config> =
     StorageMap<_, Blake2_128Concat, GenericId, OperationVersionRecord<T>, ValueQuery>;
-
-  #[pallet::storage]
-  #[pallet::getter(fn manifest)]
-  /// Manifests storage. Double map storage where the index is `[IPFSCid, OperationId]`.
-  pub type Manifests<T: Config> =
-    StorageDoubleMap<_, Blake2_128Concat, GenericId, Twox64Concat, GenericId, Vec<u8>, ValueQuery>;
 
   #[pallet::storage]
   #[pallet::getter(fn operation_count)]
@@ -99,18 +100,20 @@ pub mod pallet {
   #[pallet::event]
   #[pallet::generate_deposit(pub(crate) fn deposit_event)]
   #[pallet::metadata(T::AccountId = "AccountId")]
+  /// Events of the Operations pallet
   pub enum Event<T: Config> {
-    /// Operation Created. \[ who, OperationId \]
+    /// Operation created. \[ Account id, Operation id \]
     OperationCreated(T::AccountId, GenericId),
-    /// Operation Updated. \[ who, OperationId \]
+    /// Operation Version created. \[ Account id, Operation id \]
     OperationVersionCreated(T::AccountId, GenericId),
   }
 
   #[pallet::error]
+  /// Errors of the Operations pallet
   pub enum Error<T> {
     /// Operation already exists when creating an Operation
     OperationAlreadyExists,
-    /// Operation does not exist when updating an Operation
+    /// Operation does not exist when creating initial Operation Version
     OperationDoesNotExists,
     /// Operation Version already exists when creating an Operation Version
     OperationVersionAlreadyExists,
@@ -121,36 +124,29 @@ pub mod pallet {
   #[pallet::hooks]
   impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {}
 
-  fn mock_new_operation_version<T: Config>(operation: &Operation) -> OperationVersion {
+  fn mock_new_operation_version<T: Config>(operation: &Operation) -> OperationVersionData {
     // TODO: real op ver creation goes here
-    let mut op_ver = OperationVersion {
-      id: Vec::new(),
-      data: OperationVersionData {
-        operation_id: operation.id.clone(),
-        ..OperationVersionData::default()
-      },
-      extra: Some(OperationVersionExtra {
-        created_at: T::TimeProvider::now().as_millis(),
-      }),
-    };
-    op_ver.id = op_ver.data.to_cid();
-    op_ver
+    OperationVersionData {
+      operation_id: operation.id.clone(),
+      ..OperationVersionData::default()
+    }
   }
 
   #[pallet::call]
   impl<T: Config> Pallet<T> {
     #[pallet::weight(<T as Config>::WeightInfo::create_manifest())]
     /// Create Operation manifest
+    ///
+    /// # Arguments
+    ///  * origin - The call origin
+    ///  * operation_data - The data of the Operation to create
     pub fn create_manifest(
       origin: OriginFor<T>,
-      operation: Operation,
+      operation_data: OperationData,
     ) -> DispatchResultWithPostInfo {
       let sender = ensure_signed(origin.clone())?;
 
-      let operation = Operation {
-        id: operation.data.to_cid(),
-        ..operation
-      };
+      let operation = Operation::new(operation_data);
 
       ensure!(
         !Operations::<T>::contains_key(&sender, &operation.id),
@@ -165,9 +161,9 @@ pub mod pallet {
 
       Self::do_create_operation(&operation, &sender, current_block);
 
-      let operation_version = mock_new_operation_version::<T>(&operation);
+      let operation_version_data = mock_new_operation_version::<T>(&operation);
 
-      Self::create_initial_version(origin, operation_version)?;
+      Self::create_initial_version(origin, operation_version_data)?;
 
       Self::deposit_event(Event::OperationCreated(sender, operation.id.clone()));
 
@@ -176,13 +172,17 @@ pub mod pallet {
 
     #[pallet::weight(<T as Config>::WeightInfo::create_initial_version())]
     /// Create initial Operation Version.
+    ///
+    /// # Arguments
+    ///  * origin - The call origin
+    ///  * operation_version_data - The data of the Operation Version to create
     pub fn create_initial_version(
       origin: OriginFor<T>,
-      operation_version: OperationVersion,
+      operation_version_data: OperationVersionData,
     ) -> DispatchResultWithPostInfo {
       let sender = ensure_signed(origin.clone())?;
 
-      let operation_id = &operation_version.data.operation_id;
+      let operation_id = &operation_version_data.operation_id;
       ensure!(
         Operations::<T>::contains_key(&sender, operation_id),
         Error::<T>::OperationDoesNotExists
@@ -197,8 +197,7 @@ pub mod pallet {
           .data
           .packages
           .iter()
-          .find(|package| operation_version
-            .data
+          .find(|package| operation_version_data
             .packages
             .iter()
             .find(|new_package| package.ipfs_cid == new_package.ipfs_cid)
@@ -209,6 +208,13 @@ pub mod pallet {
 
       let current_block = <frame_system::Pallet<T>>::block_number();
 
+      let operation_version = OperationVersion::new_with_extra(
+        operation_version_data.clone(),
+        OperationVersionExtra {
+          created_at: T::TimeProvider::now().as_secs(),
+        },
+      );
+
       Self::do_create_operation_version(&operation_version, &sender, current_block);
 
       Self::deposit_event(Event::OperationVersionCreated(sender, operation_id.clone()));
@@ -216,11 +222,15 @@ pub mod pallet {
       Ok(().into())
     }
 
-    /// Approve Operation Version
     #[pallet::weight(<T as Config>::WeightInfo::version_approve())]
+    /// Approve Operation Version
+    ///
+    /// # Arguments
+    ///  * origin - The call origin
+    ///  * operation_id - The id of the Operation to approve
     pub fn version_approve(
       _origin: OriginFor<T>,
-      _operation: Operation,
+      _operation_id: GenericId,
     ) -> DispatchResultWithPostInfo {
       Ok(().into())
     }
