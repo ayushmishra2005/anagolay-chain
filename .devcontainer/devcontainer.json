@@ -1,18 +1,13 @@
 // If you want to run as a non-root user in the container, see ../docker-compose.yml.
 {
   "name": "Anagolay node",
-  "dockerComposeFile": "../docker-compose.yml",
-  "service": "code", // attaches to this service after docker-compose up `runServices`
-  "runServices": ["code"],
-  // "image": "woss/substrate_devcontainer:latest",
-  // "build": {
-  //   "dockerfile": "../devcontainer.base.Dockerfile"
-  // },
+  // "image": "mcr.microsoft.com/vscode/devcontainers/rust:bullseye",  
+  "dockerComposeFile": "./docker-compose.yml",
   "workspaceFolder": "/app",
-  // Use 'settings' to set *default* container specific settings.json values on container create.
-  // You can edit these settings after create using File > Preferences > Settings > Remote.
+  "service": "code",
   "settings": {
-    "terminal.integrated.defaultProfile.linux": "zsh",
+    "rust-analyzer.checkOnSave.command": "clippy",
+    // "terminal.integrated.defaultProfile.linux": "zsh",
     "lldb.executable": "/usr/bin/lldb",
     // VS Code don't watch files under ./target
     "files.watcherExclude": {
@@ -20,11 +15,27 @@
     }
   },
   // Uncomment next line if you want to copy your .ssh creds and other config files for easier use inside container
-  "postCreateCommand": "bash .devcontainer/copy-local-config-and-ssh-creds.sh",
+  // "postCreateCommand": "bash scripts/01-install-system-dependencies && bash scripts/02-setup-toolchain.sh; bash scripts/03-install-cargo-packages.sh",
   // noVNC, VNC, debug ports
-  "forwardPorts": [6080, 5901, 9222, 30333, 9933, 9944],
-  // "remoteUser": "vscode",
-
+  "forwardPorts": [
+    6080,
+    5901,
+    9222,
+    30333,
+    9933,
+    9944
+  ],
+  "features": {
+    "docker-in-docker": {
+      "version": "latest",
+      "moby": true
+    },
+    "git-lfs": "latest",
+    "rust": {
+      "version": "latest",
+      "profile": "default"
+    }
+  },
   "remoteUser": "vscode",
   // Add the IDs of extensions you want installed when the container is created in the array below.
   "extensions": [
