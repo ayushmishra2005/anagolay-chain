@@ -1,6 +1,6 @@
-version: "3"
+version: "3.5"
 services:
-  code:
+  an-chain-code:
     user: $UID
     cap_add:
       - SYS_PTRACE
@@ -8,7 +8,7 @@ services:
       - seccomp:unconfined
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: devops/dockerfiles/.devcontainer.Dockerfile
       args:
         VARIANT: bullseye  
         USER_UID: $UID
@@ -22,6 +22,4 @@ services:
 
 volumes:
   anagolay_cargo:
-    external: true
   vscode_extensions:
-    external: true

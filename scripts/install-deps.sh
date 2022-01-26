@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# THIS IS THE MAIN DEPS FILE, all other are crap
+
 RUST_TOOLCHAIN="${1:-nightly-2021-06-29}"
 
 apt-get update \

@@ -21,6 +21,6 @@ VOLUME /app
 # expose the
 # EXPOSE 30333 9933 9944 6080 5901 9222
 
-COPY ./install-deps.sh /tmp/library-scripts/
+COPY scripts/install-deps.sh /tmp/library-scripts/
 
 RUN bash /tmp/library-scripts/install-deps.sh

@@ -2,9 +2,9 @@
 {
   "name": "Anagolay node",
   // "image": "mcr.microsoft.com/vscode/devcontainers/rust:bullseye",  
-  "dockerComposeFile": "./docker-compose.yml",
+  "dockerComposeFile": "../docker-compose.yml",
   "workspaceFolder": "/app",
-  "service": "code",
+  "service": "an-chain-code",
   "settings": {
     "rust-analyzer.checkOnSave.command": "clippy",
     // "terminal.integrated.defaultProfile.linux": "zsh",
@@ -26,10 +26,10 @@
     9944
   ],
   "features": {
-    "docker-in-docker": {
-      "version": "latest",
-      "moby": true
-    },
+    // "docker-in-docker": {
+    //   "version": "latest",
+    //   "moby": true
+    // },
     "git-lfs": "latest",
     "rust": {
       "version": "latest",

@@ -1,5 +1,8 @@
 {
   "editor.formatOnSave": true,
+  "files.associations": {
+    "*.yml": "yaml",
+  },
   "cSpell.words": [
     "SPDX",
     "clippy",
@@ -9,6 +12,9 @@
     "sigs",
     "twox"
   ],
+  "[yaml]": {
+    "editor.defaultFormatter": "redhat.vscode-yaml"
+  },
   "search.exclude": {
     "**/target": true
   },
