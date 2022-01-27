@@ -1,2 +1,12 @@
 image:
   file: devops/dockerfiles/.gitpod.Dockerfile
+vscode:
+  extensions:
+    - rust-lang.rust
+    - tamasfe.even-better-toml
+    - belfz.search-crates-io
+    - panicbit.cargo
+    - serayuzgur.crates
+    - vadimcn.vscode-lldb
+    - actboy168.tasks
+    - redhat.vscode-yaml

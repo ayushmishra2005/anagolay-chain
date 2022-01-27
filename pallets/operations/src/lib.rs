@@ -87,6 +87,11 @@ pub mod pallet {
     StorageMap<_, Blake2_128Concat, GenericId, Vec<GenericId>, ValueQuery>;
 
   #[pallet::storage]
+  #[pallet::getter(fn package_cid)]
+  /// The a map where the key is Package_CID
+  pub type PackagesCid<T: Config> = StorageValue<_, Vec<GenericId>, ValueQuery>;
+
+  #[pallet::storage]
   #[pallet::getter(fn version)]
   /// Operation Version storage. Map storage where index is Operation Version id and values are Operation Version Records`
   pub type Versions<T: Config> =
@@ -104,8 +109,6 @@ pub mod pallet {
   pub enum Event<T: Config> {
     /// Operation created. \[ Account id, Operation id \]
     OperationCreated(T::AccountId, GenericId),
-    /// Operation Version created. \[ Account id, Operation id \]
-    OperationVersionCreated(T::AccountId, GenericId),
   }
 
   #[pallet::error]
@@ -115,34 +118,28 @@ pub mod pallet {
     OperationAlreadyExists,
     /// Operation does not exist when creating initial Operation Version
     OperationDoesNotExists,
-    /// Operation Version already exists when creating an Operation Version
-    OperationVersionAlreadyExists,
     /// Operation Version package already exists when creating an Operation Version
     OperationVersionPackageAlreadyExists,
+    /// Operation already has at least one(1) Version
+    OperationAlreadyInitialized,
   }
 
   #[pallet::hooks]
   impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {}
 
-  fn mock_new_operation_version<T: Config>(operation: &Operation) -> OperationVersionData {
-    // TODO: real op ver creation goes here
-    OperationVersionData {
-      operation_id: operation.id.clone(),
-      ..OperationVersionData::default()
-    }
-  }
-
   #[pallet::call]
   impl<T: Config> Pallet<T> {
-    #[pallet::weight(<T as Config>::WeightInfo::create_manifest())]
+    #[pallet::weight(<T as Config>::WeightInfo::create_operation())]
     /// Create Operation manifest
     ///
     /// # Arguments
     ///  * origin - The call origin
     ///  * operation_data - The data of the Operation to create
-    pub fn create_manifest(
+    ///  * operation_version_data - The data of the Operation Version to create
+    pub fn create_operation(
       origin: OriginFor<T>,
       operation_data: OperationData,
+      operation_version_data: OperationVersionData,
     ) -> DispatchResultWithPostInfo {
       let sender = ensure_signed(origin.clone())?;
 
@@ -153,63 +150,33 @@ pub mod pallet {
         Error::<T>::OperationAlreadyExists
       );
       ensure!(
-        OperationVersions::<T>::get(&operation.id).is_empty(),
-        Error::<T>::OperationVersionAlreadyExists
-      );
-
-      let current_block = <frame_system::Pallet<T>>::block_number();
-
-      Self::do_create_operation(&operation, &sender, current_block);
-
-      let operation_version_data = mock_new_operation_version::<T>(&operation);
-
-      Self::create_initial_version(origin, operation_version_data)?;
-
-      Self::deposit_event(Event::OperationCreated(sender, operation.id.clone()));
-
-      Ok(().into())
-    }
-
-    #[pallet::weight(<T as Config>::WeightInfo::create_initial_version())]
-    /// Create initial Operation Version.
-    ///
-    /// # Arguments
-    ///  * origin - The call origin
-    ///  * operation_version_data - The data of the Operation Version to create
-    pub fn create_initial_version(
-      origin: OriginFor<T>,
-      operation_version_data: OperationVersionData,
-    ) -> DispatchResultWithPostInfo {
-      let sender = ensure_signed(origin.clone())?;
-
-      let operation_id = &operation_version_data.operation_id;
-      ensure!(
-        Operations::<T>::contains_key(&sender, operation_id),
-        Error::<T>::OperationDoesNotExists
+        !OperationVersions::<T>::contains_key(&operation.id) ||
+          OperationVersions::<T>::get(&operation.id).is_empty(),
+        Error::<T>::OperationAlreadyInitialized
       );
       ensure!(
-        OperationVersions::<T>::get(operation_id).is_empty(),
-        Error::<T>::OperationVersionAlreadyExists
-      );
-      ensure!(
-        Versions::<T>::get(operation_id)
-          .record
-          .data
+        operation_version_data
           .packages
           .iter()
-          .find(|package| operation_version_data
-            .packages
-            .iter()
-            .find(|new_package| package.ipfs_cid == new_package.ipfs_cid)
-            .is_none())
+          .find(|package| {
+            match PackagesCid::<T>::try_get().ok() {
+              Some(packages) => packages.contains(&package.ipfs_cid),
+              None => false,
+            }
+          })
           .is_none(),
         Error::<T>::OperationVersionPackageAlreadyExists
       );
 
       let current_block = <frame_system::Pallet<T>>::block_number();
 
+      Self::do_create_operation(&operation, &sender, current_block);
+
       let operation_version = OperationVersion::new_with_extra(
-        operation_version_data.clone(),
+        OperationVersionData {
+          operation_id: operation.id.clone(),
+          ..operation_version_data.clone()
+        },
         OperationVersionExtra {
           created_at: T::TimeProvider::now().as_secs(),
         },
@@ -217,7 +184,7 @@ pub mod pallet {
 
       Self::do_create_operation_version(&operation_version, &sender, current_block);
 
-      Self::deposit_event(Event::OperationVersionCreated(sender, operation_id.clone()));
+      Self::deposit_event(Event::OperationCreated(sender, operation.id.clone()));
 
       Ok(().into())
     }

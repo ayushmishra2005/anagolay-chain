@@ -20,51 +20,145 @@
 
 #![cfg(test)]
 use super::{mock::*, *};
-use crate::types::{Operation, OperationVersion};
+use crate::types::{
+  Operation, OperationData, OperationVersion, OperationVersionData, OperationVersionPackage,
+  PackageType,
+};
 use anagolay::AnagolayStructureData;
 use frame_support::{assert_noop, assert_ok};
 
 #[test]
-fn operations_create_manifest() {
+fn operations_create_operation() {
   new_test_ext().execute_with(|| {
     let op = Operation::default();
-    let res = OperationTest::create_manifest(mock::Origin::signed(1), op.data.clone());
+    let op_ver = OperationVersion::default();
+    let res = OperationTest::create_operation(
+      mock::Origin::signed(1),
+      op.data.clone(),
+      op_ver.data.clone(),
+    );
     assert_ok!(res);
   });
 }
 
 #[test]
-fn operations_create_manifest_error_on_duplicate_operation() {
+fn operations_create_operation_error_on_duplicate_operation() {
   new_test_ext().execute_with(|| {
     let op = Operation::default();
-    let res = OperationTest::create_manifest(mock::Origin::signed(1), op.data.clone());
+    let op_ver = OperationVersion::default();
+    let res = OperationTest::create_operation(
+      mock::Origin::signed(1),
+      op.data.clone(),
+      op_ver.data.clone(),
+    );
     assert_ok!(res);
 
-    let res = OperationTest::create_manifest(mock::Origin::signed(1), op.data.clone());
+    let res = OperationTest::create_operation(
+      mock::Origin::signed(1),
+      op.data.clone(),
+      op_ver.data.clone(),
+    );
     assert_noop!(res, Error::<Test>::OperationAlreadyExists);
   });
 }
 
 #[test]
-fn operations_create_initial_version_error_on_nonexistent_operation() {
+fn operations_create_operation_error_reusing_package() {
   new_test_ext().execute_with(|| {
-    let op_ver = OperationVersion::default();
-    let res = OperationTest::create_initial_version(mock::Origin::signed(1), op_ver.data.clone());
-    assert_noop!(res, Error::<Test>::OperationDoesNotExists);
+    let op = Operation {
+      id: vec![],
+      data: OperationData {
+        name: b"op".to_vec(),
+        ..OperationData::default()
+      },
+      extra: None,
+    };
+    let op_ver = OperationVersion {
+      id: vec![],
+      data: OperationVersionData {
+        operation_id: op.data.to_cid(),
+        parent_id: None,
+        rehosted_repo_id: b"https://github.com/op".to_vec(),
+        packages: vec![OperationVersionPackage {
+          package_type: PackageType::Crate,
+          file_name: b"op.tgz".to_vec(),
+          ipfs_cid: b"bafkopopopopopopop".to_vec(),
+        }],
+      },
+      extra: None,
+    };
+
+    PackagesCid::<Test>::set(
+      op_ver
+        .data
+        .packages
+        .iter()
+        .map(|package| package.ipfs_cid.clone())
+        .collect(),
+    );
+
+    let res = OperationTest::create_operation(
+      mock::Origin::signed(1),
+      op.data.clone(),
+      op_ver.data.clone(),
+    );
+
+    assert_noop!(res, Error::<Test>::OperationVersionPackageAlreadyExists);
   });
 }
 
 #[test]
-fn operations_create_initial_version_error_on_duplicate_version() {
+fn operations_create_operation_error_mixing_operations() {
   new_test_ext().execute_with(|| {
-    let op = Operation::default();
-    let res = OperationTest::create_manifest(mock::Origin::signed(1), op.data.clone());
+    let op_a = Operation {
+      id: vec![],
+      data: OperationData {
+        name: b"op_a".to_vec(),
+        ..OperationData::default()
+      },
+      extra: None,
+    };
+    let op_a_ver = OperationVersion {
+      id: vec![],
+      data: OperationVersionData {
+        operation_id: vec![],
+        parent_id: None,
+        rehosted_repo_id: b"https://github.com/op_a".to_vec(),
+        packages: vec![OperationVersionPackage {
+          package_type: PackageType::Crate,
+          file_name: b"op_a.tgz".to_vec(),
+          ipfs_cid: b"bafkopaopaopaopaopaopaopa".to_vec(),
+        }],
+      },
+      extra: None,
+    };
+
+    let res = OperationTest::create_operation(
+      mock::Origin::signed(1),
+      op_a.data.clone(),
+      op_a_ver.data.clone(),
+    );
     assert_ok!(res);
 
-    let mut op_ver = OperationVersion::default();
-    op_ver.data.operation_id = op.data.to_cid();
-    let res = OperationTest::create_initial_version(mock::Origin::signed(1), op_ver.data);
-    assert_noop!(res, Error::<Test>::OperationVersionAlreadyExists);
+    let op_b = Operation {
+      id: vec![],
+      data: OperationData {
+        name: b"op_b".to_vec(),
+        ..OperationData::default()
+      },
+      extra: None,
+    };
+    let op_b_ver_mixed = OperationVersion {
+      id: vec![],
+      data: op_a_ver.data.clone(),
+      extra: None,
+    };
+    let res = OperationTest::create_operation(
+      mock::Origin::signed(1),
+      op_b.data.clone(),
+      op_b_ver_mixed.data.clone(),
+    );
+    assert_noop!(res, Error::<Test>::OperationVersionPackageAlreadyExists);
   });
 }
 

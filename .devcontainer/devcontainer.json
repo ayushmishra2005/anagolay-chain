@@ -48,6 +48,7 @@
     "mutantdino.resourcemonitor",
     "formulahendry.code-runner",
     "ms-azuretools.vscode-docker",
-    "actboy168.tasks"
+    "actboy168.tasks",
+    "redhat.vscode-yaml"
   ]
 }

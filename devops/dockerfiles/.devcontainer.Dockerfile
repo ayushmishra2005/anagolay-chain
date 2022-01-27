@@ -1,8 +1,8 @@
-# https://github.com/microsoft/vscode-dev-containers/blob/v0.159.0/containers/rust/.devcontainer/base.Dockerfile
-FROM mcr.microsoft.com/vscode/devcontainers/rust
+#https://github.com/microsoft/vscode-dev-containers/blob/main/containers/rust/.devcontainer/base.Dockerfile
+ARG VARIANT="bullseye"
+FROM mcr.microsoft.com/vscode/devcontainers/rust:1-${VARIANT}
 
 ARG USER_UID=${UID:-1000}
-
 
 ENV RUST_BACKTRACE=1 \
 	DEBIAN_FRONTEND=noninteractive \
@@ -13,7 +13,7 @@ ENV RUST_BACKTRACE=1 \
 
 
 # volume for caching the cargo packages
-VOLUME /usr/local/cargo
+# VOLUME /usr/local/cargo
 
 # volume for the mounted app
 VOLUME /app

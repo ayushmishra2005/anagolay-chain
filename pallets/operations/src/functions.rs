@@ -19,20 +19,8 @@ use super::*;
 use crate::types::{Operation, OperationRecord, OperationVersion, OperationVersionRecord};
 
 impl<T: Config> Pallet<T> {
-  /// Increase the Operation count
-  ///
-  /// Does no checks!
-  ///
-  /// Returns the new Total operation count
-  fn increase_operation_count() -> u64 {
-    let operation_count = Self::operation_count() + 1;
-    OperationCount::<T>::put(operation_count);
-    operation_count
-  }
-
   /// Inserts the Operation into the `Operations` storage
-  ///   
-  /// Increases the `Total Operation Count` via `Self::increase_operation_count`
+  /// Increases the `Total Operation Count`
   ///
   /// Does no checks.
   ///
@@ -50,13 +38,15 @@ impl<T: Config> Pallet<T> {
       account_id: account_id.clone(),
       block_number,
     };
+
     Operations::<T>::insert(account_id.clone(), operation.id.clone(), record);
-    Self::increase_operation_count();
+
+    let operation_count = Self::operation_count() + 1;
+    OperationCount::<T>::put(operation_count);
   }
 
-  /// Inserts the Operation Version into the `OperationVersions` and `Versions` storages
-  ///   
-  /// Increases the `Total Operation Count` via `Self::increase_operation_count`
+  /// Inserts the Operation Version into the `OperationVersions``OperationVersions` and `Versions` storages
+  /// Insert each package cid in the `PackageCid` storage
   ///
   /// Does no checks.
   ///
@@ -74,10 +64,20 @@ impl<T: Config> Pallet<T> {
       account_id: account_id.clone(),
       block_number,
     };
+
     let operation_id = &operation_version.data.operation_id;
     Versions::<T>::insert(operation_id.clone(), record);
+
     let mut versions = OperationVersions::<T>::get(operation_id);
     versions.push(operation_version.id.clone());
     OperationVersions::<T>::insert(operation_id.clone(), versions);
+
+    let mut packages = OperationVersions::<T>::get(operation_id);
+    operation_version
+      .data
+      .packages
+      .iter()
+      .for_each(|package| packages.push(package.ipfs_cid.clone()));
+    PackagesCid::<T>::set(packages);
   }
 }

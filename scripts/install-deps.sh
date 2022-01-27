@@ -19,7 +19,7 @@ if [ -z $CI_PROJECT_NAME ]; then
   rustup update stable
 fi
 
-rustup toolchain install $RUST_TOOLCHAIN &&
-  rustup target add wasm32-unknown-unknown --toolchain $RUST_TOOLCHAIN
+rustup toolchain install $RUST_TOOLCHAIN
+rustup target add wasm32-unknown-unknown --toolchain $RUST_TOOLCHAIN
 
 cargo install cargo-make

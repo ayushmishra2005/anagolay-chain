@@ -1,7 +1,8 @@
 version: "3.5"
 services:
   an-chain-code:
-    user: $UID
+    # user: $UID
+    user: "${UID}:${UID}"
     cap_add:
       - SYS_PTRACE
     security_opt:
@@ -10,14 +11,14 @@ services:
       context: .
       dockerfile: devops/dockerfiles/.devcontainer.Dockerfile
       args:
-        VARIANT: bullseye  
+        VARIANT: bullseye
         USER_UID: $UID
     working_dir: /app
     volumes:
       - .:/app:cached
       - anagolay_cargo:/usr/local/cargo
       ## https://code.visualstudio.com/docs/remote/containers-advanced#_avoiding-extension-reinstalls-on-container-rebuild
-      - vscode_extensions:/home/vscode/.vscode-server
+      # - vscode_extensions:/home/vscode/.vscode-server:cached
     command: sleep infinity
 
 volumes:
