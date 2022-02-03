@@ -30,13 +30,17 @@ use sp_std::{boxed::Box, vec, vec::Vec};
 use crate::Pallet as Operations;
 
 benchmarks! {
-  create {
+  create_operation {
     let caller: T::AccountId = whitelisted_caller();
-    let op = Operation {
-      id: vec![1],
-      data: OperationData::default()
-    };
-  }: _(RawOrigin::Signed(caller), op)
+    let op = OperationData::default();
+    let op_ver = OperationVersionData {
+        operation_id: vec![1],
+        ..OperationVersionData::default()
+      };
+  }: _(RawOrigin::Signed(caller), op, op_ver)
+  version_approve {
+    let caller: T::AccountId = whitelisted_caller();
+  }: _(RawOrigin::Signed(caller), vec![1])
 }
 
 impl_benchmark_test_suite!(Operations, crate::mock::new_test_ext(), crate::mock::Test);

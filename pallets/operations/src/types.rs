@@ -37,7 +37,7 @@ pub struct OperationData {
   /// max 512(0.5kb) or 1024(1kb) chars, can be markdown but not html
   pub description: Characters,
   /// What operation accepts in the implementation. these are the params of the function with the types
-  pub input: Vec<TypeName>,
+  pub inputs: Vec<TypeName>,
   /// A map where keys are names of configuration parameters and values are collections of strings representing allowed values
   pub config: BTreeMap<Characters, Vec<Characters>>,
   /// A switch used to generate the Workflow segments  
@@ -56,7 +56,7 @@ impl Default for OperationData {
     OperationData {
       name: vec![],
       description: vec![],
-      input: vec![],
+      inputs: vec![],
       config: BTreeMap::new(),
       groups: vec![],
       output: vec![],
@@ -72,8 +72,14 @@ impl AnagolayStructureData for OperationData {}
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
 /// Extra information (non hashed) for Operation entity
 pub struct OperationExtra {}
-/// Implementation of AnagolayStructureExtra trait for OperationData
+/// Implementation of AnagolayStructureExtra trait for OperationExtra
 impl AnagolayStructureExtra for OperationExtra {}
+/// Implementation of Default trait for OperationExtra
+impl Default for OperationExtra {
+  fn default() -> Self {
+    OperationExtra {}
+  }
+}
 
 /// Operation entity, alias of `AnagolayStructure<OperationData, OperationExtra>`
 pub type Operation = AnagolayStructure<OperationData, OperationExtra>;

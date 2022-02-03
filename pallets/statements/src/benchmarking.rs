@@ -20,7 +20,6 @@
 
 #![cfg(feature = "runtime-benchmarks")]
 use super::*;
-use anagolay::AnagolayStructure;
 use frame_benchmarking::{benchmarks, impl_benchmark_test_suite, whitelisted_caller};
 use frame_system::RawOrigin;
 use sp_std::{boxed::Box, vec, vec::Vec};
@@ -35,14 +34,15 @@ benchmarks! {
     let caller: T::AccountId = whitelisted_caller();
     let copyright_statement = AnagolayStatement {
       id: vec![1],
-      data: StatementData::default()
+      data: StatementData::default(),
+      extra: None,
     };
   }: _(RawOrigin::Signed(caller), copyright_statement)
 
   create_ownership{
     //Initializing benchmark for Ownership Extrinsic
     let caller: T::AccountId = whitelisted_caller();
-    let mut ownership_statement = AnagolayStructure::<StatementData>::default();
+    let mut ownership_statement = AnagolayStatement::default();
     ownership_statement.data.claim.claim_type = AnagolayClaimType::Ownership;
 
   }: _(RawOrigin::Signed(caller), ownership_statement)
@@ -50,7 +50,7 @@ benchmarks! {
   revoke{
     //Initializing benchmark for Revoke Extrinsic
     let caller: T::AccountId = whitelisted_caller();
-    let statements = AnagolayStructure::<StatementData>::default();
+    let statements = AnagolayStatement::default();
     let statement_id = statements.id.clone();
     crate::Pallet::<T>::create_copyright(RawOrigin::Signed(caller.clone()).into(), statements)?;
   }: _(RawOrigin::Signed(caller), statement_id)

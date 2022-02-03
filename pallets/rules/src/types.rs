@@ -52,6 +52,11 @@ impl AnagolayStructureData for RuleData {}
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
 pub struct RuleExtra {}
 impl AnagolayStructureExtra for RuleExtra {}
+impl Default for RuleExtra {
+  fn default() -> Self {
+    RuleExtra {}
+  }
+}
 
 impl Default for RuleData {
   fn default() -> Self {

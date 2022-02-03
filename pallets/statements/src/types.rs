@@ -137,6 +137,11 @@ impl AnagolayStructureData for StatementData {}
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
 pub struct StatementExtra {}
 impl AnagolayStructureExtra for StatementExtra {}
+impl Default for StatementExtra {
+  fn default() -> Self {
+    StatementExtra {}
+  }
+}
 
 pub type AnagolayStatement = AnagolayStructure<StatementData, StatementExtra>;
 pub type AnagolayStatementRecord<T> = AnagolayRecord<

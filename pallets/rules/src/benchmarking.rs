@@ -35,6 +35,7 @@ benchmarks! {
         let rule = Rule {
           id: vec![1],
           data: RuleData::default(),
+          extra: None
         };
     }: _(RawOrigin::Signed(caller), rule)
 }
