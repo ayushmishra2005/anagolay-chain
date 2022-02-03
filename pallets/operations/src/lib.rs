@@ -150,8 +150,8 @@ pub mod pallet {
         Error::<T>::OperationAlreadyExists
       );
       ensure!(
-        !OperationVersions::<T>::contains_key(&operation.id)
-          || OperationVersions::<T>::get(&operation.id).is_empty(),
+        !OperationVersions::<T>::contains_key(&operation.id) ||
+          OperationVersions::<T>::get(&operation.id).is_empty(),
         Error::<T>::OperationAlreadyInitialized
       );
       ensure!(

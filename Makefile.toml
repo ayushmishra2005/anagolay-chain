@@ -51,11 +51,19 @@ description = "Compile the Anagolay runtime in release mode with feature flag fo
 command = "cargo"
 args = ["build", "--release", "--features", "runtime-benchmarks"]
 
+[tasks.test-doc]
+description = "Execute documentation tests of a anagolay node."
+command = "cargo"
+args = ["test", "--doc", "--", "--show-output"]
+
 [tasks.test]
 description = "Execute unit and integration tests of a anagolay node."
 command = "cargo"
 args = ["test", "${@}"]
-# dependencies = ["build"]
+
+[tasks.test-all]
+description = "Execute all tests"
+dependencies = ["test-doc", "test"]
 
 ## Run the tests with benchmarking turned on
 [tasks.test-benchmarking]
