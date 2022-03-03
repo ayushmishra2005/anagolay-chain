@@ -54,13 +54,13 @@ pub use anagolay;
 pub use an_operations;
 
 /// Importing a statements pallet
-pub use an_statements;
+// pub use an_statements;
 
 /// Importing a rules pallet
-pub use an_rules;
+// pub use an_rules;
 
 /// Importing a poe pallet
-pub use an_poe;
+// pub use an_poe;
 
 /// An index to a block.
 pub type BlockNumber = u32;
@@ -207,8 +207,7 @@ impl grandpa::Config for Runtime {
 
   type KeyOwnerProofSystem = ();
 
-  type KeyOwnerProof =
-    <Self::KeyOwnerProofSystem as KeyOwnerProofSystem<(KeyTypeId, GrandpaId)>>::Proof;
+  type KeyOwnerProof = <Self::KeyOwnerProofSystem as KeyOwnerProofSystem<(KeyTypeId, GrandpaId)>>::Proof;
 
   type KeyOwnerIdentification =
     <Self::KeyOwnerProofSystem as KeyOwnerProofSystem<(KeyTypeId, GrandpaId)>>::IdentificationTuple;
@@ -322,21 +321,21 @@ impl an_operations::Config for Runtime {
   type TimeProvider = timestamp::Pallet<Runtime>;
 }
 
-impl an_statements::Config for Runtime {
-  type Event = Event;
-  type WeightInfo = an_statements::weights::AnagolayWeight<Runtime>;
-}
+//impl an_statements::Config for Runtime {
+//  type Event = Event;
+//  type WeightInfo = an_statements::weights::AnagolayWeight<Runtime>;
+//}
 
-impl an_rules::Config for Runtime {
-  type Event = Event;
-  type WeightInfo = an_rules::weights::AnagolayWeight<Runtime>;
-}
+//impl an_rules::Config for Runtime {
+//  type Event = Event;
+//  type WeightInfo = an_rules::weights::AnagolayWeight<Runtime>;
+//}
 
-impl an_poe::Config for Runtime {
-  type Event = Event;
-  type ExternalRulesStorage = an_rules::Pallet<Runtime>;
-  type WeightInfo = an_poe::weights::AnagolayWeight<Runtime>;
-}
+//impl an_poe::Config for Runtime {
+//  type Event = Event;
+//  type ExternalRulesStorage = an_rules::Pallet<Runtime>;
+//  type WeightInfo = an_poe::weights::AnagolayWeight<Runtime>;
+//}
 
 construct_runtime!(
     pub enum Runtime where
@@ -359,9 +358,9 @@ construct_runtime!(
         // Used for the module anagolay
         Anagolay: anagolay::{Module},
         Operations: an_operations::{Module, Call, Storage, Event<T>},
-        Statements: an_statements::{Module, Call, Storage, Event<T>},
-        Rules: an_rules::{Module, Call, Storage, Event<T>},
-        Poe: an_poe::{Module, Call, Storage, Event<T>},
+//        Statements: an_statements::{Module, Call, Storage, Event<T>},
+//        Rules: an_rules::{Module, Call, Storage, Event<T>},
+//        Poe: an_poe::{Module, Call, Storage, Event<T>},
     }
 );
 
@@ -390,8 +389,7 @@ pub type UncheckedExtrinsic = generic::UncheckedExtrinsic<Address, Call, Signatu
 /// Extrinsic type that has already been checked.
 pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, Call, SignedExtra>;
 /// Executive: handles dispatch to the various modules.
-pub type Executive =
-  frame_executive::Executive<Runtime, Block, system::ChainContext<Runtime>, Runtime, AllModules>;
+pub type Executive = frame_executive::Executive<Runtime, Block, system::ChainContext<Runtime>, Runtime, AllModules>;
 
 impl_runtime_apis! {
     impl sp_api::Core<Block> for Runtime {
@@ -551,11 +549,11 @@ impl_runtime_apis! {
 
             add_benchmark!(params, batches, an_operations, Operations);
 
-            add_benchmark!(params, batches, an_poe, Poe);
+//            add_benchmark!(params, batches, an_poe, Poe);
 
-            add_benchmark!(params, batches, an_rules, Rules);
+//            add_benchmark!(params, batches, an_rules, Rules);
 
-            add_benchmark!(params, batches, an_statements, Statements);
+//            add_benchmark!(params, batches, an_statements, Statements);
 
             if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
             Ok(batches)

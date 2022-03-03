@@ -1,43 +1,37 @@
-// If you want to run as a non-root user in the container, see ../docker-compose.yml.
 {
-  "name": "Anagolay node",
-  // "image": "mcr.microsoft.com/vscode/devcontainers/rust:bullseye",  
+  "name": "Anagolay Network -- Node",
   "dockerComposeFile": "../docker-compose.yml",
-  "workspaceFolder": "/app",
-  "service": "an-chain-code",
+  "workspaceFolder": "/workspace",
+  "service": "code",
   "settings": {
     "rust-analyzer.checkOnSave.command": "clippy",
-    // "terminal.integrated.defaultProfile.linux": "zsh",
+    "terminal.integrated.defaultProfile.linux": "zsh",
     "lldb.executable": "/usr/bin/lldb",
-    // VS Code don't watch files under ./target
     "files.watcherExclude": {
       "**/target/**": true
     }
   },
-  // Uncomment next line if you want to copy your .ssh creds and other config files for easier use inside container
-  // "postCreateCommand": "bash scripts/01-install-system-dependencies && bash scripts/02-setup-toolchain.sh; bash scripts/03-install-cargo-packages.sh",
-  // noVNC, VNC, debug ports
   "forwardPorts": [
-    6080,
-    5901,
-    9222,
-    30333,
-    9933,
-    9944
+    // 30333,
+    // 9933,
+    // 9944,
+    // 9615
   ],
   "features": {
-    // "docker-in-docker": {
-    //   "version": "latest",
-    //   "moby": true
-    // },
-    "git-lfs": "latest",
-    "rust": {
+    "docker-from-docker": {
       "version": "latest",
-      "profile": "default"
+      "moby": true
+    },
+    "git-lfs": "latest",
+    "common": {
+      "installOhMyZsh": false,
     }
+    // "rust": {
+    //   "version": "latest",
+    //   "profile": "default"
+    // }
   },
   "remoteUser": "vscode",
-  // Add the IDs of extensions you want installed when the container is created in the array below.
   "extensions": [
     "rust-lang.rust",
     "tamasfe.even-better-toml",
@@ -49,6 +43,9 @@
     "formulahendry.code-runner",
     "ms-azuretools.vscode-docker",
     "actboy168.tasks",
-    "redhat.vscode-yaml"
-  ]
+    "redhat.vscode-yaml",
+    "foxundermoon.shell-format",
+    "esbenp.prettier-vscode"
+  ],
+  "postCreateCommand": "bash .devcontainer/install-deps.sh"
 }

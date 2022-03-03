@@ -1,11 +1,11 @@
 [package]
 authors = ['did:substrate:GHm6gp6khjcxQvnbnSsHdYejsFK1nNVxcGyGAsbDfsymtLr']
-repository = 'https://gitlab.com/anagolay/node/'
+repository = 'https://gitlab.com/anagolay/anagolay/'
 homepage = 'https://anagolay.network/pallet/operations'
 edition = '2018'
 license-file = "./LICENSE"
 name = 'an-operations'
-version = '0.1.0'
+version = '0.3.0'
 
 [package.metadata.docs.rs]
 targets = ["x86_64-unknown-linux-gnu"]
@@ -44,5 +44,4 @@ sp-io = { version = '3.0', default-features = false }
 sp-runtime = { version = '3.0', default-features = false }
 sp-std = { version = '3.0', default-features = false }
 
-anagolay = { path = '../anagolay', default-features = false, package = 'pallet-anagolay' }
-
+anagolay = { path = '../anagolay', default-features = false, package = 'anagolay-support' }

@@ -4,98 +4,17 @@ Anagolay is a next-generation framework for ownerships, copyrights and digital l
 
 ## Local Development
 
-The installation assumes you are running Debian 10. This will install all the needed deps.
+The installation assumes your development environment is a [devcontainer](https://code.visualstudio.com/docs/remote/containers).
+For your convenience we provide the settings, recommended extensions and devcontainer. Feel free to use it and report any issues you face.
 
-```sh
-# OPTIONAL -- install this only if you are missing the system dependencies
-sudo ./scripts/01-install-system-dependencies.sh
-
-# MANDATORY -- this sets up the toolchains and rust
-./scripts/02-setup-toolchain.sh
-
-# MANDATORY -- Installs the additional packages for better Developer Experience (DX)
-./scripts/03-install-cargo-packages.sh
-
-# OPTIONAL [HIGHLY RECOMMENDED]-- For better DX while developing the project + some goodies like cargo-cache
-./scripts/99-install-dev-cargo-packages.sh
-
-# Initialize the git hooks described in the rusty-hooks.toml
-rusty-hook init
-```
-
-### Speeding up your build times with `cachepot` and local driver
-
-Before continuing check that your `RUSTC_WRAPPER` is not set by running this command:
-
-```bash
-echo $RUSTC_WRAPPER
-```
-
-If the output is something than blank line run this:
-
-```bash
-unset RUSTC_WRAPPER
-```
-
-Now we can start installing it and setting it up. Follow the code snippet to get it installed:
-
-```bash
-# Install the cachepot
-cargo install --git https://github.com/paritytech/cachepot
-```
-
-After that's done open your `.zshrc` or `.bashrc` and add following at the end of the file:
-
-```bash
-# this will pick up the location of the installation
-export CACHEPOT_DIR="$HOME/.cache/cachepot"
-
-# recommended location for the caches
-export RUSTC_WRAPPER="$HOME/.cargo/bin/cachepot"
-
-# reload your shell
-
-## plain old sourcing
-source ~/.zshrc
-#or
-source  ~/.bashrc
-
-# if you are using the zsh4humans ignore sourcing above and execute this
-exec zsh
-```
-
-To test that we have correctly installed the cachepot we need to compile the project.
-
-```bash
-cargo make check && cachepot -s
-```
-
-If everything is ok, you should see statistics about your cache.
+You'll need to provide a `.env` file in the root of the project that will be used to initialize the container environment.
+It can be copied and edited from the provided `sample.env`.
 
 ### Testing, building and available commands
 
-We are using the [cargo-make](https://github.com/sagiegurari/cargo-make) crate to automate scripts and make them easier to maintain and execute. All scripts are semantically named and `cargo` top level commands are the same.
+We are using the [makers](https://github.com/sagiegurari/cargo-make) crate to automate scripts and make them easier to maintain and execute. All scripts are semantically named and `makers` top level commands are the same.
 
-Here is the list of currently available tasks which you can run by `cargo make TASK_NAME`:
-
-| Task name                | description                                                                                      |
-| :----------------------- | :----------------------------------------------------------------------------------------------- |
-| fmt                      | Formats the code using the `cargo fmt`                                                           |
-| fmt-check                | Checks the code using the `cargo fmt -- --check`                                                 |
-| check                    | Check a anagolay node and all of its dependencies for errors.                                    |
-| clean                    | Remove generated artifacts, namely `anagolay`.                                                   |
-| build                    | Compile the Anagolay runtime in debug mode. Accepts any valid build arguments.                   |
-| build-release            | Compile the Anagolay runtime in release mode. Accepts any valid build arguments.                 |
-| build-release-benchmarks | Compile the Anagolay runtime in release mode with feature flag for benchmarks.                   |
-| test                     | Execute unit and integration tests of a anagolay node. Accepts any valid `cargo test` arguments. |
-| test-benchmarking        | Execute unit and integration tests of a anagolay node with flags enabled for testing benchmarks. |
-| chain-dev-purge          | Purge the local chain database for debug build.                                                  |
-| chain-dev-start          | Starts the chain in dev mode with sane default flags.                                            |
-| ci-flow                  | Experimental ci-flow which runs the checks in single run instead many.                           |
-
-### VsCode
-
-For your convenience we provide the settings, recommended extensions and devcontainer. Feel free to use it and report any issues you face.
+Here is the list of currently available tasks `makers --list-category-steps anagolay` which you can run by `makers TASK_NAME`.
 
 ## Security and code quality
 
@@ -162,13 +81,13 @@ docker-compose push node
 ## Running in dev mode
 
 ```bash
-cargo make chain-dev-start
+makers chain-dev-start
 ```
 
 ## Testing
 
-To test the full suite run `cargo make test`
-To test documentation examples, run `cargo test --doc -- --show-output`
+To test the full suite run `makers test`
+To test documentation examples, run `makers test --doc -- --show-output`
 
 ## Benchmarking
 
@@ -199,32 +118,14 @@ To generate pallet weights run from the root of the project. Use the folder name
 Cargo has integration with rustdoc to make it easier to generate docs. To generate pallets/crates documentation run from the root of the project. It'll generate all pallet's documentation.
 
 ```sh
-cargo doc --no-deps
+makers docs-flow --no-deps
 ```
 
-To open the documentation in web browser use:
+`docs/api` folder will contain the autogenerated docs in the root of the project. 
 
-```sh
-cargo doc --no-deps --open
-```
+VERY important website to check when upgrading the toolchain https://rust-lang.github.io/rustup-components-history/
 
-`target/doc` folder will contain the autogenerated docs in the root of the project. 
 
-## NOTES
+## License
 
-### Failing cachepot
-
-One of the fastest ways is to `unset RUSTC_WRAPPER` and run the commands again. If you are doing `cargo make build`, and you unset the RUSTC_WRAPPER then the command should finish normally, but it will take longer time.
-
-https://github.com/scs/substrate-api-client/blob/master/test_no_std/Cargo.toml
-
-`find . -name "\*.sh" -exec chmod +x {} \;`
-
-`export COMPOSE_DOCKER_CLI_BUILD=0 && export DOCKER_BUILD=0 && export DOCKER_BUILDKIT=0`
-`export COMPOSE_DOCKER_CLI_BUILD=1 && export DOCKER_BUILD=1 && export DOCKER_BUILDKIT=1`
-
-Update the `*.sh` in scripts to be executable. Do this after you use the `chmod +x ./script.sh`
-
-```
-git ls-files -z scripts/*.sh | xargs -0 git update-index --chmod=+x
-```
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)

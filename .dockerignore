@@ -1,8 +1,9 @@
 target
+**target**
 .vscode
-.git
-doc
+docs
 Dockerfile
 certs
 coverage
 .devcontainer
+.env

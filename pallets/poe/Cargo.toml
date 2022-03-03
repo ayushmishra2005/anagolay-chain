@@ -1,6 +1,6 @@
 [package]
 authors = ['did:substrate:GHm6gp6khjcxQvnbnSsHdYejsFK1nNVxcGyGAsbDfsymtLr']
-repository = 'https://gitlab.com/anagolay/node/'
+repository = 'https://gitlab.com/anagolay/anagolay/'
 homepage = 'https://anagolay.network/pallet/poe'
 edition = '2018'
 license-file = "./LICENSE"
@@ -49,6 +49,6 @@ sp-io = { version = '3.0', default-features = false }
 sp-runtime = { version = '3.0', default-features = false }
 sp-std = { version = '3.0', default-features = false }
 
-anagolay = { path = '../anagolay', default-features = false, package = 'pallet-anagolay' }
+anagolay = { path = '../anagolay', default-features = false, package = 'anagolay-support' }
 operations = { path = '../operations', default-features = false, package = 'an-operations' }
 rules = { path = '../rules', default-features = false, package = 'an-rules' }

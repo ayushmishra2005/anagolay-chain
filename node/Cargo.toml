@@ -1,12 +1,12 @@
 [package]
 authors = ['did:substrate:GHm6gp6khjcxQvnbnSsHdYejsFK1nNVxcGyGAsbDfsymtLr']
-repository = 'https://gitlab.com/anagolay/node/'
+repository = 'https://gitlab.com/anagolay/anagolay/'
 homepage = 'https://anagolay.network'
 build = 'build.rs'
 edition = '2018'
 license-file = "./LICENSE"
 name = 'anagolay'
-version = '0.2.0'
+version = '0.3.0'
 
 [package.metadata.docs.rs]
 targets = ['x86_64-unknown-linux-gnu']

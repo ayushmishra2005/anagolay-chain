@@ -42,7 +42,11 @@ benchmarks! {
   create_ownership{
     //Initializing benchmark for Ownership Extrinsic
     let caller: T::AccountId = whitelisted_caller();
-    let mut ownership_statement = AnagolayStatement::default();
+    let mut ownership_statement = AnagolayStatement {
+      id: vec![1],
+      data: StatementData::default(),
+      extra: None,
+    };
     ownership_statement.data.claim.claim_type = AnagolayClaimType::Ownership;
 
   }: _(RawOrigin::Signed(caller), ownership_statement)
@@ -50,7 +54,11 @@ benchmarks! {
   revoke{
     //Initializing benchmark for Revoke Extrinsic
     let caller: T::AccountId = whitelisted_caller();
-    let statements = AnagolayStatement::default();
+    let statements = AnagolayStatement {
+      id: vec![1],
+      data: StatementData::default(),
+      extra: None,
+    };
     let statement_id = statements.id.clone();
     crate::Pallet::<T>::create_copyright(RawOrigin::Signed(caller.clone()).into(), statements)?;
   }: _(RawOrigin::Signed(caller), statement_id)

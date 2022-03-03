@@ -16,9 +16,12 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-//! an_operations pallet is the interface for the creation and management of Operations.
+//! `an_operations` pallet is the interface for the creation and management of Operations.
+//!
 //! Operation is an abstraction that represents one task in a sequence of tasks, a Workflow.
+//!
 //! Every operation has a minimum of one Version which is created when the Operation is created.
+//!
 //! Each Version contains all the information needed to execute it, download it,
 //! and chain it in the Workflow.
 //! The pallet also deals with creation and approval of Operation Versions.
@@ -34,18 +37,26 @@ mod benchmarking;
 mod functions;
 mod mock;
 mod tests;
-mod types;
+pub mod types;
 pub mod weights;
 
 pub use pallet::*;
 pub use weights::WeightInfo;
 
+// Type aliases for IDs used in the storage. Instead of writing large documentation we can show the
+// user what the storage expects and what saves.
+
+type OperationId = GenericId;
+type VersionId = GenericId;
+/// this is the value of the `OperationVersionPackage.pacakge_cid`
+type PackageId = GenericId;
+
 #[frame_support::pallet]
 pub mod pallet {
   use super::*;
   use crate::types::{
-    Operation, OperationData, OperationRecord, OperationVersion, OperationVersionData,
-    OperationVersionExtra, OperationVersionRecord,
+    Operation, OperationData, OperationRecord, OperationVersion, OperationVersionData, OperationVersionExtra,
+    OperationVersionRecord,
   };
   use frame_support::{pallet_prelude::*, traits::UnixTime};
   use frame_system::pallet_prelude::*;
@@ -69,58 +80,47 @@ pub mod pallet {
 
   #[pallet::storage]
   #[pallet::getter(fn operation)]
-  /// Operations storage. Double map storage where the index is the tuple Account id and Operation id.
-  pub type Operations<T: Config> = StorageDoubleMap<
-    _,
-    Blake2_128Concat,
-    T::AccountId,
-    Twox64Concat,
-    GenericId,
-    OperationRecord<T>,
-    ValueQuery,
-  >;
-
+  /// Retrieve the Operation Manifest with the AccountId ( which is the owner ) and OperationId.
+  pub type Operations<T: Config> =
+    StorageDoubleMap<_, Blake2_128Concat, T::AccountId, Twox64Concat, OperationId, OperationRecord<T>, ValueQuery>;
   #[pallet::storage]
   #[pallet::getter(fn operation_version)]
-  /// Operation Version storage. Map storage where index is Operation id and values are collections of Operation Version ids
-  pub type OperationVersions<T: Config> =
-    StorageMap<_, Blake2_128Concat, GenericId, Vec<GenericId>, ValueQuery>;
+  /// Retrieve all Versions for a single Operation Manifest.
+  pub type VersionsViaOperationId<T: Config> = StorageMap<_, Blake2_128Concat, OperationId, Vec<VersionId>, ValueQuery>;
 
   #[pallet::storage]
-  #[pallet::getter(fn package_cid)]
-  /// The a map where the key is Package_CID
-  pub type PackagesCid<T: Config> = StorageValue<_, Vec<GenericId>, ValueQuery>;
+  #[pallet::getter(fn package_by_id)]
+  /// All published pacakges will appear here. Note that this list will be quite large, be aware of
+  /// qeurying this without proper limits!
+  pub type Packages<T: Config> = StorageValue<_, Vec<PackageId>, ValueQuery>;
 
   #[pallet::storage]
   #[pallet::getter(fn version)]
-  /// Operation Version storage. Map storage where index is Operation Version id and values are Operation Version Records`
-  pub type Versions<T: Config> =
-    StorageMap<_, Blake2_128Concat, GenericId, OperationVersionRecord<T>, ValueQuery>;
+  /// Retrieve the Version.
+  pub type Versions<T: Config> = StorageMap<_, Blake2_128Concat, VersionId, OperationVersionRecord<T>, ValueQuery>;
 
   #[pallet::storage]
-  #[pallet::getter(fn operation_count)]
-  /// Total amount of the stored Operations
-  pub type OperationCount<T: Config> = StorageValue<_, u64, ValueQuery>;
+  #[pallet::getter(fn total)]
+  /// Total amount Operations.
+  pub type OperationTotal<T: Config> = StorageValue<_, u64, ValueQuery>;
 
   #[pallet::event]
   #[pallet::generate_deposit(pub(crate) fn deposit_event)]
   #[pallet::metadata(T::AccountId = "AccountId")]
   /// Events of the Operations pallet
   pub enum Event<T: Config> {
-    /// Operation created. \[ Account id, Operation id \]
-    OperationCreated(T::AccountId, GenericId),
+    /// Operation Manifest created together with Version and Packages.
+    OperationCreated(T::AccountId, OperationId),
   }
 
   #[pallet::error]
   /// Errors of the Operations pallet
   pub enum Error<T> {
-    /// Operation already exists when creating an Operation
+    /// Operation Manifest already exists.
     OperationAlreadyExists,
-    /// Operation does not exist when creating initial Operation Version
-    OperationDoesNotExists,
-    /// Operation Version package already exists when creating an Operation Version
+    /// Version pacakge already exists. If you think this is a bug in our system let us know [here](https://matrix.to/#/!FJvAuDoWRoMVuOFYwL:matrix.org?via=matrix.org).
     OperationVersionPackageAlreadyExists,
-    /// Operation already has at least one(1) Version
+    /// The Operation already has an initial Version and cannot be published again.
     OperationAlreadyInitialized,
   }
 
@@ -129,17 +129,17 @@ pub mod pallet {
 
   #[pallet::call]
   impl<T: Config> Pallet<T> {
-    #[pallet::weight(<T as Config>::WeightInfo::create_operation())]
-    /// Create Operation manifest
+    #[pallet::weight(<T as Config>::WeightInfo::create())]
+    /// Create Operation manifest and a Version.
     ///
-    /// # Arguments
-    ///  * origin - The call origin
-    ///  * operation_data - The data of the Operation to create
-    ///  * operation_version_data - The data of the Operation Version to create
-    pub fn create_operation(
+    /// Once you have created the Manifest this extrinsic will always fail with at least 3 different
+    /// errors, each depend on the parts of the structure.
+    /// There is a check that a user cannot cheat and create new pacakge if the package is
+    /// connected to other Operation or any other Version.
+    pub fn create(
       origin: OriginFor<T>,
       operation_data: OperationData,
-      operation_version_data: OperationVersionData,
+      version_data: OperationVersionData,
     ) -> DispatchResultWithPostInfo {
       let sender = ensure_signed(origin.clone())?;
 
@@ -150,16 +150,16 @@ pub mod pallet {
         Error::<T>::OperationAlreadyExists
       );
       ensure!(
-        !OperationVersions::<T>::contains_key(&operation.id) ||
-          OperationVersions::<T>::get(&operation.id).is_empty(),
+        !VersionsViaOperationId::<T>::contains_key(&operation.id) ||
+          VersionsViaOperationId::<T>::get(&operation.id).is_empty(),
         Error::<T>::OperationAlreadyInitialized
       );
       ensure!(
-        operation_version_data
+        version_data
           .packages
           .iter()
           .find(|package| {
-            match PackagesCid::<T>::try_get().ok() {
+            match Packages::<T>::try_get().ok() {
               Some(packages) => packages.contains(&package.ipfs_cid),
               None => false,
             }
@@ -175,7 +175,7 @@ pub mod pallet {
       let operation_version = OperationVersion::new_with_extra(
         OperationVersionData {
           operation_id: operation.id.clone(),
-          ..operation_version_data.clone()
+          ..version_data.clone()
         },
         OperationVersionExtra {
           created_at: T::TimeProvider::now().as_secs(),
@@ -195,10 +195,7 @@ pub mod pallet {
     /// # Arguments
     ///  * origin - The call origin
     ///  * operation_id - The id of the Operation to approve
-    pub fn version_approve(
-      _origin: OriginFor<T>,
-      _operation_id: GenericId,
-    ) -> DispatchResultWithPostInfo {
+    pub fn version_approve(_origin: OriginFor<T>, _operation_id: GenericId) -> DispatchResultWithPostInfo {
       Ok(().into())
     }
   }

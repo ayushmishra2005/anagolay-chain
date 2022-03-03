@@ -21,43 +21,80 @@
 #![cfg(test)]
 use super::{mock::*, *};
 use crate::types::{
-  Operation, OperationData, OperationVersion, OperationVersionData, OperationVersionPackage,
-  PackageType,
+  Operation, OperationData, OperationVersion, OperationVersionData, OperationVersionPackage, PackageType,
 };
 use anagolay::AnagolayStructureData;
 use frame_support::{assert_noop, assert_ok};
 
+fn mock_request() -> (Operation, OperationVersion) {
+  let op = Operation {
+    id: vec![],
+    data: OperationData {
+      name: b"op_a".to_vec(),
+      ..OperationData::default()
+    },
+    extra: None,
+  };
+  let op_ver = OperationVersion {
+    id: vec![],
+    data: OperationVersionData {
+      operation_id: vec![],
+      parent_id: None,
+      rehosted_repo_id: b"bafkreporeporeporepo".to_vec(),
+      documentation_id: b"bafkdocadocadocadoca".to_vec(),
+      packages: vec![OperationVersionPackage {
+        package_type: PackageType::CRATE,
+        file_name: b"op_a.tgz".to_vec(),
+        ipfs_cid: b"bafkopaopaopaopaopaopaopa".to_vec(),
+      }],
+    },
+    extra: None,
+  };
+  (op, op_ver)
+}
+
 #[test]
 fn operations_create_operation() {
   new_test_ext().execute_with(|| {
-    let op = Operation::default();
-    let op_ver = OperationVersion::default();
-    let res = OperationTest::create_operation(
-      mock::Origin::signed(1),
-      op.data.clone(),
-      op_ver.data.clone(),
-    );
+    let (op, mut op_ver) = mock_request();
+    let origin = mock::Origin::signed(1);
+    let res = OperationTest::create(origin, op.data.clone(), op_ver.data.clone());
+
     assert_ok!(res);
+
+    let op_id = &op.data.to_cid();
+    op_ver.data.operation_id = op_id.clone();
+    let op_ver_id = &op_ver.data.to_cid();
+
+    let operation = Operations::<Test>::get(1, op_id);
+    assert_eq!(operation.record.data, op.data);
+    assert_eq!(operation.record.extra, op.extra);
+
+    let operation_versions = VersionsViaOperationId::<Test>::get(op_id);
+    assert_eq!(1, operation_versions.len());
+    assert_eq!(op_ver_id, operation_versions.get(0).unwrap());
+
+    let packages = Packages::<Test>::get();
+    assert_eq!(1, packages.len());
+    assert_eq!(op_ver.data.packages[0].ipfs_cid, *packages.get(0).unwrap());
+
+    let version = Versions::<Test>::get(op_ver_id);
+    assert_eq!(version.record.data, op_ver.data);
+    assert!(version.record.extra.is_some());
+
+    let operation_total = OperationTotal::<Test>::get();
+    assert_eq!(1, operation_total);
   });
 }
 
 #[test]
 fn operations_create_operation_error_on_duplicate_operation() {
   new_test_ext().execute_with(|| {
-    let op = Operation::default();
-    let op_ver = OperationVersion::default();
-    let res = OperationTest::create_operation(
-      mock::Origin::signed(1),
-      op.data.clone(),
-      op_ver.data.clone(),
-    );
+    let (op, op_ver) = mock_request();
+    let res = OperationTest::create(mock::Origin::signed(1), op.data.clone(), op_ver.data.clone());
     assert_ok!(res);
 
-    let res = OperationTest::create_operation(
-      mock::Origin::signed(1),
-      op.data.clone(),
-      op_ver.data.clone(),
-    );
+    let res = OperationTest::create(mock::Origin::signed(1), op.data.clone(), op_ver.data.clone());
     assert_noop!(res, Error::<Test>::OperationAlreadyExists);
   });
 }
@@ -65,30 +102,9 @@ fn operations_create_operation_error_on_duplicate_operation() {
 #[test]
 fn operations_create_operation_error_reusing_package() {
   new_test_ext().execute_with(|| {
-    let op = Operation {
-      id: vec![],
-      data: OperationData {
-        name: b"op".to_vec(),
-        ..OperationData::default()
-      },
-      extra: None,
-    };
-    let op_ver = OperationVersion {
-      id: vec![],
-      data: OperationVersionData {
-        operation_id: op.data.to_cid(),
-        parent_id: None,
-        rehosted_repo_id: b"https://github.com/op".to_vec(),
-        packages: vec![OperationVersionPackage {
-          package_type: PackageType::Crate,
-          file_name: b"op.tgz".to_vec(),
-          ipfs_cid: b"bafkopopopopopopop".to_vec(),
-        }],
-      },
-      extra: None,
-    };
+    let (op, op_ver) = mock_request();
 
-    PackagesCid::<Test>::set(
+    Packages::<Test>::set(
       op_ver
         .data
         .packages
@@ -97,11 +113,7 @@ fn operations_create_operation_error_reusing_package() {
         .collect(),
     );
 
-    let res = OperationTest::create_operation(
-      mock::Origin::signed(1),
-      op.data.clone(),
-      op_ver.data.clone(),
-    );
+    let res = OperationTest::create(mock::Origin::signed(1), op.data.clone(), op_ver.data.clone());
 
     assert_noop!(res, Error::<Test>::OperationVersionPackageAlreadyExists);
   });
@@ -110,34 +122,9 @@ fn operations_create_operation_error_reusing_package() {
 #[test]
 fn operations_create_operation_error_mixing_operations() {
   new_test_ext().execute_with(|| {
-    let op_a = Operation {
-      id: vec![],
-      data: OperationData {
-        name: b"op_a".to_vec(),
-        ..OperationData::default()
-      },
-      extra: None,
-    };
-    let op_a_ver = OperationVersion {
-      id: vec![],
-      data: OperationVersionData {
-        operation_id: vec![],
-        parent_id: None,
-        rehosted_repo_id: b"https://github.com/op_a".to_vec(),
-        packages: vec![OperationVersionPackage {
-          package_type: PackageType::Crate,
-          file_name: b"op_a.tgz".to_vec(),
-          ipfs_cid: b"bafkopaopaopaopaopaopaopa".to_vec(),
-        }],
-      },
-      extra: None,
-    };
+    let (op_a, op_a_ver) = mock_request();
 
-    let res = OperationTest::create_operation(
-      mock::Origin::signed(1),
-      op_a.data.clone(),
-      op_a_ver.data.clone(),
-    );
+    let res = OperationTest::create(mock::Origin::signed(1), op_a.data.clone(), op_a_ver.data.clone());
     assert_ok!(res);
 
     let op_b = Operation {
@@ -153,11 +140,7 @@ fn operations_create_operation_error_mixing_operations() {
       data: op_a_ver.data.clone(),
       extra: None,
     };
-    let res = OperationTest::create_operation(
-      mock::Origin::signed(1),
-      op_b.data.clone(),
-      op_b_ver_mixed.data.clone(),
-    );
+    let res = OperationTest::create(mock::Origin::signed(1), op_b.data.clone(), op_b_ver_mixed.data.clone());
     assert_noop!(res, Error::<Test>::OperationVersionPackageAlreadyExists);
   });
 }

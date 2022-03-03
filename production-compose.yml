@@ -1,0 +1,10 @@
+version: "3"
+services:
+  anagolay:
+    image: anagolay/anagolay:e42e183
+    restart: unless-stopped
+    volumes:
+      - anagolay_data:/data
+    command: --dev --no-telemetry --rpc-external --unsafe-ws-external --rpc-cors all
+volumes:
+  anagolay_data:

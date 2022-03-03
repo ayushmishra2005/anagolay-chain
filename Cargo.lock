@@ -118,62 +118,12 @@ dependencies = [
 
 [[package]]
 name = "an-operations"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
+ "anagolay-support",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
- "pallet-anagolay",
- "parity-scale-codec",
- "serde",
- "sp-core",
- "sp-io",
- "sp-runtime",
- "sp-std",
-]
-
-[[package]]
-name = "an-poe"
-version = "0.1.0"
-dependencies = [
- "an-operations",
- "an-rules",
- "frame-benchmarking",
- "frame-support",
- "frame-system",
- "pallet-anagolay",
- "parity-scale-codec",
- "serde",
- "sp-core",
- "sp-io",
- "sp-runtime",
- "sp-std",
-]
-
-[[package]]
-name = "an-rules"
-version = "0.1.0"
-dependencies = [
- "frame-benchmarking",
- "frame-support",
- "frame-system",
- "pallet-anagolay",
- "parity-scale-codec",
- "serde",
- "sp-core",
- "sp-io",
- "sp-runtime",
- "sp-std",
-]
-
-[[package]]
-name = "an-statements"
-version = "0.1.0"
-dependencies = [
- "frame-benchmarking",
- "frame-support",
- "frame-system",
- "pallet-anagolay",
  "parity-scale-codec",
  "serde",
  "sp-core",
@@ -184,7 +134,7 @@ dependencies = [
 
 [[package]]
 name = "anagolay"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "anagolay-runtime",
  "frame-benchmarking",
@@ -226,12 +176,10 @@ dependencies = [
 
 [[package]]
 name = "anagolay-runtime"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "an-operations",
- "an-poe",
- "an-rules",
- "an-statements",
+ "anagolay-support",
  "frame-benchmarking",
  "frame-executive",
  "frame-support",
@@ -239,7 +187,6 @@ dependencies = [
  "frame-system-benchmarking",
  "frame-system-rpc-runtime-api",
  "hex-literal",
- "pallet-anagolay",
  "pallet-aura",
  "pallet-balances",
  "pallet-grandpa",
@@ -264,6 +211,24 @@ dependencies = [
  "sp-transaction-pool",
  "sp-version",
  "substrate-wasm-builder",
+]
+
+[[package]]
+name = "anagolay-support"
+version = "0.3.0"
+dependencies = [
+ "bytecursor",
+ "cid 0.7.0",
+ "frame-support",
+ "frame-system",
+ "multibase 0.9.1",
+ "multihash 0.15.0",
+ "parity-scale-codec",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+ "unsigned-varint 0.7.1",
 ]
 
 [[package]]
@@ -3938,24 +3903,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6ff55baddef9e4ad00f88b6c743a2a8062d4c6ade126c2a528644b8e444d52ce"
 dependencies = [
  "stable_deref_trait",
-]
-
-[[package]]
-name = "pallet-anagolay"
-version = "0.1.0"
-dependencies = [
- "bytecursor",
- "cid 0.7.0",
- "frame-support",
- "frame-system",
- "multibase 0.9.1",
- "multihash 0.15.0",
- "parity-scale-codec",
- "sp-core",
- "sp-io",
- "sp-runtime",
- "sp-std",
- "unsigned-varint 0.7.1",
 ]
 
 [[package]]

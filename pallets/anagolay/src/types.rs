@@ -5,7 +5,8 @@ use multihash::{Blake3_256, Code, Hasher};
 use sp_std::vec::Vec;
 use unsigned_varint::encode as varint_encode;
 
-/// Generic ID, this is the content identifier of the payload, like rule or proof. for now it's CID string
+/// Generic ID, this is the content identifier of the payload, like rule or proof. for now it's CID
+/// string
 pub type GenericId = Vec<u8>;
 
 /// Placeholder for SSI and DID
@@ -51,7 +52,7 @@ pub trait AnagolayStructureData: Default + Encode + Clone + PartialEq + Eq {
   ///
   /// ```
   /// use codec::{Decode, Encode};
-  /// use pallet_anagolay::{AnagolayStructureData, AnagolayStructureExtra};
+  /// use anagolay_support::{AnagolayStructureData, AnagolayStructureExtra};
   ///
   /// #[derive(Encode, Decode, Clone, PartialEq, Eq)]
   /// struct EntityData {
@@ -73,7 +74,6 @@ pub trait AnagolayStructureData: Default + Encode + Clone + PartialEq + Eq {
   /// };
   ///
   /// assert_eq!(b"bafkr4iac2luovbttsv5iftbg2zl4okalixafa2vjwtbmf6exgwiuvukhmi".to_vec(), entity.to_cid());
-  ///
   /// ```
   fn to_cid(&self) -> Vec<u8> {
     let hash = MultihashGeneric::wrap(
@@ -151,7 +151,7 @@ impl<T: AnagolayStructureData, U: AnagolayStructureExtra> AnagolayStructure<T, U
   ///
   /// ```
   /// use codec::{Decode, Encode};
-  /// use pallet_anagolay::{AnagolayStructure, AnagolayStructureData, AnagolayStructureExtra};
+  /// use anagolay_support::{AnagolayStructure, AnagolayStructureData, AnagolayStructureExtra};
   ///
   /// #[derive(Encode, Decode, Clone, PartialEq, Eq)]
   /// struct EntityData {
@@ -186,7 +186,6 @@ impl<T: AnagolayStructureData, U: AnagolayStructureExtra> AnagolayStructure<T, U
   /// assert_eq!(b"hello".to_vec(), entity.data.text);
   /// assert!(entity.extra.is_some());
   /// assert_eq!(0, entity.extra.unwrap().created_at);
-  ///
   pub fn new_with_extra(data: T, extra: U) -> Self {
     AnagolayStructure {
       id: data.to_cid(),

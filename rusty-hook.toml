@@ -1,5 +1,5 @@
 [hooks]
-pre-commit = "cargo make fmt-check"
+pre-commit = "makers format && makers format-toml-flow"
 # pre-push = ["cargo make check", "cargo make fmt-check"]
 # post-commit = "echo yay"
 

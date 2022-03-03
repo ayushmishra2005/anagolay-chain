@@ -1,6 +1,5 @@
 use anagolay_runtime::{
-  AccountId, AuraConfig, BalancesConfig, GenesisConfig, GrandpaConfig, Signature, SudoConfig,
-  SystemConfig, WASM_BINARY,
+  AccountId, AuraConfig, BalancesConfig, GenesisConfig, GrandpaConfig, Signature, SudoConfig, SystemConfig, WASM_BINARY,
 };
 use sc_service::ChainType;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
@@ -123,20 +122,13 @@ fn testnet_genesis(
       changes_trie_config: Default::default(),
     }),
     balances: Some(BalancesConfig {
-      balances: endowed_accounts
-        .iter()
-        .cloned()
-        .map(|k| (k, 1 << 60))
-        .collect(),
+      balances: endowed_accounts.iter().cloned().map(|k| (k, 1 << 60)).collect(),
     }),
     aura: Some(AuraConfig {
       authorities: initial_authorities.iter().map(|x| (x.0.clone())).collect(),
     }),
     grandpa: Some(GrandpaConfig {
-      authorities: initial_authorities
-        .iter()
-        .map(|x| (x.1.clone(), 1))
-        .collect(),
+      authorities: initial_authorities.iter().map(|x| (x.1.clone(), 1)).collect(),
     }),
     sudo: Some(SudoConfig { key: root_key }),
   }

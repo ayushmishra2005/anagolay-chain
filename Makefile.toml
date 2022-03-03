@@ -1,82 +1,71 @@
-# env_files = [
-#   "./.env"
-# ]
-
 [config]
 # https://github.com/sagiegurari/cargo-make#disabling-workspace-support
 default_to_workspace = false
 
-[tasks.fmt]
-install_crate = "rustfmt"
-description = "Formats the code using the cargo fmt."
-command = "cargo"
-args = ["fmt", "--", "--emit=files"]
+[tasks.docs]
+description = "Generate rust documentation (override to include all deps, all features). This will overwrite the default docs which is the part of `makers docs-flow` so you can safely use it. It accepst all arguments as docs would"
+args = ["doc", "--all-features", "${@}"]
 
-[tasks.fmt-check]
-description = "Checks the code using the cargo fmt."
-install_crate = "rustfmt"
-command = "cargo"
-args = ["fmt", "--", "--check"]
+[tasks.test]
+description = "Test the projec in less verbose mode for all features. It accepst all arguments as test would"
+args = ["test", "--all-features", "${@}"]
 
-[tasks.check]
-description = "Check a local package and all of its dependencies for errors."
-command = "cargo"
-args = ["check"]
-
-[tasks.clean]
+[tasks.clean-anagolay]
+category = "anagolay"
 description = "Remove generated artifact `anagolay`."
 command = "cargo"
 args = ["clean", "-p", "anagolay"]
 
 [tasks.clean-all]
+category = "anagolay"
 description = "Remove generated artifacts."
 command = "cargo"
 args = ["clean"]
 
 [tasks.build]
+category = "anagolay"
 description = "Compile the Anagolay runtime in debug mode. Accepts any valid build arguments."
 command = "cargo"
 args = ["build", "${@}"]
-# dependencies = ["clean"]
 
 [tasks.build-release]
-description = "Compile the Anagolay runtime in release mode. Accepts any valid build arguments."
+condition = { profiles = ["production"] }
+category = "anagolay"
+description = "Compile the Anagolay runtime in release mode with --locked option. Accepts any valid build arguments."
 command = "cargo"
-args = ["build", "--release", "${@}"]
-# dependencies = ["clean"]
+args = ["build", "--locked", "--release", "${@}"]
 
 ## Build release with feature runtime-benchmarks
 [tasks.build-release-benchmarks]
+condition = { profiles = ["production"] }
+category = "anagolay"
 description = "Compile the Anagolay runtime in release mode with feature flag for benchmarks. "
 command = "cargo"
-args = ["build", "--release", "--features", "runtime-benchmarks"]
+args = ["build", "--locked", "--release", "--features", "runtime-benchmarks"]
 
-[tasks.test-doc]
-description = "Execute documentation tests of a anagolay node."
-command = "cargo"
-args = ["test", "--doc", "--", "--show-output"]
-
-[tasks.test]
-description = "Execute unit and integration tests of a anagolay node."
-command = "cargo"
-args = ["test", "${@}"]
-
-[tasks.test-all]
-description = "Execute all tests"
-dependencies = ["test-doc", "test"]
 
 ## Run the tests with benchmarking turned on
 [tasks.test-benchmarking]
+category = "anagolay"
 description = "Execute unit and integration tests of a anagolay node with flags enabled for testing benchmarks."
 command = "cargo"
-args = ["test", "--features", "runtime-benchmarks", "--features", "--all", "benchmarking"]
+args = [
+  "test",
+  "--features",
+  "runtime-benchmarks",
+  "--features",
+  "--all",
+  "benchmarking",
+]
 
 [tasks.chain-dev-purge]
+category = "anagolay"
 description = "Purge the local chain database for debug build."
 command = "./target/debug/anagolay"
 args = ["purge-chain", "-y", "--dev"]
 
 [tasks.chain-dev-start]
+category = "anagolay"
 description = "Starts the chain in dev mode with sane default flags."
 command = "./target/debug/anagolay"
 args = [
@@ -91,5 +80,6 @@ dependencies = ["build"]
 
 # Gitlab CI flow
 [tasks.ci-flow]
+category = "anagolay"
 description = "Experimental ci-flow which runs the checks in single run instead many."
-dependencies = ["fmt-check", "build", "test"]
+dependencies = ["check-format-flow", "test"]

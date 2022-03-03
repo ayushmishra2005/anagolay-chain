@@ -6,48 +6,73 @@
     {
       "type": "shell",
       "label": "check",
-      "command": "cargo",
+      "command": "makers",
       // "args": ["check", "--verbose"],
-      "args": ["make", "check"],
-      "problemMatcher": ["$rustc"],
+      "args": [
+        "check"
+      ],
+      "problemMatcher": [
+        "$rustc"
+      ],
       "group": "build"
     },
     {
       "type": "shell",
       "label": "test",
-      "command": "cargo",
-      "args": ["make", "test"],
-      "problemMatcher": ["$rustc"],
+      "command": "makers",
+      "args": [
+        "test"
+      ],
+      "problemMatcher": [
+        "$rustc"
+      ],
       "group": "build"
     },
     {
       "type": "shell",
       "label": "build",
-      "command": "cargo",
-      "args": ["make", "build"],
-      "problemMatcher": ["$rustc"],
+      "command": "makers",
+      "args": [
+        "build"
+      ],
+      "problemMatcher": [
+        "$rustc"
+      ],
       "group": "build"
     },
     {
       "label": "purge chain",
       "type": "shell",
       "command": "cargo",
-      "args": ["make", "chain-dev-purge"],
-      "problemMatcher": ["$rustc"]
+      "args": [
+        "make",
+        "chain-dev-purge"
+      ],
+      "problemMatcher": [
+        "$rustc"
+      ]
     },
     {
       "label": "start dev",
       "type": "shell",
-      "command": "cargo",
-      "args": ["make", "chain-dev-start"],
-      "problemMatcher": ["$rustc"]
+      "command": "makers",
+      "args": [
+        "chain-dev-start"
+      ],
+      "problemMatcher": [
+        "$rustc"
+      ]
     },
     {
       "type": "shell",
       "label": "fmt check",
-      "command": "cargo",
-      "args": ["make", "fmt-check"],
-      "problemMatcher": ["$rustc"],
+      "command": "makers",
+      "args": [
+        "format"
+      ],
+      "problemMatcher": [
+        "$rustc"
+      ],
       "group": "build"
     }
   ]

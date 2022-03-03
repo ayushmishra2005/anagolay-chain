@@ -15,6 +15,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
+//! Business logic is located here.
+//!
+//! Each pallet must have this file.
+
 use super::*;
 use crate::types::{Operation, OperationRecord, OperationVersion, OperationVersionRecord};
 
@@ -28,11 +32,7 @@ impl<T: Config> Pallet<T> {
   ///  * operation - The Operation to insert
   ///  * account_id - The owner of the Operation
   ///  * block_number - Current block
-  pub fn do_create_operation(
-    operation: &Operation,
-    account_id: &T::AccountId,
-    block_number: T::BlockNumber,
-  ) {
+  pub fn do_create_operation(operation: &Operation, account_id: &T::AccountId, block_number: T::BlockNumber) {
     let record = OperationRecord::<T> {
       record: operation.clone(),
       account_id: account_id.clone(),
@@ -41,12 +41,11 @@ impl<T: Config> Pallet<T> {
 
     Operations::<T>::insert(account_id.clone(), operation.id.clone(), record);
 
-    let operation_count = Self::operation_count() + 1;
-    OperationCount::<T>::put(operation_count);
+    OperationTotal::<T>::put(Self::total().saturating_add(1));
   }
 
-  /// Inserts the Operation Version into the `OperationVersions``OperationVersions` and `Versions` storages
-  /// Insert each package cid in the `PackageCid` storage
+  /// Inserts the Operation Version into the `VersionsViaOperationId``VersionsViaOperationId` and
+  /// `Versions` storages Insert each package cid in the `PackageCid` storage
   ///
   /// Does no checks.
   ///
@@ -66,18 +65,20 @@ impl<T: Config> Pallet<T> {
     };
 
     let operation_id = &operation_version.data.operation_id;
-    Versions::<T>::insert(operation_id.clone(), record);
+    let operation_version_id = &operation_version.id.clone();
 
-    let mut versions = OperationVersions::<T>::get(operation_id);
-    versions.push(operation_version.id.clone());
-    OperationVersions::<T>::insert(operation_id.clone(), versions);
+    Versions::<T>::insert(operation_version_id, record);
 
-    let mut packages = OperationVersions::<T>::get(operation_id);
-    operation_version
-      .data
-      .packages
-      .iter()
-      .for_each(|package| packages.push(package.ipfs_cid.clone()));
-    PackagesCid::<T>::set(packages);
+    VersionsViaOperationId::<T>::mutate(operation_id, |versions| {
+      versions.push(operation_version_id.clone());
+    });
+
+    Packages::<T>::mutate(|packages| {
+      operation_version
+        .data
+        .packages
+        .iter()
+        .for_each(|package| packages.push(package.ipfs_cid.clone()));
+    });
   }
 }
