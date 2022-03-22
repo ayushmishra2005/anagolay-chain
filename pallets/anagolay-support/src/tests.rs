@@ -16,32 +16,36 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-// Ensure we're `no_std` when compiling for Wasm.
-#![cfg_attr(not(feature = "std"), no_std)]
+//! Tests for the module.
 
-mod types;
+use super::{mock::*, *};
 
-pub use pallet::*;
+#[test]
+fn check_is_existing_package() {
+  new_test_ext().execute_with(|| {
+    enum TestArtifactType {
+      TEST,
+    }
+    impl ArtifactType for TestArtifactType {}
 
-#[frame_support::pallet]
-mod pallet {
-  pub use crate::types::*;
-  use frame_support::pallet_prelude::*;
-  use frame_system::pallet_prelude::*;
+    let test_cid = b"bafktesttesttest".to_vec();
+    let package = AnagolayPackageStructure {
+      package_type: TestArtifactType::TEST,
+      ipfs_cid: test_cid.clone(),
+      file_name: None,
+    };
 
-  #[pallet::pallet]
-  #[pallet::generate_store(pub(super) trait Store)]
-  pub struct Pallet<T>(_);
+    assert!(!AnagolayTest::is_existing_package(&package));
 
-  #[pallet::config]
-  pub trait Config: frame_system::Config {}
+    AnagolayTest::store_packages(&vec![package]);
 
-  #[pallet::hooks]
-  impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {}
+    let packages = AnagolayTest::get_packages();
+    assert_eq!(1, packages.len());
+    assert_eq!(test_cid.clone(), *packages.get(0).unwrap())
+  });
+}
 
-  #[pallet::call]
-  impl<T: Config> Pallet<T> {}
-
-  #[pallet::error]
-  pub enum Error<T> {}
+#[test]
+fn test_template() {
+  new_test_ext().execute_with(|| {});
 }

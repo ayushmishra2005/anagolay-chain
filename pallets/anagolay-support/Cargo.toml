@@ -1,6 +1,6 @@
 [package]
 authors = ['did:substrate:GHm6gp6khjcxQvnbnSsHdYejsFK1nNVxcGyGAsbDfsymtLr']
-description = 'Anagolay pallet, defaults are here'
+description = 'Anagolay support pallet, default types and shared implementations are here'
 repository = 'https://gitlab.com/anagolay/anagolay/'
 edition = '2018'
 license-file = './LICENSE'
@@ -22,15 +22,16 @@ std = [
   'sp-io/std',
 ]
 
+[dev-dependencies]
+serde = { version = "1.0" }
+
 [dependencies]
-cid = { version = '0.7.0', default-features = false }
+cid = { version = '0.8.3', default-features = false, features = ["alloc"] }
 multibase = { version = '0.9.1', default-features = false }
 multihash = { version = '0.15.0', default-features = false, features = [
   'multihash-impl',
   'blake3',
 ] }
-bytecursor = { version = '0.2.0', default-features = false }
-unsigned-varint = { version = "0.7.1", default-features = false }
 codec = { version = '2.1', default-features = false, features = [
   'derive',
 ], package = 'parity-scale-codec' }

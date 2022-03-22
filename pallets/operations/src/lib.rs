@@ -29,16 +29,19 @@
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use anagolay::GenericId;
+use anagolay_support::GenericId;
 use sp_std::vec::Vec;
 
 // use frame_support::debug;
 mod benchmarking;
 mod functions;
-mod mock;
-mod tests;
 pub mod types;
 pub mod weights;
+
+#[cfg(test)]
+mod mock;
+#[cfg(test)]
+mod tests;
 
 pub use pallet::*;
 pub use weights::WeightInfo;
@@ -48,8 +51,6 @@ pub use weights::WeightInfo;
 
 type OperationId = GenericId;
 type VersionId = GenericId;
-/// this is the value of the `OperationVersionPackage.pacakge_cid`
-type PackageId = GenericId;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -67,7 +68,7 @@ pub mod pallet {
 
   #[pallet::config]
   /// Config of the operations pallet
-  pub trait Config: frame_system::Config {
+  pub trait Config: frame_system::Config + anagolay_support::Config {
     /// The overarching event type.
     type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 
@@ -79,30 +80,25 @@ pub mod pallet {
   }
 
   #[pallet::storage]
-  #[pallet::getter(fn operation)]
+  #[pallet::getter(fn operations_by_account_id_and_operation_id)]
   /// Retrieve the Operation Manifest with the AccountId ( which is the owner ) and OperationId.
-  pub type Operations<T: Config> =
+  pub type OperationsByAccountIdAndOperationId<T: Config> =
     StorageDoubleMap<_, Blake2_128Concat, T::AccountId, Twox64Concat, OperationId, OperationRecord<T>, ValueQuery>;
   #[pallet::storage]
-  #[pallet::getter(fn operation_version)]
+  #[pallet::getter(fn versions_by_operation_id)]
   /// Retrieve all Versions for a single Operation Manifest.
-  pub type VersionsViaOperationId<T: Config> = StorageMap<_, Blake2_128Concat, OperationId, Vec<VersionId>, ValueQuery>;
+  pub type VersionsByOperationId<T: Config> = StorageMap<_, Blake2_128Concat, OperationId, Vec<VersionId>, ValueQuery>;
 
   #[pallet::storage]
-  #[pallet::getter(fn package_by_id)]
-  /// All published pacakges will appear here. Note that this list will be quite large, be aware of
-  /// qeurying this without proper limits!
-  pub type Packages<T: Config> = StorageValue<_, Vec<PackageId>, ValueQuery>;
-
-  #[pallet::storage]
-  #[pallet::getter(fn version)]
+  #[pallet::getter(fn versions_by_version_id)]
   /// Retrieve the Version.
-  pub type Versions<T: Config> = StorageMap<_, Blake2_128Concat, VersionId, OperationVersionRecord<T>, ValueQuery>;
+  pub type VersionsByVersionId<T: Config> =
+    StorageMap<_, Blake2_128Concat, VersionId, OperationVersionRecord<T>, ValueQuery>;
 
   #[pallet::storage]
   #[pallet::getter(fn total)]
-  /// Total amount Operations.
-  pub type OperationTotal<T: Config> = StorageValue<_, u64, ValueQuery>;
+  /// Total amount of Operations.
+  pub type Total<T: Config> = StorageValue<_, u64, ValueQuery>;
 
   #[pallet::event]
   #[pallet::generate_deposit(pub(crate) fn deposit_event)]
@@ -146,24 +142,19 @@ pub mod pallet {
       let operation = Operation::new(operation_data);
 
       ensure!(
-        !Operations::<T>::contains_key(&sender, &operation.id),
+        !OperationsByAccountIdAndOperationId::<T>::contains_key(&sender, &operation.id),
         Error::<T>::OperationAlreadyExists
       );
       ensure!(
-        !VersionsViaOperationId::<T>::contains_key(&operation.id) ||
-          VersionsViaOperationId::<T>::get(&operation.id).is_empty(),
+        !VersionsByOperationId::<T>::contains_key(&operation.id) ||
+          VersionsByOperationId::<T>::get(&operation.id).is_empty(),
         Error::<T>::OperationAlreadyInitialized
       );
       ensure!(
         version_data
           .packages
           .iter()
-          .find(|package| {
-            match Packages::<T>::try_get().ok() {
-              Some(packages) => packages.contains(&package.ipfs_cid),
-              None => false,
-            }
-          })
+          .find(|package| anagolay_support::Pallet::<T>::is_existing_package(package))
           .is_none(),
         Error::<T>::OperationVersionPackageAlreadyExists
       );

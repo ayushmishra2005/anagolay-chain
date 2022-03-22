@@ -2,22 +2,24 @@ use cid::{multihash::MultihashGeneric, Cid};
 use codec::{Decode, Encode};
 use multibase::Base;
 use multihash::{Blake3_256, Code, Hasher};
+use sp_runtime::RuntimeDebug;
 use sp_std::vec::Vec;
-use unsigned_varint::encode as varint_encode;
 
 /// Generic ID, this is the content identifier of the payload, like rule or proof. for now it's CID
 /// string
 pub type GenericId = Vec<u8>;
 
 /// Placeholder for SSI and DID
-pub type CreatorId = Vec<u8>;
+pub type CreatorId = GenericId;
 
 /// Alias for string
-pub type Characters = Vec<u8>;
+pub type Characters = GenericId;
+
+/// The type of the values in the `PackagesByPackageId` storage
+pub type PackageId = GenericId;
 
 /// List of equipment that needs rules generated
 #[derive(Encode, Decode, Clone, PartialEq, Eq, Ord, PartialOrd, Debug)]
-// #[cfg_attr(feature = "std", derive(Debug))]
 pub enum ForWhat {
   /// WE are creating it For what? This can be a part of the group
   GENERIC, // 0
@@ -87,27 +89,7 @@ pub trait AnagolayStructureData: Default + Encode + Clone + PartialEq + Eq {
     let cid = Cid::new_v1(RAW, hash);
 
     // create the string slice like `bafk...`
-    let mut cid_bytes = bytecursor::bytecursor::ByteCursor::new(Vec::new());
-    let mut version_buf = varint_encode::u64_buffer();
-    let version = varint_encode::u64(cid.version().into(), &mut version_buf);
-
-    let mut codec_buf = varint_encode::u64_buffer();
-    let codec = varint_encode::u64(cid.codec(), &mut codec_buf);
-
-    cid_bytes.write_all(version).unwrap();
-    cid_bytes.write_all(codec).unwrap();
-
-    let mut code_buf = varint_encode::u64_buffer();
-    let code = varint_encode::u64(cid.hash().code(), &mut code_buf);
-
-    let mut size_buf = varint_encode::u8_buffer();
-    let size = varint_encode::u8(cid.hash().size(), &mut size_buf);
-
-    cid_bytes.write_all(code).unwrap();
-    cid_bytes.write_all(size).unwrap();
-    cid_bytes.write_all(cid.hash().digest()).unwrap();
-
-    let cid_str = multibase::encode(Base::Base32Lower, cid_bytes.into_inner());
+    let cid_str = multibase::encode(Base::Base32Lower, cid.to_bytes());
 
     // make the string slice into vec bytes, usually we use that
     cid_str.into_bytes()
@@ -193,4 +175,41 @@ impl<T: AnagolayStructureData, U: AnagolayStructureExtra> AnagolayStructure<T, U
       extra: Some(extra),
     }
   }
+}
+
+/// Trait used as type parameter in [`AnagolayPackageStructure`], allowing different structures to
+/// define the enumeration of possible artifact types depending on the specific case:
+///
+/// # Examples
+///
+/// ```
+/// use anagolay_support::{AnagolayPackageStructure, ArtifactType};
+///
+/// enum OperationArtifactType {
+///   CRATE, CJS, WASM, ESM, WEB, DOCS, GIT
+/// }
+///
+/// impl ArtifactType for OperationArtifactType {}
+///
+/// type OperationPackageStructure = AnagolayPackageStructure<OperationArtifactType>;
+///
+/// enum ImageArtifactType {
+///   RAW
+/// }
+///
+/// impl ArtifactType for ImageArtifactType {}
+///
+/// type ImagePackageStructure = AnagolayPackageStructure<OperationArtifactType>;
+/// ```
+pub trait ArtifactType {}
+
+/// Operation Version package
+#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
+pub struct AnagolayPackageStructure<T: ArtifactType> {
+  /// Type of the package
+  pub package_type: T,
+  /// Name of the file
+  pub file_name: Option<Characters>,
+  /// IPFS cid
+  pub ipfs_cid: GenericId,
 }

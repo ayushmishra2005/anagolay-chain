@@ -18,15 +18,14 @@
 
 //! Test utilities
 
-use crate as operations;
+use crate as anagolay_support;
 use crate::Config;
-use frame_support::{parameter_types, traits::UnixTime};
+use frame_support::parameter_types;
 use sp_core::H256;
 use sp_runtime::{
   testing::Header,
   traits::{BlakeTwo256, IdentityLookup},
 };
-use std::time::Duration;
 
 use frame_system as system;
 
@@ -41,7 +40,6 @@ frame_support::construct_runtime!(
         UncheckedExtrinsic = UncheckedExtrinsic,
     {
         System: system::{Module, Call, Config, Storage, Event<T>},
-        OperationTest: operations::{Module, Call, Storage, Event<T>},
         AnagolayTest: anagolay_support::{Module, Call, Storage},
     }
 );
@@ -76,21 +74,7 @@ impl frame_system::Config for Test {
   type SS58Prefix = SS58Prefix;
 }
 
-pub struct MockTime {}
-
-impl UnixTime for MockTime {
-  fn now() -> Duration {
-    core::time::Duration::from_millis(1000)
-  }
-}
-
-impl Config for Test {
-  type Event = ();
-  type WeightInfo = crate::weights::AnagolayWeight<Test>;
-  type TimeProvider = MockTime;
-}
-
-impl anagolay_support::Config for Test {}
+impl Config for Test {}
 
 // Build genesis storage according to the mock runtime.
 pub fn new_test_ext() -> sp_io::TestExternalities {

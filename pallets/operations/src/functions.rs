@@ -39,12 +39,12 @@ impl<T: Config> Pallet<T> {
       block_number,
     };
 
-    Operations::<T>::insert(account_id.clone(), operation.id.clone(), record);
+    OperationsByAccountIdAndOperationId::<T>::insert(account_id.clone(), operation.id.clone(), record);
 
-    OperationTotal::<T>::put(Self::total().saturating_add(1));
+    Total::<T>::put(Self::total().saturating_add(1));
   }
 
-  /// Inserts the Operation Version into the `VersionsViaOperationId``VersionsViaOperationId` and
+  /// Inserts the Operation Version into the `VersionsByOperationId``VersionsByOperationId` and
   /// `Versions` storages Insert each package cid in the `PackageCid` storage
   ///
   /// Does no checks.
@@ -67,18 +67,12 @@ impl<T: Config> Pallet<T> {
     let operation_id = &operation_version.data.operation_id;
     let operation_version_id = &operation_version.id.clone();
 
-    Versions::<T>::insert(operation_version_id, record);
+    VersionsByVersionId::<T>::insert(operation_version_id, record);
 
-    VersionsViaOperationId::<T>::mutate(operation_id, |versions| {
+    VersionsByOperationId::<T>::mutate(operation_id, |versions| {
       versions.push(operation_version_id.clone());
     });
 
-    Packages::<T>::mutate(|packages| {
-      operation_version
-        .data
-        .packages
-        .iter()
-        .for_each(|package| packages.push(package.ipfs_cid.clone()));
-    });
+    anagolay_support::Pallet::<T>::store_packages(&operation_version.data.packages);
   }
 }

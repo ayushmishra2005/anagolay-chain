@@ -27,7 +27,7 @@ mod mock;
 mod tests;
 mod types;
 pub mod weights;
-use anagolay::GenericId;
+use anagolay_support::GenericId;
 pub use pallet::*;
 pub use weights::WeightInfo;
 
