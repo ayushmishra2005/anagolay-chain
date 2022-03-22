@@ -21,7 +21,7 @@
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use anagolay::GenericId;
+use anagolay_support::GenericId;
 
 // use frame_support::debug;
 

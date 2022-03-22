@@ -21,8 +21,10 @@
 //! Each pallet must have this file.
 
 // use super::*;
-use anagolay::{
-  AnagolayRecord, AnagolayStructure, AnagolayStructureData, AnagolayStructureExtra, Characters, ForWhat, GenericId,
+use crate::{OperationId, VersionId};
+use anagolay_support::{
+  AnagolayPackageStructure, AnagolayRecord, AnagolayStructure, AnagolayStructureData, AnagolayStructureExtra,
+  ArtifactType, Characters, ForWhat, GenericId,
 };
 use codec::{Decode, Encode};
 use sp_runtime::RuntimeDebug;
@@ -98,10 +100,10 @@ pub type Operation = AnagolayStructure<OperationData, OperationExtra>;
 pub type OperationRecord<T> =
   AnagolayRecord<Operation, <T as frame_system::Config>::AccountId, <T as frame_system::Config>::BlockNumber>;
 
-/// Operation Version package types. This enum corresponds to the different types of
+/// Operation Version artifact types. This enum corresponds to the different types of
 /// packages created by the publisher service when an Operation Version is published
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
-pub enum PackageType {
+pub enum OperationArtifactType {
   /// Rust crate
   CRATE,
   /// CommonJS module for the direct use in the nodejs env which doesn't have the ESM support. When
@@ -132,32 +134,31 @@ pub enum PackageType {
   WEB,
 }
 
-/// Operation Version package
-#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
-pub struct OperationVersionPackage {
-  /// Type of the package
-  pub package_type: PackageType,
-  /// Name of the file
-  pub file_name: Characters,
-  /// IPFS cid
-  pub ipfs_cid: GenericId,
-}
+impl ArtifactType for OperationArtifactType {}
 
-/// Operation Version data. This contains all the needed parameters which define the Operation
+#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
+/// Extra information (non hashed) for Operation Version entity
+pub struct OperationVersionExtra {
+  pub created_at: u64,
+}
+/// Implementation of AnagolayStructureExtra trait for OperationVersionExtra
+impl AnagolayStructureExtra for OperationVersionExtra {}
+
+/// Operation version data. This contains all the needed parameters which define the Operation
 /// Version and is hashed to produce its id
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
 pub struct OperationVersionData {
   /// The id of the Operation to which this Operation Version is associated.
   /// __This field is read-only__
-  pub operation_id: GenericId,
+  pub operation_id: OperationId,
   /// The id of the previous Operation Version for the same operation, if any.
-  pub parent_id: Option<GenericId>,
+  pub parent_id: Option<VersionId>,
   /// The IPFS cid of the repository rehosting the original one specified in the Operation structure
   pub rehosted_repo_id: GenericId,
   /// The IPFS cid of the documentation
   pub documentation_id: GenericId,
   /// Collection of packages that the publisher produced
-  pub packages: Vec<OperationVersionPackage>,
+  pub packages: Vec<AnagolayPackageStructure<OperationArtifactType>>,
 }
 
 /// Implementation of Default trait for OperationVersionData
@@ -175,14 +176,6 @@ impl Default for OperationVersionData {
 
 /// Implementation of AnagolayStructureData trait for OperationVersionData
 impl AnagolayStructureData for OperationVersionData {}
-
-#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
-/// Extra information (non hashed) for Operation Version entity
-pub struct OperationVersionExtra {
-  pub created_at: u64,
-}
-/// Implementation of AnagolayStructureExtra trait for OperationVersionExtra
-impl AnagolayStructureExtra for OperationVersionExtra {}
 
 /// OperationVersion entity, alias of `AnagolayStructure<OperationData, OperationExtra>`
 pub type OperationVersion = AnagolayStructure<OperationVersionData, OperationVersionExtra>;

@@ -18,7 +18,7 @@
 
 use super::*;
 use crate::types::{AnagolayStatement, AnagolayStatementRecord};
-use anagolay::{AnagolayRecord, GenericId};
+use anagolay_support::{AnagolayRecord, GenericId};
 use sp_std::vec::Vec;
 
 impl<T: Config> Pallet<T> {

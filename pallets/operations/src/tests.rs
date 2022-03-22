@@ -18,12 +18,9 @@
 
 //! Tests for the module.
 
-#![cfg(test)]
 use super::{mock::*, *};
-use crate::types::{
-  Operation, OperationData, OperationVersion, OperationVersionData, OperationVersionPackage, PackageType,
-};
-use anagolay::AnagolayStructureData;
+use crate::types::{Operation, OperationArtifactType, OperationData, OperationVersion, OperationVersionData};
+use anagolay_support::{AnagolayPackageStructure, AnagolayStructureData};
 use frame_support::{assert_noop, assert_ok};
 
 fn mock_request() -> (Operation, OperationVersion) {
@@ -42,9 +39,9 @@ fn mock_request() -> (Operation, OperationVersion) {
       parent_id: None,
       rehosted_repo_id: b"bafkreporeporeporepo".to_vec(),
       documentation_id: b"bafkdocadocadocadoca".to_vec(),
-      packages: vec![OperationVersionPackage {
-        package_type: PackageType::CRATE,
-        file_name: b"op_a.tgz".to_vec(),
+      packages: vec![AnagolayPackageStructure {
+        package_type: OperationArtifactType::CRATE,
+        file_name: Some(b"op_a.tgz".to_vec()),
         ipfs_cid: b"bafkopaopaopaopaopaopaopa".to_vec(),
       }],
     },
@@ -66,23 +63,23 @@ fn operations_create_operation() {
     op_ver.data.operation_id = op_id.clone();
     let op_ver_id = &op_ver.data.to_cid();
 
-    let operation = Operations::<Test>::get(1, op_id);
+    let operation = OperationsByAccountIdAndOperationId::<Test>::get(1, op_id);
     assert_eq!(operation.record.data, op.data);
     assert_eq!(operation.record.extra, op.extra);
 
-    let operation_versions = VersionsViaOperationId::<Test>::get(op_id);
+    let operation_versions = VersionsByOperationId::<Test>::get(op_id);
     assert_eq!(1, operation_versions.len());
     assert_eq!(op_ver_id, operation_versions.get(0).unwrap());
 
-    let packages = Packages::<Test>::get();
+    let packages = anagolay_support::Pallet::<Test>::get_packages();
     assert_eq!(1, packages.len());
     assert_eq!(op_ver.data.packages[0].ipfs_cid, *packages.get(0).unwrap());
 
-    let version = Versions::<Test>::get(op_ver_id);
+    let version = VersionsByVersionId::<Test>::get(op_ver_id);
     assert_eq!(version.record.data, op_ver.data);
     assert!(version.record.extra.is_some());
 
-    let operation_total = OperationTotal::<Test>::get();
+    let operation_total = Total::<Test>::get();
     assert_eq!(1, operation_total);
   });
 }
@@ -104,14 +101,7 @@ fn operations_create_operation_error_reusing_package() {
   new_test_ext().execute_with(|| {
     let (op, op_ver) = mock_request();
 
-    Packages::<Test>::set(
-      op_ver
-        .data
-        .packages
-        .iter()
-        .map(|package| package.ipfs_cid.clone())
-        .collect(),
-    );
+    anagolay_support::Pallet::<Test>::store_packages(&op_ver.data.packages);
 
     let res = OperationTest::create(mock::Origin::signed(1), op.data.clone(), op_ver.data.clone());
 

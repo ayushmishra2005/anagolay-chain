@@ -21,7 +21,7 @@ std = [
   'sp-runtime/std',
   'sp-std/std',
   "sp-io/std",
-  'anagolay/std',
+  'anagolay-support/std',
 ]
 runtime-benchmarks = [
   'frame-benchmarking',
@@ -43,4 +43,4 @@ sp-io = { version = '3.0', default-features = false }
 sp-runtime = { version = '3.0', default-features = false }
 sp-std = { version = '3.0', default-features = false }
 
-anagolay = { path = '../anagolay', default-features = false, package = 'anagolay-support' }
+anagolay-support = { path = '../anagolay-support', default-features = false }
