@@ -19,29 +19,32 @@
 //! Tests for the module.
 
 use super::{mock::*, *};
+use codec::{Decode, Encode};
+use sp_runtime::RuntimeDebug;
 
 #[test]
-fn check_is_existing_package() {
+fn check_is_existing_artifact() {
   new_test_ext().execute_with(|| {
+    #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
     enum TestArtifactType {
       TEST,
     }
+
     impl ArtifactType for TestArtifactType {}
 
     let test_cid = b"bafktesttesttest".to_vec();
-    let package = AnagolayPackageStructure {
-      package_type: TestArtifactType::TEST,
+    let artifact = AnagolayArtifactStructure {
+      artifact_type: TestArtifactType::TEST,
       ipfs_cid: test_cid.clone(),
-      file_name: None,
     };
 
-    assert!(!AnagolayTest::is_existing_package(&package));
+    assert!(!AnagolayTest::is_existing_artifact(&artifact));
 
-    AnagolayTest::store_packages(&vec![package]);
+    AnagolayTest::store_artifacts(&vec![artifact]);
 
-    let packages = AnagolayTest::get_packages();
-    assert_eq!(1, packages.len());
-    assert_eq!(test_cid.clone(), *packages.get(0).unwrap())
+    let artifacts = AnagolayTest::get_artifacts();
+    assert_eq!(1, artifacts.len());
+    assert_eq!(test_cid.clone(), *artifacts.get(0).unwrap())
   });
 }
 

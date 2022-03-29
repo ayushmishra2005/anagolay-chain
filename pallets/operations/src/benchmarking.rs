@@ -22,6 +22,7 @@
 use super::*;
 use types::*;
 
+use anagolay_support::AnagolayVersionData;
 use frame_benchmarking::{benchmarks, impl_benchmark_test_suite, whitelisted_caller};
 use frame_system::RawOrigin;
 use sp_std::{boxed::Box, vec, vec::Vec};
@@ -33,7 +34,7 @@ benchmarks! {
   create {
     let caller: T::AccountId = whitelisted_caller();
     let op = OperationData::default();
-    let op_ver = OperationVersionData::default();
+    let op_ver = AnagolayVersionData::default();
   }: _(RawOrigin::Signed(caller), op, op_ver)
 
   version_approve {

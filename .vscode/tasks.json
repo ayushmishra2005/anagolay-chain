@@ -43,9 +43,8 @@
     {
       "label": "purge chain",
       "type": "shell",
-      "command": "cargo",
+      "command": "makers",
       "args": [
-        "make",
         "chain-dev-purge"
       ],
       "problemMatcher": [

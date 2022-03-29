@@ -51,13 +51,13 @@ pub use timestamp::Call as TimestampCall;
 pub use anagolay_support;
 
 /// Importing a operations pallet
-pub use an_operations;
+pub use operations;
 
 /// Importing a statements pallet
 // pub use an_statements;
 
-/// Importing a rules pallet
-// pub use an_rules;
+/// Importing workflows pallet
+pub use workflows;
 
 /// Importing a poe pallet
 // pub use an_poe;
@@ -232,7 +232,7 @@ impl timestamp::Config for Runtime {
 parameter_types! {
     pub const ExistentialDeposit: u128 = 10 * CENTS;
     // For weight estimation, we assume that the most locks on an individual account will be 50.
-  // This number may need to be adjusted in the future if this assumption no longer holds true.
+    // This number may need to be adjusted in the future if this assumption no longer holds true.
     pub const MaxLocks: u32 = 50;
 }
 
@@ -315,9 +315,9 @@ impl sudo::Config for Runtime {
 // ------------------------------------------------------------------------------------------------
 impl anagolay_support::Config for Runtime {}
 
-impl an_operations::Config for Runtime {
+impl operations::Config for Runtime {
   type Event = Event;
-  type WeightInfo = an_operations::weights::AnagolayWeight<Runtime>;
+  type WeightInfo = operations::weights::AnagolayWeight<Runtime>;
   type TimeProvider = timestamp::Pallet<Runtime>;
 }
 
@@ -326,10 +326,11 @@ impl an_operations::Config for Runtime {
 //  type WeightInfo = an_statements::weights::AnagolayWeight<Runtime>;
 //}
 
-//impl an_rules::Config for Runtime {
-//  type Event = Event;
-//  type WeightInfo = an_rules::weights::AnagolayWeight<Runtime>;
-//}
+impl workflows::Config for Runtime {
+  type Event = Event;
+  type WeightInfo = workflows::weights::AnagolayWeight<Runtime>;
+  type TimeProvider = timestamp::Pallet<Runtime>;
+}
 
 //impl an_poe::Config for Runtime {
 //  type Event = Event;
@@ -357,9 +358,9 @@ construct_runtime!(
 
         // Used for the module anagolay
         Anagolay: anagolay_support::{Module},
-        Operations: an_operations::{Module, Call, Storage, Event<T>},
+        Operations: operations::{Module, Call, Storage, Event<T>},
 //        Statements: an_statements::{Module, Call, Storage, Event<T>},
-//        Rules: an_rules::{Module, Call, Storage, Event<T>},
+        Workflows: workflows::{Module, Call, Storage, Event<T>},
 //        Poe: an_poe::{Module, Call, Storage, Event<T>},
     }
 );
@@ -547,11 +548,11 @@ impl_runtime_apis! {
             let mut batches = Vec::<BenchmarkBatch>::new();
             let params = (&config, &whitelist);
 
-            add_benchmark!(params, batches, an_operations, Operations);
+            add_benchmark!(params, batches, operations, Operations);
 
 //            add_benchmark!(params, batches, an_poe, Poe);
 
-//            add_benchmark!(params, batches, an_rules, Rules);
+            add_benchmark!(params, batches, workflows, Workflows);
 
 //            add_benchmark!(params, batches, an_statements, Statements);
 

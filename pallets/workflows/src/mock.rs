@@ -20,15 +20,16 @@
 
 #![cfg(test)]
 
-use crate as rules;
+use crate as workflows;
 use crate::Config;
-use frame_support::parameter_types;
+use frame_support::{parameter_types, traits::UnixTime};
 use frame_system as system;
 use sp_core::H256;
 use sp_runtime::{
   testing::Header,
   traits::{BlakeTwo256, IdentityLookup},
 };
+use std::time::Duration;
 
 type UncheckedExtrinsic = system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = system::mocking::MockBlock<Test>;
@@ -41,7 +42,8 @@ frame_support::construct_runtime!(
         UncheckedExtrinsic = UncheckedExtrinsic,
     {
         System: system::{Module, Call, Config, Storage, Event<T>},
-        TestRules: rules::{Module, Call, Storage, Event<T>},
+        AnagolayTest: anagolay_support::{Module, Call, Storage},
+        WorkflowTest: workflows::{Module, Call, Storage, Event<T>},
     }
 );
 
@@ -75,15 +77,23 @@ impl system::Config for Test {
   type SS58Prefix = SS58Prefix;
 }
 
+pub struct MockTime {}
+
+impl UnixTime for MockTime {
+  fn now() -> Duration {
+    core::time::Duration::from_millis(1000)
+  }
+}
+
 impl Config for Test {
   type Event = ();
   type WeightInfo = ();
+  type TimeProvider = MockTime;
 }
+
+impl anagolay_support::Config for Test {}
 
 // Build genesis storage according to the mock runtime.
 pub fn new_test_ext() -> sp_io::TestExternalities {
-  system::GenesisConfig::default()
-    .build_storage::<Test>()
-    .unwrap()
-    .into()
+  system::GenesisConfig::default().build_storage::<Test>().unwrap().into()
 }

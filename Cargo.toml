@@ -4,7 +4,7 @@ members = [
   'pallets/anagolay-support',
   'pallets/operations',
   #  'pallets/statements',
-  #  'pallets/rules',
+  'pallets/workflows',
   #  'pallets/poe',
   'runtime',
 ]

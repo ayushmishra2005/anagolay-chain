@@ -14,3 +14,4 @@ vscode:
     - serayuzgur.crates
     - vadimcn.vscode-lldb
     - redhat.vscode-yaml
+    - mhutchie.git-graph

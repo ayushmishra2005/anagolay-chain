@@ -17,7 +17,7 @@ if $build_and_run; then
     --chain="${chain}" \
     --steps=50 \
     --repeat=100 \
-    --pallet="an_${pallet}" \
+    --pallet="${pallet}" \
     --extrinsic=* \
     --execution=wasm \
     --wasm-execution=compiled \
@@ -29,7 +29,7 @@ else
     --chain="${chain}" \
     --steps=50 \
     --repeat=100 \
-    --pallet="an_${pallet}" \
+    --pallet="${pallet}" \
     --extrinsic=* \
     --execution=wasm \
     --wasm-execution=compiled \

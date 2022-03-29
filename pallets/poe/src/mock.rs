@@ -42,7 +42,7 @@ frame_support::construct_runtime!(
         UncheckedExtrinsic = UncheckedExtrinsic,
     {
         System: system::{Module, Call, Config, Storage, Event<T>},
-        Rules: rules::{Module, Call, Storage, Event<T>},
+        Workflows: workflows::{Module, Call, Storage, Event<T>},
         TestPoe: poe::{Module, Call, Storage, Event<T>},
     }
 );
@@ -79,19 +79,16 @@ impl system::Config for Test {
 
 impl Config for Test {
   type Event = ();
-  type ExternalRulesStorage = rules::Pallet<Test>;
+  type ExternalWorkflowsStorage = workflows::Pallet<Test>;
   type WeightInfo = ();
 }
 
-impl rules::Config for Test {
+impl workflows::Config for Test {
   type Event = ();
   type WeightInfo = ();
 }
 
 // Build genesis storage according to the mock runtime.
 pub fn new_test_ext() -> sp_io::TestExternalities {
-  system::GenesisConfig::default()
-    .build_storage::<Test>()
-    .unwrap()
-    .into()
+  system::GenesisConfig::default().build_storage::<Test>().unwrap().into()
 }

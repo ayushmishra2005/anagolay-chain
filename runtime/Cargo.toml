@@ -22,9 +22,9 @@ runtime-benchmarks = [
   'hex-literal',
   'sp-runtime/runtime-benchmarks',
   'system/runtime-benchmarks',
-  'an-operations/runtime-benchmarks',
+  'operations/runtime-benchmarks',
   #  'an-poe/runtime-benchmarks',
-  #  'an-rules/runtime-benchmarks',
+  'workflows/runtime-benchmarks',
   #  'an-statements/runtime-benchmarks',
 ]
 std = [
@@ -53,10 +53,10 @@ std = [
   'timestamp/std',
   'transaction-payment/std',
   'anagolay-support/std',
-  'an-operations/std',
+  'operations/std',
   #  'an-statements/std',
   #  'an-poe/std',
-  #  'an-rules/std',
+  'workflows/std',
 ]
 
 [dependencies]
@@ -94,7 +94,7 @@ transaction-payment-rpc-runtime-api = { version = '3.0', default-features = fals
 smallvec = "1.6.1"
 
 anagolay-support = { path = '../pallets/anagolay-support', default-features = false }
-an-operations = { path = '../pallets/operations', default-features = false, package = 'an-operations' }
-# an-rules = { path = '../pallets/rules', default-features = false, package = 'an-rules' }
+operations = { path = '../pallets/operations', default-features = false }
+workflows = { path = '../pallets/workflows', default-features = false }
 # an-statements = { path = '../pallets/statements', default-features = false, package = 'an-statements' }
 # an-poe = { path = '../pallets/poe', default-features = false, package = 'an-poe' }

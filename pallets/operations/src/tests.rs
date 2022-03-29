@@ -20,7 +20,7 @@
 
 use super::{mock::*, *};
 use crate::types::{Operation, OperationArtifactType, OperationData, OperationVersion, OperationVersionData};
-use anagolay_support::{AnagolayPackageStructure, AnagolayStructureData};
+use anagolay_support::{AnagolayArtifactStructure, AnagolayStructureData};
 use frame_support::{assert_noop, assert_ok};
 
 fn mock_request() -> (Operation, OperationVersion) {
@@ -35,13 +35,10 @@ fn mock_request() -> (Operation, OperationVersion) {
   let op_ver = OperationVersion {
     id: vec![],
     data: OperationVersionData {
-      operation_id: vec![],
+      entity_id: vec![],
       parent_id: None,
-      rehosted_repo_id: b"bafkreporeporeporepo".to_vec(),
-      documentation_id: b"bafkdocadocadocadoca".to_vec(),
-      packages: vec![AnagolayPackageStructure {
-        package_type: OperationArtifactType::CRATE,
-        file_name: Some(b"op_a.tgz".to_vec()),
+      artifacts: vec![AnagolayArtifactStructure {
+        artifact_type: OperationArtifactType::CRATE,
         ipfs_cid: b"bafkopaopaopaopaopaopaopa".to_vec(),
       }],
     },
@@ -60,10 +57,10 @@ fn operations_create_operation() {
     assert_ok!(res);
 
     let op_id = &op.data.to_cid();
-    op_ver.data.operation_id = op_id.clone();
+    op_ver.data.entity_id = op_id.clone();
     let op_ver_id = &op_ver.data.to_cid();
 
-    let operation = OperationsByAccountIdAndOperationId::<Test>::get(1, op_id);
+    let operation = OperationsByOperationIdAndAccountId::<Test>::get(op_id, 1);
     assert_eq!(operation.record.data, op.data);
     assert_eq!(operation.record.extra, op.extra);
 
@@ -71,9 +68,9 @@ fn operations_create_operation() {
     assert_eq!(1, operation_versions.len());
     assert_eq!(op_ver_id, operation_versions.get(0).unwrap());
 
-    let packages = anagolay_support::Pallet::<Test>::get_packages();
-    assert_eq!(1, packages.len());
-    assert_eq!(op_ver.data.packages[0].ipfs_cid, *packages.get(0).unwrap());
+    let artifacts = anagolay_support::Pallet::<Test>::get_artifacts();
+    assert_eq!(1, artifacts.len());
+    assert_eq!(op_ver.data.artifacts[0].ipfs_cid, *artifacts.get(0).unwrap());
 
     let version = VersionsByVersionId::<Test>::get(op_ver_id);
     assert_eq!(version.record.data, op_ver.data);
@@ -101,7 +98,7 @@ fn operations_create_operation_error_reusing_package() {
   new_test_ext().execute_with(|| {
     let (op, op_ver) = mock_request();
 
-    anagolay_support::Pallet::<Test>::store_packages(&op_ver.data.packages);
+    anagolay_support::Pallet::<Test>::store_artifacts(&op_ver.data.artifacts);
 
     let res = OperationTest::create(mock::Origin::signed(1), op.data.clone(), op_ver.data.clone());
 

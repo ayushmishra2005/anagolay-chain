@@ -3,6 +3,7 @@
 Create, replace and store Rules definitions;
 
 Contains the storage management and Rules definition
+
 # Benchmarking
 
 To enable benchmarking run `cargo build --release --features runtime-benchmarks`
@@ -14,11 +15,11 @@ To generate pallet weights run
    --chain=dev \
    --steps=50 \
    --repeat=20 \
-   --pallet=an_rules \
+   --pallet=an_workflows \
    --extrinsic="*" \
    --execution=wasm \
    --wasm-execution=compiled \
    --heap-pages=4096 \
-   --output=pallets/rules/src/weights.rs \
+   --output=pallets/workflows/src/weights.rs \
    --template=./templates/module-weight-template.hbs
 ```

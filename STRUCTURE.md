@@ -3,7 +3,6 @@
 Anagolay is split into multiple parts for maximum maintainability and ease of use.
 
 - pallets
-- implemented-operations
 - node
 - runtime
 
@@ -14,21 +13,15 @@ Anagolay is split into multiple parts for maximum maintainability and ease of us
 - _constraints_:
   - all crates that go on chain must be `[no_std]`
 
-_Pallets_ are individual modules within _Anagolay Network_ These are containers that host domain-specific logic. They have the `pallet-` prefix. For example, `an-operations` contains logic for manipulating with operations.
+_Pallets_ are individual modules within _Anagolay Network_ These are containers that host domain-specific logic. For example, `operations` contains logic for manipulating with operations.
 
 Current list of pallets:
 
 - operations
 - poe (Proof-of-Existence)
-- rules
-- anagolay ( all generics are here )
+- workflows
+- anagolay-support ( all generics are here )
 - statements
-
-## Implemented operations
-
-- _found in_: `/operations`
-
-These are the implementations of the _Operations_ in rust. Check the _pallet/operations_ for more info.
 
 ## Node
 
