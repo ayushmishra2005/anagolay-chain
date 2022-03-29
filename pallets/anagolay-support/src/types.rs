@@ -1,24 +1,55 @@
+// This file is part of Anagolay Foundation.
+
+// Copyright (C) 2019-2022 Anagolay Foundation.
+// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
+
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
+
+// You should have received a copy of the GNU General Public License
+// along with this program. If not, see <https://www.gnu.org/licenses/>.
+
 use cid::{multihash::MultihashGeneric, Cid};
 use codec::{Decode, Encode};
 use multibase::Base;
 use multihash::{Blake3_256, Code, Hasher};
 use sp_runtime::RuntimeDebug;
-use sp_std::vec::Vec;
+use sp_std::{vec, vec::Vec};
 
 /// Generic ID, this is the content identifier of the payload, like rule or proof. for now it's CID
-/// string
-pub type GenericId = Vec<u8>;
+/// string. It must be private, aliased by types of each respective entity id, since it's used in
+/// [`AnagolayVersionData`] to refer to any entity id
+type GenericId = Vec<u8>;
+
+/// Alias for string
+pub type Characters = Vec<u8>;
+
+// Type aliases for IDs used in the storage. Instead of writing large documentation we can show the
+// user what the storage expects and what saves.
 
 /// Placeholder for SSI and DID
 pub type CreatorId = GenericId;
 
-/// Alias for string
-pub type Characters = GenericId;
+/// The type of the values in the `ArtifactsByArtifactId` storage
+pub type ArtifactId = GenericId;
 
-/// The type of the values in the `PackagesByPackageId` storage
-pub type PackageId = GenericId;
+/// The type used for an Operation ID
+pub type OperationId = GenericId;
 
-/// List of equipment that needs rules generated
+/// The type used for a Workflow ID
+pub type WorkflowId = GenericId;
+
+/// The type used for any entity Version ID
+pub type VersionId = GenericId;
+
+/// List of equipment that needs workflows generated
 #[derive(Encode, Decode, Clone, PartialEq, Eq, Ord, PartialOrd, Debug)]
 pub enum ForWhat {
   /// WE are creating it For what? This can be a part of the group
@@ -38,7 +69,8 @@ impl Default for ForWhat {
   }
 }
 
-/// Info, this is what gets stored
+/// Info, this is what gets stored. The Generic `A` is usally the `AccountId` and `B` is
+/// `BlockNumber`
 #[derive(Default, Encode, Decode, Clone, PartialEq, Eq)]
 pub struct AnagolayRecord<T, A, B> {
   pub record: T,
@@ -77,7 +109,7 @@ pub trait AnagolayStructureData: Default + Encode + Clone + PartialEq + Eq {
   ///
   /// assert_eq!(b"bafkr4iac2luovbttsv5iftbg2zl4okalixafa2vjwtbmf6exgwiuvukhmi".to_vec(), entity.to_cid());
   /// ```
-  fn to_cid(&self) -> Vec<u8> {
+  fn to_cid(&self) -> GenericId {
     let hash = MultihashGeneric::wrap(
       Code::Blake3_256.into(),
       Blake3_256::digest(self.encode().as_slice()).as_ref(),
@@ -183,33 +215,143 @@ impl<T: AnagolayStructureData, U: AnagolayStructureExtra> AnagolayStructure<T, U
 /// # Examples
 ///
 /// ```
-/// use anagolay_support::{AnagolayPackageStructure, ArtifactType};
+/// use codec::{Decode, Encode};
+/// use anagolay_support::{AnagolayArtifactStructure, ArtifactType};
 ///
+/// #[derive(Encode, Decode, Clone, PartialEq, Eq)]
 /// enum OperationArtifactType {
-///   CRATE, CJS, WASM, ESM, WEB, DOCS, GIT
+///   CRATE, WASM, DOCS, GIT
 /// }
 ///
 /// impl ArtifactType for OperationArtifactType {}
 ///
-/// type OperationPackageStructure = AnagolayPackageStructure<OperationArtifactType>;
+/// type OperationPackageStructure = AnagolayArtifactStructure<OperationArtifactType>;
 ///
+/// #[derive(Encode, Decode, Clone, PartialEq, Eq)]
 /// enum ImageArtifactType {
 ///   RAW
 /// }
 ///
 /// impl ArtifactType for ImageArtifactType {}
 ///
-/// type ImagePackageStructure = AnagolayPackageStructure<OperationArtifactType>;
+/// type ImagePackageStructure = AnagolayArtifactStructure<ImageArtifactType>;
 /// ```
-pub trait ArtifactType {}
+pub trait ArtifactType: Encode + Decode + Clone + PartialEq + Eq {}
 
-/// Operation Version package
+/// Operation Version artifact
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
-pub struct AnagolayPackageStructure<T: ArtifactType> {
-  /// Type of the package
-  pub package_type: T,
-  /// Name of the file
-  pub file_name: Option<Characters>,
+pub struct AnagolayArtifactStructure<T: ArtifactType> {
+  /// Type of the artifact
+  pub artifact_type: T,
   /// IPFS cid
   pub ipfs_cid: GenericId,
+}
+
+#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
+/// Extra information (non hashed) for an entity Version
+pub struct AnagolayVersionExtra {
+  pub created_at: u64,
+}
+
+/// Implementation of AnagolayStructureExtra trait for OperationVersionExtra
+impl AnagolayStructureExtra for AnagolayVersionExtra {}
+
+/// Version data. It contains all the needed parameters which define the entity Version and is
+/// hashed to produce the Version id
+///
+/// # Examples
+///
+/// ```
+/// use codec::{Decode, Encode};
+/// use anagolay_support::{AnagolayStructure, AnagolayVersionData, AnagolayVersionExtra, ArtifactType};
+///
+/// #[derive(Encode, Decode, Clone, PartialEq, Eq)]
+/// enum OperationArtifactType {
+///   CRATE, WASM, DOCS, GIT
+/// }
+/// impl ArtifactType for OperationArtifactType {}
+///
+/// type OperationVersionData = AnagolayVersionData<OperationArtifactType>;
+/// type OperationVersion = AnagolayStructure<OperationVersionData, AnagolayVersionExtra>;
+/// ```
+#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
+pub struct AnagolayVersionData<T: ArtifactType> {
+  /// The id of the Operation, Workflow or other entity to which this Version is
+  /// associated. __This field is read-only__
+  pub entity_id: GenericId,
+  /// The id of the previous Operation Version for the same operation, if any.
+  pub parent_id: Option<VersionId>,
+  /// Collection of packages that the publisher produced
+  pub artifacts: Vec<AnagolayArtifactStructure<T>>,
+}
+
+/// Implementation of Default trait for AnagolayVersionData
+impl<T: ArtifactType> Default for AnagolayVersionData<T> {
+  fn default() -> Self {
+    AnagolayVersionData {
+      entity_id: vec![],
+      parent_id: None,
+      artifacts: vec![],
+    }
+  }
+}
+
+/// Implementation of AnagolayStructureData trait for AnagolayVersionData
+impl<T: ArtifactType> AnagolayStructureData for AnagolayVersionData<T> {}
+
+/// WASM artifacts commonly produced for a published entity. The subtype should be passed as
+/// parameter of the entity-defined artifact type enumeration, like in the example:
+///
+/// # Examples
+///
+/// ```
+/// use codec::{Decode, Encode};
+/// use anagolay_support::{ArtifactType, WasmArtifactSubType};
+///
+/// #[derive(Encode, Decode, Clone, PartialEq, Eq)]
+/// enum OperationArtifactType {
+///   CRATE, WASM(WasmArtifactSubType), DOCS, GIT
+/// }
+/// impl ArtifactType for OperationArtifactType {}
+/// #[derive(Encode, Decode, Clone, PartialEq, Eq)]
+/// enum WorkflowArtifactType {
+///   CRATE, WASM(WasmArtifactSubType), DOCS, GIT
+/// }
+/// impl ArtifactType for WorkflowArtifactType {}
+///
+/// let op_esm_artifact_type = OperationArtifactType::WASM(WasmArtifactSubType::ESM);
+/// let wf_esm_artifact_type = WorkflowArtifactType::WASM(WasmArtifactSubType::ESM);
+/// ```
+#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
+pub enum WasmArtifactSubType {
+  /// CommonJS module for the direct use in the nodejs env which doesn't have the ESM support. When
+  /// Nodejs has native ESM support this should be used only for the legacy versions. Check
+  /// [here](https://nodejs.org/api/esm.html) the Nodejs ESM status.
+  CJS,
+  /// Native ES module, usually used with bundler software like webpack. You can use this just by
+  /// including it, the wasm will be instantiated on require time. Example can be found
+  /// [here](https://rustwasm.github.io/docs/wasm-bindgen/examples/hello-world.html) and official
+  /// docs [here](https://rustwasm.github.io/docs/wasm-bindgen/reference/deployment.html#bundlers).
+  /// For the official NODEJS support see [this doc](https://nodejs.org/api/esm.html)
+  /// If you want to use this with nodejs, use the bundler.
+  ESM,
+  /// This is an ES module with manual instantiation of the wasm. It doesn't include polyfills
+  /// More info is on the
+  /// [wasm-pack doc website](https://rustwasm.github.io/docs/wasm-bindgen/reference/deployment.html#without-a-bundler)
+  /// and [wasm-bindgen](https://rustwasm.github.io/docs/wasm-bindgen/reference/browser-support.html)
+  /// # Example in Javascript
+  ///
+  /// ```javascript
+  /// import init, { execute } from './op-file'
+  /// async function main() {
+  ///   await init() //initialize wasm
+  ///   const e = execute([new Uint8Array(7)], new Map())
+  ///   console.log(e.decode());
+  /// }
+  /// main().catch(console.error)
+  /// ```
+  WEB,
+  /// Just a compiled WASM file without any acompanied JS or `.d.ts` files. You have to do all
+  /// things manual.
+  WASM,
 }

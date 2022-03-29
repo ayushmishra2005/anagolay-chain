@@ -12,10 +12,10 @@
     }
   },
   "forwardPorts": [
-    // 30333,
-    // 9933,
-    // 9944,
-    // 9615
+    30333,
+    9933,
+    9944,
+    9615
   ],
   "features": {
     "docker-from-docker": {
@@ -45,7 +45,8 @@
     "actboy168.tasks",
     "redhat.vscode-yaml",
     "foxundermoon.shell-format",
-    "esbenp.prettier-vscode"
+    "esbenp.prettier-vscode",
+    "mhutchie.git-graph"
   ],
   "postCreateCommand": "bash .devcontainer/install-deps.sh"
 }

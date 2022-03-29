@@ -15,65 +15,61 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-//! Business logic is located here.
-//!
-//! Each pallet must have this file.
-
 use super::*;
-use crate::types::{Operation, OperationRecord, OperationVersion, OperationVersionRecord};
+use crate::types::{Workflow, WorkflowRecord, WorkflowVersion, WorkflowVersionRecord};
 use sp_std::borrow::ToOwned;
 
 impl<T: Config> Pallet<T> {
-  /// Inserts the Operation into the `OperationsByOperationIdAndAccountId` storage
-  /// Increases the `Total` Operation count
+  /// Inserts the Operation into the `WorkflowsByAccountIdAndWorkflowId` storage
+  /// Increases the `Total` Workflow count
   ///
   /// Does no checks.
   ///
   /// # Arguments
-  ///  * operation - The Operation to insert
-  ///  * account_id - The owner of the Operation
+  ///  * workflow - The Workflow to insert
+  ///  * account_id - The owner of the Workflow
   ///  * block_number - Current block
-  pub fn do_create_operation(operation: &Operation, account_id: &T::AccountId, block_number: T::BlockNumber) {
-    let record = OperationRecord::<T> {
-      record: operation.clone(),
+  pub fn do_create_workflow(workflow: &Workflow, account_id: &T::AccountId, block_number: &T::BlockNumber) {
+    let workflow_record = WorkflowRecord::<T> {
+      record: workflow.clone(),
       account_id: account_id.clone(),
-      block_number,
+      block_number: *block_number,
     };
 
-    OperationsByOperationIdAndAccountId::<T>::insert(operation.id.clone(), account_id.clone(), record);
+    WorkflowsByWorkflowIdAndAccountId::<T>::insert(&workflow.id, &account_id, workflow_record.clone());
 
     Total::<T>::put(Self::total().saturating_add(1));
   }
 
-  /// Inserts the Operation Version into the `VersionsByOperationId` and
+  /// Inserts the Workflow Version into the `VersionsByOperationId` and
   /// `Versions` storages Insert each package cid in the `PackageCid` storage
   ///
   /// Does no checks.
   ///
   /// # Arguments
-  ///  * operation_version - The Operation Version to insert
+  ///  * workflow_version - The Operation to insert
   ///  * account_id - The owner of the Operation
   ///  * block_number - Current block
-  pub fn do_create_operation_version(
-    operation_version: &OperationVersion,
+  pub fn do_create_workflow_version(
+    workflow_version: &WorkflowVersion,
     account_id: &T::AccountId,
     block_number: T::BlockNumber,
   ) {
-    let record = OperationVersionRecord::<T> {
-      record: operation_version.clone(),
+    let record = WorkflowVersionRecord::<T> {
+      record: workflow_version.clone(),
       account_id: account_id.clone(),
       block_number,
     };
 
-    let operation_id = &operation_version.data.entity_id;
-    let operation_version_id = operation_version.id.to_owned();
+    let workflow_id = &workflow_version.data.entity_id;
+    let workflow_version_id = workflow_version.id.to_owned();
 
-    VersionsByVersionId::<T>::insert(&operation_version_id, record);
+    VersionsByVersionId::<T>::insert(&workflow_version_id, record);
 
-    VersionsByOperationId::<T>::mutate(operation_id, |versions| {
-      versions.push(operation_version_id.clone());
+    VersionsByWorkflowId::<T>::mutate(workflow_id, |versions| {
+      versions.push(workflow_version_id.clone());
     });
 
-    anagolay_support::Pallet::<T>::store_artifacts(&operation_version.data.artifacts);
+    anagolay_support::Pallet::<T>::store_artifacts(&workflow_version.data.artifacts);
   }
 }

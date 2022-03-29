@@ -16,28 +16,27 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-//! Benchmarking for Rules Pallet
+//! Benchmarking for Workflow Pallet
 
 #![cfg(feature = "runtime-benchmarks")]
 
 use super::*;
+use anagolay_support::AnagolayVersionData;
 use frame_benchmarking::{benchmarks, impl_benchmark_test_suite, whitelisted_caller};
 use frame_system::RawOrigin;
 use sp_std::{boxed::Box, vec, vec::Vec};
 use types::*;
 
 #[allow(unused)]
-use crate::Pallet as Rules;
+use crate::Pallet as Workflows;
 
 benchmarks! {
-    create_rule {
-        let caller: T::AccountId = whitelisted_caller();
-        let rule = Rule {
-          id: vec![1],
-          data: RuleData::default(),
-          extra: None
-        };
-    }: _(RawOrigin::Signed(caller), rule)
+  create {
+    let caller: T::AccountId = whitelisted_caller();
+    let wf = WorkflowData::default();
+    let wf_ver = AnagolayVersionData::default();
+  }: _(RawOrigin::Signed(caller), wf, wf_ver)
+
 }
 
-impl_benchmark_test_suite!(Rules, crate::mock::new_test_ext(), crate::mock::Test);
+impl_benchmark_test_suite!(Workflows, crate::mock::new_test_ext(), crate::mock::Test);

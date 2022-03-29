@@ -22,7 +22,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use anagolay_support::GenericId;
-use rules::PutInStorage;
+use workflows::PutInStorage;
 mod benchmarking;
 mod functions;
 mod mock;
@@ -49,13 +49,13 @@ pub mod pallet {
 
   #[pallet::config]
   ///The pallet's configuration trait.
-  pub trait Config: frame_system::Config + rules::Config {
+  pub trait Config: frame_system::Config + workflows::Config {
     /// The overarching event type.
     type Event: From<Event<Self>>
       + Into<<Self as frame_system::Config>::Event>
       + IsType<<Self as frame_system::Config>::Event>;
-    // type ExternalRulesStorage: PutInStorage<Self::AccountId, Self::BlockNumber>;
-    type ExternalRulesStorage: PutInStorage;
+    // type ExternalWorkflowsStorage: PutInStorage<Self::AccountId, Self::BlockNumber>;
+    type ExternalWorkflowsStorage: PutInStorage;
 
     /// Weight information for extrinsics for this pallet.
     type WeightInfo: WeightInfo;
@@ -64,15 +64,8 @@ pub mod pallet {
   #[pallet::storage]
   #[pallet::getter(fn proofs)]
   /// PoE Proofs
-  pub type Proofs<T: Config> = StorageDoubleMap<
-    _,
-    Blake2_128Concat,
-    GenericId,
-    Twox64Concat,
-    T::AccountId,
-    ProofRecord<T>,
-    ValueQuery,
-  >;
+  pub type Proofs<T: Config> =
+    StorageDoubleMap<_, Blake2_128Concat, GenericId, Twox64Concat, T::AccountId, ProofRecord<T>, ValueQuery>;
 
   #[pallet::storage]
   #[pallet::getter(fn proofs_count)]
@@ -82,15 +75,8 @@ pub mod pallet {
   #[pallet::storage]
   #[pallet::getter(fn p_hashes)]
   /// Perceptual hash finder hash(phash) : (PerceptualHash, ProofId)
-  pub(super) type PHashes<T: Config> = StorageDoubleMap<
-    _,
-    Blake2_128Concat,
-    T::Hash,
-    Twox64Concat,
-    T::AccountId,
-    PhashInfo,
-    ValueQuery,
-  >;
+  pub(super) type PHashes<T: Config> =
+    StorageDoubleMap<_, Blake2_128Concat, T::Hash, Twox64Concat, T::AccountId, PhashInfo, ValueQuery>;
 
   #[pallet::storage]
   #[pallet::getter(fn phash_count)]
@@ -133,10 +119,10 @@ pub mod pallet {
 
       let proof_id = proof.id.clone();
 
-      let rule_record = rules::Pallet::<T>::rules(rule_id, &sender);
+      let rule_record = workflows::Pallet::<T>::workflows(rule_id, &sender);
 
-      // @TODO somehow figure this out. we don't need it NOW but must be done before the Milestone 2 is submitted
-      // ensure!(&rule_record, Error::<T>::NoSuchRule);
+      // @TODO somehow figure this out. we don't need it NOW but must be done before the Milestone 2 is
+      // submitted ensure!(&rule_record, Error::<T>::NoSuchRule);
 
       // The types must match
       if proof.data.groups != rule_record.record.data.groups {
@@ -152,7 +138,8 @@ pub mod pallet {
       let proof_info = ProofRecord::<T> {
         record: proof.clone(),
         account_id: sender.clone(),
-        block_number: <frame_system::Pallet<T>>::block_number(), // Call the `system` pallet to get the current block number
+        block_number: <frame_system::Pallet<T>>::block_number(), /* Call the `system` pallet to get the current block
+                                                                  * number */
       };
 
       Proofs::<T>::insert(&proof_id, &sender, proof_info);
@@ -165,12 +152,10 @@ pub mod pallet {
       Ok(().into())
     }
 
-    /// INDEX storage, save the connection phash <-> proofId for hamming/leven distance calc. Eventually refactor this, for now leave it
+    /// INDEX storage, save the connection phash <-> proofId for hamming/leven distance calc.
+    /// Eventually refactor this, for now leave it
     #[pallet::weight(<T as Config>::WeightInfo::save_phash())]
-    pub(super) fn save_phash(
-      origin: OriginFor<T>,
-      payload_data: PhashInfo,
-    ) -> DispatchResultWithPostInfo {
+    pub(super) fn save_phash(origin: OriginFor<T>, payload_data: PhashInfo) -> DispatchResultWithPostInfo {
       let sender = ensure_signed(origin)?;
 
       // Check is do we have the proof, can't add without
@@ -179,8 +164,7 @@ pub mod pallet {
         Error::<T>::NoSuchProof
       );
 
-      let payload_data_digest =
-        payload_data.using_encoded(<T as frame_system::Config>::Hashing::hash);
+      let payload_data_digest = payload_data.using_encoded(<T as frame_system::Config>::Hashing::hash);
 
       ensure!(
         !PHashes::<T>::contains_key(&payload_data_digest, &sender),

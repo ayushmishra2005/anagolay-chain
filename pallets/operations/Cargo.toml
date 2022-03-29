@@ -4,7 +4,7 @@ repository = 'https://gitlab.com/anagolay/anagolay/'
 homepage = 'https://anagolay.network/pallet/operations'
 edition = '2018'
 license-file = "./LICENSE"
-name = 'an-operations'
+name = 'operations'
 version = '0.3.0'
 
 [package.metadata.docs.rs]

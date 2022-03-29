@@ -26,36 +26,36 @@ impl<T: Config> Pallet<T> {
   /// Verifies if the package passed as argument is already stored
   ///
   /// # Arguments
-  ///  * package - The package to check
+  ///  * artifact - The artifact to check
   ///
   /// # Return
-  /// True if the package is already stored, false otherwise
-  pub fn is_existing_package(package: &AnagolayPackageStructure<impl ArtifactType>) -> bool {
-    match PackagesByPackageId::<T>::try_get().ok() {
-      Some(packages) => packages.contains(&package.ipfs_cid),
+  /// True if the artifact is already stored, false otherwise
+  pub fn is_existing_artifact(artifact: &AnagolayArtifactStructure<impl ArtifactType>) -> bool {
+    match ArtifactsByArtifactId::<T>::try_get().ok() {
+      Some(artifacts) => artifacts.contains(&artifact.ipfs_cid),
       None => false,
     }
   }
 
-  /// Store all packages passed as parameter.
+  /// Store all artifacts passed as parameter.
   ///
   /// Does not do any check.
   ///
   /// # Arguments
-  ///  * packages - The packages to store
-  pub fn store_packages(packages: &Vec<AnagolayPackageStructure<impl ArtifactType>>) {
-    PackagesByPackageId::<T>::mutate(|stored_packages| {
-      packages
+  ///  * artifacts - The artifacts to store
+  pub fn store_artifacts(artifacts: &Vec<AnagolayArtifactStructure<impl ArtifactType>>) {
+    ArtifactsByArtifactId::<T>::mutate(|stored_artifacts| {
+      artifacts
         .iter()
-        .for_each(|package| stored_packages.push(package.ipfs_cid.clone()));
+        .for_each(|artifact| stored_artifacts.push(artifact.ipfs_cid.clone()));
     });
   }
 
-  /// Retrieve all stored packages
+  /// Retrieve all stored artifacts
   ///
-  /// # Arguments
-  ///  * packages - The packages to store
-  pub fn get_packages() -> Vec<PackageId> {
-    PackagesByPackageId::<T>::get()
+  /// # Return
+  /// Collection of artifact Ids
+  pub fn get_artifacts() -> Vec<ArtifactId> {
+    ArtifactsByArtifactId::<T>::get()
   }
 }

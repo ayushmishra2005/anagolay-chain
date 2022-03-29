@@ -16,7 +16,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-//! `an_operations` pallet is the interface for the creation and management of Operations.
+//! `operations` pallet is the interface for the creation and management of Operations.
 //!
 //! Operation is an abstraction that represents one task in a sequence of tasks, a Workflow.
 //!
@@ -29,7 +29,6 @@
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use anagolay_support::GenericId;
 use sp_std::vec::Vec;
 
 // use frame_support::debug;
@@ -46,19 +45,13 @@ mod tests;
 pub use pallet::*;
 pub use weights::WeightInfo;
 
-// Type aliases for IDs used in the storage. Instead of writing large documentation we can show the
-// user what the storage expects and what saves.
-
-type OperationId = GenericId;
-type VersionId = GenericId;
-
 #[frame_support::pallet]
 pub mod pallet {
   use super::*;
   use crate::types::{
-    Operation, OperationData, OperationRecord, OperationVersion, OperationVersionData, OperationVersionExtra,
-    OperationVersionRecord,
+    Operation, OperationData, OperationRecord, OperationVersion, OperationVersionData, OperationVersionRecord,
   };
+  use anagolay_support::{AnagolayVersionData, AnagolayVersionExtra, OperationId, VersionId};
   use frame_support::{pallet_prelude::*, traits::UnixTime};
   use frame_system::pallet_prelude::*;
 
@@ -66,8 +59,8 @@ pub mod pallet {
   #[pallet::generate_store(pub(super) trait Store)]
   pub struct Pallet<T>(_);
 
-  #[pallet::config]
   /// Config of the operations pallet
+  #[pallet::config]
   pub trait Config: frame_system::Config + anagolay_support::Config {
     /// The overarching event type.
     type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
@@ -79,42 +72,43 @@ pub mod pallet {
     type TimeProvider: UnixTime;
   }
 
-  #[pallet::storage]
-  #[pallet::getter(fn operations_by_account_id_and_operation_id)]
   /// Retrieve the Operation Manifest with the AccountId ( which is the owner ) and OperationId.
-  pub type OperationsByAccountIdAndOperationId<T: Config> =
-    StorageDoubleMap<_, Blake2_128Concat, T::AccountId, Twox64Concat, OperationId, OperationRecord<T>, ValueQuery>;
+  #[pallet::storage]
+  #[pallet::getter(fn operations_by_operation_id_and_account_id)]
+  pub type OperationsByOperationIdAndAccountId<T: Config> =
+    StorageDoubleMap<_, Blake2_128Concat, OperationId, Twox64Concat, T::AccountId, OperationRecord<T>, ValueQuery>;
+
+  /// Retrieve all Versions for a single Operation Manifest.
   #[pallet::storage]
   #[pallet::getter(fn versions_by_operation_id)]
-  /// Retrieve all Versions for a single Operation Manifest.
   pub type VersionsByOperationId<T: Config> = StorageMap<_, Blake2_128Concat, OperationId, Vec<VersionId>, ValueQuery>;
 
+  /// Retrieve the Version.
   #[pallet::storage]
   #[pallet::getter(fn versions_by_version_id)]
-  /// Retrieve the Version.
   pub type VersionsByVersionId<T: Config> =
     StorageMap<_, Blake2_128Concat, VersionId, OperationVersionRecord<T>, ValueQuery>;
 
+  /// Total amount of Operations.
   #[pallet::storage]
   #[pallet::getter(fn total)]
-  /// Total amount of Operations.
   pub type Total<T: Config> = StorageValue<_, u64, ValueQuery>;
 
+  /// Events of the Operations pallet
   #[pallet::event]
   #[pallet::generate_deposit(pub(crate) fn deposit_event)]
   #[pallet::metadata(T::AccountId = "AccountId")]
-  /// Events of the Operations pallet
   pub enum Event<T: Config> {
     /// Operation Manifest created together with Version and Packages.
     OperationCreated(T::AccountId, OperationId),
   }
 
-  #[pallet::error]
   /// Errors of the Operations pallet
+  #[pallet::error]
   pub enum Error<T> {
     /// Operation Manifest already exists.
     OperationAlreadyExists,
-    /// Version pacakge already exists. If you think this is a bug in our system let us know [here](https://matrix.to/#/!FJvAuDoWRoMVuOFYwL:matrix.org?via=matrix.org).
+    /// Version package already exists. If you think this is a bug in our system let us know [here](https://matrix.to/#/!FJvAuDoWRoMVuOFYwL:matrix.org?via=matrix.org).
     OperationVersionPackageAlreadyExists,
     /// The Operation already has an initial Version and cannot be published again.
     OperationAlreadyInitialized,
@@ -125,13 +119,28 @@ pub mod pallet {
 
   #[pallet::call]
   impl<T: Config> Pallet<T> {
-    #[pallet::weight(<T as Config>::WeightInfo::create())]
-    /// Create Operation manifest and a Version.
+    /// Create Operation manifest and the initial Version.
     ///
-    /// Once you have created the Manifest this extrinsic will always fail with at least 3 different
+    /// Once you have created the Manifest this extrinsic will always fail with 3 different
     /// errors, each depend on the parts of the structure.
-    /// There is a check that a user cannot cheat and create new pacakge if the package is
+    /// There is a check that a user cannot cheat and create new package if the package is
     /// connected to other Operation or any other Version.
+    ///
+    /// # Arguments
+    /// * origin - the call origin
+    /// * operation_data - the data section of the Operation manifest
+    /// * version_data - the data section of the Version manifest
+    ///
+    /// # Errors
+    /// * `OperationAlreadyExists` - if an Operation with the same manifest was already created by
+    ///   the caller or by another user
+    /// * `OperationAlreadyInitialized` - if the Operation already has an initial Version
+    /// * `OperationVersionPackageAlreadyExists` - one of the packages of the Version is already
+    ///   registered to another Operation
+    ///
+    /// # Return
+    /// `DispatchResultWithPostInfo` containing Unit type
+    #[pallet::weight(<T as Config>::WeightInfo::create())]
     pub fn create(
       origin: OriginFor<T>,
       operation_data: OperationData,
@@ -142,7 +151,7 @@ pub mod pallet {
       let operation = Operation::new(operation_data);
 
       ensure!(
-        !OperationsByAccountIdAndOperationId::<T>::contains_key(&sender, &operation.id),
+        OperationsByOperationIdAndAccountId::<T>::iter_prefix_values(&operation.id).count() == 0,
         Error::<T>::OperationAlreadyExists
       );
       ensure!(
@@ -152,9 +161,9 @@ pub mod pallet {
       );
       ensure!(
         version_data
-          .packages
+          .artifacts
           .iter()
-          .find(|package| anagolay_support::Pallet::<T>::is_existing_package(package))
+          .find(|package| anagolay_support::Pallet::<T>::is_existing_artifact(package))
           .is_none(),
         Error::<T>::OperationVersionPackageAlreadyExists
       );
@@ -164,11 +173,11 @@ pub mod pallet {
       Self::do_create_operation(&operation, &sender, current_block);
 
       let operation_version = OperationVersion::new_with_extra(
-        OperationVersionData {
-          operation_id: operation.id.clone(),
+        AnagolayVersionData {
+          entity_id: operation.id.clone(),
           ..version_data.clone()
         },
-        OperationVersionExtra {
+        AnagolayVersionExtra {
           created_at: T::TimeProvider::now().as_secs(),
         },
       );
@@ -180,13 +189,13 @@ pub mod pallet {
       Ok(().into())
     }
 
-    #[pallet::weight(<T as Config>::WeightInfo::version_approve())]
     /// Approve Operation Version
     ///
     /// # Arguments
     ///  * origin - The call origin
     ///  * operation_id - The id of the Operation to approve
-    pub fn version_approve(_origin: OriginFor<T>, _operation_id: GenericId) -> DispatchResultWithPostInfo {
+    #[pallet::weight(<T as Config>::WeightInfo::version_approve())]
+    pub fn version_approve(_origin: OriginFor<T>, _operation_id: OperationId) -> DispatchResultWithPostInfo {
       Ok(().into())
     }
   }

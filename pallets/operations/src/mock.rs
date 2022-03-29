@@ -41,8 +41,8 @@ frame_support::construct_runtime!(
         UncheckedExtrinsic = UncheckedExtrinsic,
     {
         System: system::{Module, Call, Config, Storage, Event<T>},
-        OperationTest: operations::{Module, Call, Storage, Event<T>},
         AnagolayTest: anagolay_support::{Module, Call, Storage},
+        OperationTest: operations::{Module, Call, Storage, Event<T>},
     }
 );
 

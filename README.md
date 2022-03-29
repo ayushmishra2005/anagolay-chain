@@ -91,7 +91,7 @@ To test documentation examples, run `makers test --doc -- --show-output`
 
 ## Benchmarking
 
-To generate pallet weights run from the root of the project. Use the folder name for the pallet. It will add the `an_` prefix to it. This script will compile the node for you and run the benchmarks.
+To generate pallet weights run from the root of the project. Use the folder name for the pallet. This script will compile the node for you and run the benchmarks.
 
 ```sh
 # TEMPLATE  ./scripts/run-benchmarks.sh CHAIN PALLET $RUN_WITH_BUILD[true << default |false]

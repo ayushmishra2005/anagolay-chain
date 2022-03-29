@@ -1,10 +1,10 @@
 [package]
 authors = ['did:substrate:GHm6gp6khjcxQvnbnSsHdYejsFK1nNVxcGyGAsbDfsymtLr']
 repository = 'https://gitlab.com/anagolay/anagolay/'
-homepage = 'https://anagolay.network/pallet/rules'
+homepage = 'https://anagolay.network/pallet/workflows'
 edition = '2018'
 license-file = "./LICENSE"
-name = 'an-rules'
+name = 'workflows'
 version = '0.1.0'
 
 [package.metadata.docs.rs]
