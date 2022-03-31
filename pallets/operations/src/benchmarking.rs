@@ -22,7 +22,7 @@
 use super::*;
 use types::*;
 
-use anagolay_support::AnagolayVersionData;
+use anagolay_support::{AnagolayVersionData, OperationId};
 use frame_benchmarking::{benchmarks, impl_benchmark_test_suite, whitelisted_caller};
 use frame_system::RawOrigin;
 use sp_std::{boxed::Box, vec, vec::Vec};
@@ -39,7 +39,7 @@ benchmarks! {
 
   version_approve {
     let caller: T::AccountId = whitelisted_caller();
-    let op_id = b"a".to_vec();
+    let op_id = OperationId::from("a");
   }: _(RawOrigin::Signed(caller), op_id)
 }
 

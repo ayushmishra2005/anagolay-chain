@@ -22,26 +22,27 @@
 
 use super::{mock::*, *};
 use crate::types::{Workflow, WorkflowArtifactType, WorkflowData, WorkflowVersion, WorkflowVersionData};
-use anagolay_support::{AnagolayArtifactStructure, AnagolayStructureData};
+use anagolay_support::{AnagolayArtifactStructure, AnagolayStructureData, ArtifactId, VersionId, WorkflowId};
 use frame_support::{assert_noop, assert_ok};
 
 fn mock_request() -> (Workflow, WorkflowVersion) {
   let wf = Workflow {
-    id: vec![],
+    id: WorkflowId::from("bafkr4ih2xmsije6aa6yfwjdfmztnnkbb6ip56g3ojfcyfgjx6jsh6bogoe"),
     data: WorkflowData {
-      name: b"wf_a".to_vec(),
+      name: "wf_aaaaa".into(),
+      description: "wf_aaaaa operation description".into(),
       ..WorkflowData::default()
     },
     extra: None,
   };
   let wf_ver = WorkflowVersion {
-    id: vec![],
+    id: VersionId::from("bafybeihc2e5rshwlkcg47uojrhtw7dwhyq2cxwivf3sysfnx5jtuuafvia"),
     data: WorkflowVersionData {
-      entity_id: vec![],
+      entity_id: Some(wf.id.clone()),
       parent_id: None,
       artifacts: vec![AnagolayArtifactStructure {
         artifact_type: WorkflowArtifactType::CRATE,
-        ipfs_cid: b"bafkwfawfawfawfawfawfawfa".to_vec(),
+        ipfs_cid: ArtifactId::from("bafkreibft6r6ijt7lxmbu2x3oq2s2ehwm5kz2nflwnlktdhcq2yfhgd4ku"),
       }],
     },
     extra: None,
@@ -59,7 +60,7 @@ fn workflows_create_workflow() {
     assert_ok!(res);
 
     let wf_id = &wf.data.to_cid();
-    wf_ver.data.entity_id = wf_id.clone();
+    wf_ver.data.entity_id = Some(wf_id.clone());
     let wf_ver_id = &wf_ver.data.to_cid();
 
     let workflow = WorkflowsByWorkflowIdAndAccountId::<Test>::get(wf_id, 1);
@@ -117,20 +118,35 @@ fn workflows_create_workflow_error_mixing_workflows() {
     assert_ok!(res);
 
     let wf_b = Workflow {
-      id: vec![],
+      id: WorkflowId::default(),
       data: WorkflowData {
-        name: b"wf_b".to_vec(),
+        name: "wf_bbbbb".into(),
+        description: "wf_bbbbb operation description".into(),
         ..WorkflowData::default()
       },
       extra: None,
     };
     let wf_b_ver_mixed = WorkflowVersion {
-      id: vec![],
+      id: VersionId::default(),
       data: wf_a_ver.data.clone(),
       extra: None,
     };
     let res = WorkflowTest::create(mock::Origin::signed(1), wf_b.data.clone(), wf_b_ver_mixed.data.clone());
     assert_noop!(res, Error::<Test>::WorkflowVersionPackageAlreadyExists);
+  });
+}
+
+#[test]
+fn workflows_create_workflow_error_bad_request() {
+  new_test_ext().execute_with(|| {
+    let (mut wf, mut wf_ver) = mock_request();
+    wf.data.name = "this_is_a_very_very_very_very_very_very_very_very_very_very_loooooong_workflow_name_that_does_not_respect_maximum_length_constraint".into();
+    let res = WorkflowTest::create(mock::Origin::signed(1), wf.data.clone(), wf_ver.data.clone());
+    assert_noop!(res, Error::<Test>::BadRequest);
+
+    wf_ver.data.artifacts[0].ipfs_cid = ArtifactId::from("bafk_invalid_cid");
+    let res = WorkflowTest::create(mock::Origin::signed(1), wf.data.clone(), wf_ver.data.clone());
+    assert_noop!(res, Error::<Test>::BadRequest);
   });
 }
 

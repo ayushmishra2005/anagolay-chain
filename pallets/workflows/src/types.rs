@@ -24,37 +24,55 @@ use codec::{Decode, Encode};
 use sp_runtime::RuntimeDebug;
 use sp_std::{clone::Clone, collections::btree_map::BTreeMap, default::Default, vec, vec::Vec};
 
-/// OperationVersionReference
+/// Definition of an Operation to execute in a Workflow Segment
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
 pub struct OperationVersionReference {
+  /// The Version id of the Operation to execute
   pub operation_version_id: VersionId,
+  /// The map representing the Operation configuration to apply upon execution
   pub config: BTreeMap<Characters, Vec<Characters>>,
 }
 
-/// WorkflowSegment   
-/// @TODO
+/// Contains a sequence of Operations, the eventual configuration of each one
+/// of them, and a reference to the input required to bootstrap the process. In fact, the required
+/// input may come from other Segments of the Workflow or from external input as well (eg: end-user
+/// interaction)
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
 pub struct WorkflowSegment {
-  pub input: Vec<u8>,
+  /// The collection of inputs for this segment, where a number lesser than zero means that the
+  /// input must be acquired from the outside world (e.g.: user interaction) rather then from a
+  /// precedently executed Workflow Segment (thus, its index)
+  pub input: Vec<i8>,
+  /// The sequence of operations to execute in this Segment
   pub sequence: Vec<OperationVersionReference>,
 }
 
 /// Workflow Data, used to generate `manifest.id`
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
 pub struct WorkflowData {
-  /// Operation name
+  /// Operation name. min 8, max 128(0.12kb) characters, slugify to use _
   pub name: Characters,
-  /// Use markdown but not html
+  /// Description can be markdown but not html. min 8, max 1024(1kb) chars
   pub description: Characters,
-  /// @TODO
+  /// Id of the creator of the workflow as a reference to his account id on the blockchain
   pub creator: CreatorId,
-  /// @TODO
+  /// Tells which groups the Workflow belongs to
   pub groups: Vec<ForWhat>,
-  /// @TODO
+  /// A list of Segment definitions
   pub segments: Vec<WorkflowSegment>,
 }
 
-impl AnagolayStructureData for WorkflowData {}
+impl AnagolayStructureData for WorkflowData {
+  fn validate(&self) -> Result<(), Characters> {
+    if self.name.len() < 8 || self.name.len() > 128 {
+      Err("WorkflowData.name: length must be between 8 and 128 characters".into())
+    } else if self.description.len() < 8 || self.description.len() > 1024 {
+      Err("WorkflowData.description: length must be between 8 and 1024 characters".into())
+    } else {
+      Ok(())
+    }
+  }
+}
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
 pub struct WorkflowExtra {}
@@ -68,9 +86,9 @@ impl Default for WorkflowExtra {
 impl Default for WorkflowData {
   fn default() -> Self {
     WorkflowData {
-      name: b"".to_vec(),
+      name: "".into(),
       creator: CreatorId::default(),
-      description: vec![],
+      description: "".into(),
       groups: vec![ForWhat::default()],
       segments: vec![],
     }

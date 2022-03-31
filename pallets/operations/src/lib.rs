@@ -51,7 +51,9 @@ pub mod pallet {
   use crate::types::{
     Operation, OperationData, OperationRecord, OperationVersion, OperationVersionData, OperationVersionRecord,
   };
-  use anagolay_support::{AnagolayVersionData, AnagolayVersionExtra, OperationId, VersionId};
+  use anagolay_support::{
+    AnagolayStructureData, AnagolayVersionData, AnagolayVersionExtra, Characters, OperationId, VersionId,
+  };
   use frame_support::{pallet_prelude::*, traits::UnixTime};
   use frame_system::pallet_prelude::*;
 
@@ -101,6 +103,8 @@ pub mod pallet {
   pub enum Event<T: Config> {
     /// Operation Manifest created together with Version and Packages.
     OperationCreated(T::AccountId, OperationId),
+    /// Bad request error occurs and this event propagates a detailed description
+    BadRequestError(T::AccountId, Characters),
   }
 
   /// Errors of the Operations pallet
@@ -112,6 +116,8 @@ pub mod pallet {
     OperationVersionPackageAlreadyExists,
     /// The Operation already has an initial Version and cannot be published again.
     OperationAlreadyInitialized,
+    /// A parameter of the request is invalid or does not respect a given constraint
+    BadRequest,
   }
 
   #[pallet::hooks]
@@ -121,7 +127,7 @@ pub mod pallet {
   impl<T: Config> Pallet<T> {
     /// Create Operation manifest and the initial Version.
     ///
-    /// Once you have created the Manifest this extrinsic will always fail with 3 different
+    /// Once you have created the Manifest this extrinsic will always fail with different
     /// errors, each depend on the parts of the structure.
     /// There is a check that a user cannot cheat and create new package if the package is
     /// connected to other Operation or any other Version.
@@ -137,6 +143,7 @@ pub mod pallet {
     /// * `OperationAlreadyInitialized` - if the Operation already has an initial Version
     /// * `OperationVersionPackageAlreadyExists` - one of the packages of the Version is already
     ///   registered to another Operation
+    /// * `BadRequest` - if the request is invalid or does not respect a given constraint
     ///
     /// # Return
     /// `DispatchResultWithPostInfo` containing Unit type
@@ -147,6 +154,17 @@ pub mod pallet {
       version_data: OperationVersionData,
     ) -> DispatchResultWithPostInfo {
       let sender = ensure_signed(origin.clone())?;
+
+      let operation_data_validation = operation_data.validate();
+      if let Err(ref message) = operation_data_validation {
+        Self::deposit_event(Event::BadRequestError(sender.clone(), message.clone()));
+      }
+      ensure!(operation_data_validation.is_ok(), Error::<T>::BadRequest);
+      let version_data_validation = version_data.validate();
+      if let Err(ref message) = version_data_validation {
+        Self::deposit_event(Event::BadRequestError(sender.clone(), message.clone()));
+      }
+      ensure!(version_data_validation.is_ok(), Error::<T>::BadRequest);
 
       let operation = Operation::new(operation_data);
 
@@ -174,7 +192,7 @@ pub mod pallet {
 
       let operation_version = OperationVersion::new_with_extra(
         AnagolayVersionData {
-          entity_id: operation.id.clone(),
+          entity_id: Some(operation.id.clone()),
           ..version_data.clone()
         },
         AnagolayVersionExtra {
