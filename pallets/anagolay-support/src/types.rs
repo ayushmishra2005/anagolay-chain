@@ -116,7 +116,7 @@ impl Default for Characters {
 }
 
 impl Characters {
-  /// Convenience method to create a class from a string slice when the result type is implicit
+  /// Convenience method to create `Characters` from a string slice when the result type is implicit
   ///
   /// # Example
   ///
@@ -407,6 +407,8 @@ pub trait ArtifactType: Encode + Decode + Clone + PartialEq + Eq {}
 pub struct AnagolayArtifactStructure<T: ArtifactType> {
   /// Type of the artifact
   pub artifact_type: T,
+  /// Extension of the stored file
+  pub file_extension: Characters,
   /// IPFS cid
   pub ipfs_cid: ArtifactId,
 }
@@ -462,6 +464,15 @@ impl<T: ArtifactType> Default for AnagolayVersionData<T> {
 
 /// Implementation of AnagolayStructureData trait for AnagolayVersionData
 impl<T: ArtifactType> AnagolayStructureData for AnagolayVersionData<T> {
+  /// Validate the following constraints:
+  /// * entity_id: If present, must be a valid CID
+  /// * parent_id: If present, must be a valid CID
+  /// * artifacts: For each artifact, the file_extension must not be empty and the ipfs_cid must be
+  ///   a valid CID
+  ///
+  /// # Return
+  /// An unit result if the validation is successful, a `Character` error with a description in
+  /// case it fails
   fn validate(&self) -> Result<(), Characters> {
     if let Some(entity_id) = &self.entity_id {
       entity_id.validate().map_err(|err| {
@@ -481,15 +492,20 @@ impl<T: ArtifactType> AnagolayStructureData for AnagolayVersionData<T> {
       .artifacts
       .iter()
       .enumerate()
-      .find(|(_, artifact)| artifact.ipfs_cid.validate().is_err())
+      .find(|(_, artifact)| artifact.ipfs_cid.validate().is_err() || artifact.file_extension.len() == 0)
     {
-      artifact.ipfs_cid.validate().map_err(|err| {
-        Characters::from(type_name_of_val(&self))
-          .concat(".artifacts[")
-          .concat_u8(*index as u8)
-          .concat("]: ")
-          .concat(err.as_str())
-      })?;
+      let message = Characters::from(type_name_of_val(&self))
+        .concat(".artifacts[")
+        .concat_u8(*index as u8)
+        .concat("]");
+      if artifact.file_extension.len() == 0 {
+        return Err(message.concat(".file_extension: cannot be empty".into()));
+      } else {
+        artifact
+          .ipfs_cid
+          .validate()
+          .map_err(|err| message.concat(".ipfs_cid: ").concat(err.as_str()))?;
+      }
     }
     Ok(())
   }
