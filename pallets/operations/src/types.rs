@@ -38,9 +38,9 @@ pub type TypeName = Vec<u8>;
 /// to produce its id
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
 pub struct OperationData {
-  /// Operation name
+  /// Operation name. min 8, max 128(0.12kb) characters, slugify to use _
   pub name: Characters,
-  /// Use markdown but not html
+  /// Description can be markdown but not html. min 8, max 1024(1kb) chars
   pub description: Characters,
   /// What operation accepts in the implementation. these are the params of the function with the
   /// types
@@ -52,9 +52,10 @@ pub struct OperationData {
   pub groups: Vec<ForWhat>,
   /// Data type name defining the operation output
   pub output: TypeName,
-  /// The fully qualified URL for the repository, this can be any public repo URL
+  /// The fully qualified URL for the repository, this can be any public repo URL. min 8, max
+  /// 128(0.12kb) characters
   pub repository: Characters,
-  /// Short name of the license, like "Apache-2.0"
+  /// Short name of the license, like "Apache-2.0". min 8, max 128(0.12kb) characters,
   pub license: Characters,
   /// Indicator of the capability of the Operation to work in no-std environment
   pub nostd: bool,
@@ -64,21 +65,35 @@ pub struct OperationData {
 impl Default for OperationData {
   fn default() -> Self {
     OperationData {
-      name: vec![],
-      description: vec![],
+      name: "".into(),
+      description: "".into(),
       inputs: vec![],
       config: BTreeMap::new(),
       groups: vec![],
       output: vec![],
-      repository: vec![],
-      license: vec![],
+      repository: "".into(),
+      license: "".into(),
       nostd: false,
     }
   }
 }
 
 /// Implementation of AnagolayStructureData trait for OperationData
-impl AnagolayStructureData for OperationData {}
+impl AnagolayStructureData for OperationData {
+  fn validate(&self) -> Result<(), Characters> {
+    if self.name.len() < 8 || self.name.len() > 128 {
+      Err("OperationData.name: length must be between 8 and 128 characters".into())
+    } else if self.description.len() < 8 || self.description.len() > 1024 {
+      Err("OperationData.description: length must be between 8 and 1024 characters".into())
+    } else if self.repository.len() < 8 || self.repository.len() > 128 {
+      Err("OperationData.repository: length must be between 8 and 128 characters".into())
+    } else if self.license.len() < 8 || self.license.len() > 128 {
+      Err("OperationData.license: length must be between 8 and 128 characters".into())
+    } else {
+      Ok(())
+    }
+  }
+}
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
 /// Extra information (non hashed) for Operation entity

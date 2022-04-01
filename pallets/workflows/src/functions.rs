@@ -61,7 +61,7 @@ impl<T: Config> Pallet<T> {
       block_number,
     };
 
-    let workflow_id = &workflow_version.data.entity_id;
+    let workflow_id = &workflow_version.data.entity_id.as_ref().unwrap();
     let workflow_version_id = workflow_version.id.to_owned();
 
     VersionsByVersionId::<T>::insert(&workflow_version_id, record);

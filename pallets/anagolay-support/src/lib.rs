@@ -18,6 +18,7 @@
 
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
+#![feature(type_name_of_val)]
 
 //! # Anagolay blockchain
 //! This is the support pallet for the anagolay blockchain. It factors common types and behaviors
@@ -44,6 +45,24 @@
 //! * functions - Private behaviour of the pallet, the lib entry points delegate to this module
 //! * mock - Prepares the mocks for unit tests, only used in test configuration
 //! * types - Collects the types and the data model used by the pallet
+//!
+//! ## Features of the support crate
+//! The factored common types are:
+//!
+//! * Identifiers - Every entity has their own (`OperationId`, `WorkflowId`, etc.) but they are all
+//! aliases of a private struct `GenericId` that deals with validation and (de)serialization
+//! * Characters - Offers an interface to deal with strings in nostd
+//! * AnagolayStructure - Provides a pattern struct with an id, some data nad an optional extra.
+//! The id is guaranteed to be computed from the data.
+//! * AnagolayVersion - Another pattern struct used by all entity to deal with their published
+//!   artifacts and
+//! incremental versions on the blockchain
+//! * AnagolayRecord - Pattern struct used to store the entities on the chain along with the caller
+//!   and the
+//! block number
+
+// Ensure we're `no_std` when compiling for Wasm.
+#![cfg_attr(not(feature = "std"), no_std)]
 
 mod functions;
 mod types;

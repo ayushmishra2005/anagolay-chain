@@ -65,7 +65,7 @@ impl<T: Config> Pallet<T> {
       block_number,
     };
 
-    let operation_id = &operation_version.data.entity_id;
+    let operation_id = &operation_version.data.entity_id.as_ref().unwrap();
     let operation_version_id = operation_version.id.to_owned();
 
     VersionsByVersionId::<T>::insert(&operation_version_id, record);

@@ -52,7 +52,9 @@ pub mod pallet {
   use crate::types::{
     Workflow, WorkflowData, WorkflowRecord, WorkflowVersion, WorkflowVersionData, WorkflowVersionRecord,
   };
-  use anagolay_support::{AnagolayVersionData, AnagolayVersionExtra, VersionId, WorkflowId};
+  use anagolay_support::{
+    AnagolayStructureData, AnagolayVersionData, AnagolayVersionExtra, Characters, VersionId, WorkflowId,
+  };
   use frame_support::{pallet_prelude::*, traits::UnixTime};
   use frame_system::pallet_prelude::*;
   use sp_std::vec::Vec;
@@ -105,6 +107,8 @@ pub mod pallet {
   pub enum Event<T: Config> {
     /// Workflow Manifest created together with Version and Packages.
     WorkflowCreated(T::AccountId, WorkflowId),
+    /// Bad request error occurs and this event propagates a detailed description
+    BadRequestError(T::AccountId, Characters),
   }
 
   /// Errors of the Operations pallet
@@ -116,6 +120,8 @@ pub mod pallet {
     WorkflowVersionPackageAlreadyExists,
     /// The Workflow already has an initial Version and cannot be published again.
     WorkflowAlreadyInitialized,
+    /// A parameter of the request is invalid or does not respect a given constraint
+    BadRequest,
   }
 
   #[pallet::hooks]
@@ -141,6 +147,7 @@ pub mod pallet {
     /// * `WorkflowAlreadyInitialized` - if the Workflow already has an initial Version
     /// * `WorkflowVersionPackageAlreadyExists` - one of the packages of the Version is already
     ///   registered to another Workflow
+    /// * `BadRequest` - if the request is invalid or does not respect a given constraint
     ///
     /// # Return
     /// `DispatchResultWithPostInfo` containing Unit type
@@ -151,6 +158,17 @@ pub mod pallet {
       version_data: WorkflowVersionData,
     ) -> DispatchResultWithPostInfo {
       let sender = ensure_signed(origin.clone())?;
+
+      let workflow_data_validation = workflow_data.validate();
+      if let Err(ref message) = workflow_data_validation {
+        Self::deposit_event(Event::BadRequestError(sender.clone(), message.clone()));
+      }
+      ensure!(workflow_data_validation.is_ok(), Error::<T>::BadRequest);
+      let version_data_validation = version_data.validate();
+      if let Err(ref message) = version_data_validation {
+        Self::deposit_event(Event::BadRequestError(sender.clone(), message.clone()));
+      }
+      ensure!(version_data_validation.is_ok(), Error::<T>::BadRequest);
 
       let workflow = Workflow::new(workflow_data);
 
@@ -178,7 +196,7 @@ pub mod pallet {
 
       let workflow_version = WorkflowVersion::new_with_extra(
         AnagolayVersionData {
-          entity_id: workflow.id.clone(),
+          entity_id: Some(workflow.id.clone()),
           ..version_data.clone()
         },
         AnagolayVersionExtra {

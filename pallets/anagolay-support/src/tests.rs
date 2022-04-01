@@ -19,6 +19,7 @@
 //! Tests for the module.
 
 use super::{mock::*, *};
+use crate::ArtifactId;
 use codec::{Decode, Encode};
 use sp_runtime::RuntimeDebug;
 
@@ -32,7 +33,7 @@ fn check_is_existing_artifact() {
 
     impl ArtifactType for TestArtifactType {}
 
-    let test_cid = b"bafktesttesttest".to_vec();
+    let test_cid = ArtifactId::from("bafktesttesttest");
     let artifact = AnagolayArtifactStructure {
       artifact_type: TestArtifactType::TEST,
       ipfs_cid: test_cid.clone(),
