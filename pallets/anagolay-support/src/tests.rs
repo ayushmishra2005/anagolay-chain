@@ -36,6 +36,7 @@ fn check_is_existing_artifact() {
     let test_cid = ArtifactId::from("bafktesttesttest");
     let artifact = AnagolayArtifactStructure {
       artifact_type: TestArtifactType::TEST,
+      file_extension: "tgz".into(),
       ipfs_cid: test_cid.clone(),
     };
 
