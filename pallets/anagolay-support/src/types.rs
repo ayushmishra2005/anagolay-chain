@@ -186,9 +186,6 @@ impl Characters {
   }
 }
 
-/// Placeholder for SSI and DID
-pub type CreatorId = private::GenericId;
-
 /// The type of the values in the `ArtifactsByArtifactId` storage
 pub type ArtifactId = private::GenericId;
 

@@ -81,14 +81,14 @@ impl Default for OperationData {
 /// Implementation of AnagolayStructureData trait for OperationData
 impl AnagolayStructureData for OperationData {
   fn validate(&self) -> Result<(), Characters> {
-    if self.name.len() < 8 || self.name.len() > 128 {
-      Err("OperationData.name: length must be between 8 and 128 characters".into())
-    } else if self.description.len() < 8 || self.description.len() > 1024 {
-      Err("OperationData.description: length must be between 8 and 1024 characters".into())
-    } else if self.repository.len() < 8 || self.repository.len() > 128 {
-      Err("OperationData.repository: length must be between 8 and 128 characters".into())
-    } else if self.license.len() < 8 || self.license.len() > 128 {
-      Err("OperationData.license: length must be between 8 and 128 characters".into())
+    if self.name.len() < 4 || self.name.len() > 128 {
+      Err("OperationData.name: length must be between 4 and 128 characters".into())
+    } else if self.description.len() < 4 || self.description.len() > 1024 {
+      Err("OperationData.description: length must be between 4 and 1024 characters".into())
+    } else if self.repository.len() < 4 || self.repository.len() > 128 {
+      Err("OperationData.repository: length must be between 4 and 128 characters".into())
+    } else if self.license.len() < 4 || self.license.len() > 128 {
+      Err("OperationData.license: length must be between 4 and 128 characters".into())
     } else {
       Ok(())
     }

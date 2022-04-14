@@ -18,7 +18,7 @@
 
 use anagolay_support::{
   AnagolayRecord, AnagolayStructure, AnagolayStructureData, AnagolayStructureExtra, AnagolayVersionData,
-  AnagolayVersionExtra, ArtifactType, Characters, CreatorId, ForWhat, VersionId, WasmArtifactSubType,
+  AnagolayVersionExtra, ArtifactType, Characters, ForWhat, VersionId, WasmArtifactSubType,
 };
 use codec::{Decode, Encode};
 use sp_runtime::RuntimeDebug;
@@ -28,7 +28,7 @@ use sp_std::{clone::Clone, collections::btree_map::BTreeMap, default::Default, v
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
 pub struct OperationVersionReference {
   /// The Version id of the Operation to execute
-  pub operation_version_id: VersionId,
+  pub version_id: VersionId,
   /// The map representing the Operation configuration to apply upon execution
   pub config: BTreeMap<Characters, Vec<Characters>>,
 }
@@ -54,20 +54,23 @@ pub struct WorkflowData {
   pub name: Characters,
   /// Description can be markdown but not html. min 8, max 1024(1kb) chars
   pub description: Characters,
-  /// Id of the creator of the workflow as a reference to his account id on the blockchain
-  pub creator: CreatorId,
+  /// Identifier of the creator users or system as a reference to his account id on the blockchain,
+  /// pgp key or email
+  pub creators: Vec<Characters>,
   /// Tells which groups the Workflow belongs to
   pub groups: Vec<ForWhat>,
   /// A list of Segment definitions
   pub segments: Vec<WorkflowSegment>,
+  /// A semantic version to use when producing the artifacts
+  pub version: Characters,
 }
 
 impl AnagolayStructureData for WorkflowData {
   fn validate(&self) -> Result<(), Characters> {
-    if self.name.len() < 8 || self.name.len() > 128 {
-      Err("WorkflowData.name: length must be between 8 and 128 characters".into())
-    } else if self.description.len() < 8 || self.description.len() > 1024 {
-      Err("WorkflowData.description: length must be between 8 and 1024 characters".into())
+    if self.name.len() < 4 || self.name.len() > 128 {
+      Err("WorkflowData.name: length must be between 4 and 128 characters".into())
+    } else if self.description.len() < 4 || self.description.len() > 1024 {
+      Err("WorkflowData.description: length must be between 4 and 1024 characters".into())
     } else {
       Ok(())
     }
@@ -87,10 +90,11 @@ impl Default for WorkflowData {
   fn default() -> Self {
     WorkflowData {
       name: "".into(),
-      creator: CreatorId::default(),
+      creators: vec!["".into()],
       description: "".into(),
       groups: vec![ForWhat::default()],
       segments: vec![],
+      version: "".into(),
     }
   }
 }
