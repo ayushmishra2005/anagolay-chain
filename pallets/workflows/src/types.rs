@@ -18,7 +18,7 @@
 
 use anagolay_support::{
   AnagolayRecord, AnagolayStructure, AnagolayStructureData, AnagolayStructureExtra, AnagolayVersionData,
-  AnagolayVersionExtra, ArtifactType, Characters, ForWhat, VersionId, WasmArtifactSubType,
+  AnagolayVersionExtra, ArtifactType, Characters, CreatorId, ForWhat, VersionId, WasmArtifactSubType,
 };
 use codec::{Decode, Encode};
 use sp_runtime::RuntimeDebug;
@@ -42,7 +42,7 @@ pub struct WorkflowSegment {
   /// The collection of inputs for this segment, where a number lesser than zero means that the
   /// input must be acquired from the outside world (e.g.: user interaction) rather then from a
   /// precedently executed Workflow Segment (thus, its index)
-  pub input: Vec<i8>,
+  pub inputs: Vec<i8>,
   /// The sequence of operations to execute in this Segment
   pub sequence: Vec<OperationVersionReference>,
 }
@@ -56,7 +56,7 @@ pub struct WorkflowData {
   pub description: Characters,
   /// Identifier of the creator users or system as a reference to his account id on the blockchain,
   /// pgp key or email
-  pub creators: Vec<Characters>,
+  pub creators: Vec<CreatorId>,
   /// Tells which groups the Workflow belongs to
   pub groups: Vec<ForWhat>,
   /// A list of Segment definitions
@@ -71,6 +71,8 @@ impl AnagolayStructureData for WorkflowData {
       Err("WorkflowData.name: length must be between 4 and 128 characters".into())
     } else if self.description.len() < 4 || self.description.len() > 1024 {
       Err("WorkflowData.description: length must be between 4 and 1024 characters".into())
+    } else if self.creators.len() != 1 {
+      Err("WorkflowData.creators: only Workflows with a single creator are supported at the moment".into())
     } else {
       Ok(())
     }
