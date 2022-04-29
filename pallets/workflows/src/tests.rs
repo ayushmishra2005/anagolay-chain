@@ -31,6 +31,7 @@ fn mock_request() -> (Workflow, WorkflowVersion) {
     data: WorkflowData {
       name: "wf_aaaaa".into(),
       description: "wf_aaaaa operation description".into(),
+      version: "0.1.0".into(),
       ..WorkflowData::default()
     },
     extra: None,
@@ -123,6 +124,7 @@ fn workflows_create_workflow_error_mixing_workflows() {
       data: WorkflowData {
         name: "wf_bbbbb".into(),
         description: "wf_bbbbb operation description".into(),
+        version: "0.1.0".into(),
         ..WorkflowData::default()
       },
       extra: None,

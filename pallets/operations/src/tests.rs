@@ -154,6 +154,24 @@ fn operations_create_operation_error_bad_request() {
 }
 
 #[test]
+fn operations_create_operation_with_config() {
+  new_test_ext().execute_with(|| {
+    let (mut op, op_ver) = mock_request();
+    op.data
+      .config
+      .insert("test_key".into(), vec!["test_val0".into(), "test_val1".into()]);
+    let res = OperationTest::create(mock::Origin::signed(1), op.data.clone(), op_ver.data.clone());
+    assert_ok!(res);
+
+    let op_id = &op.data.to_cid();
+    let stored_op = OperationsByOperationIdAndAccountId::<Test>::get(op_id, 1);
+    let mut stored_op_keys = stored_op.record.data.config.into_keys();
+    let mut op_keys = op.data.config.into_keys();
+    assert_eq!(stored_op_keys.next().unwrap(), op_keys.next().unwrap());
+  });
+}
+
+#[test]
 fn test_template() {
   new_test_ext().execute_with(|| {});
 }

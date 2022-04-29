@@ -30,7 +30,7 @@ pub struct OperationVersionReference {
   /// The Version id of the Operation to execute
   pub version_id: VersionId,
   /// The map representing the Operation configuration to apply upon execution
-  pub config: BTreeMap<Characters, Vec<Characters>>,
+  pub config: BTreeMap<Characters, Characters>,
 }
 
 /// Contains a sequence of Operations, the eventual configuration of each one
@@ -50,13 +50,13 @@ pub struct WorkflowSegment {
 /// Workflow Data, used to generate `manifest.id`
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
 pub struct WorkflowData {
-  /// Operation name. min 8, max 128(0.12kb) characters, slugify to use _
+  /// Human readable Workflow name. min 8, max 128(0.12kb) characters, slugify to use _
   pub name: Characters,
-  /// Description can be markdown but not html. min 8, max 1024(1kb) chars
-  pub description: Characters,
   /// Identifier of the creator users or system as a reference to his account id on the blockchain,
   /// pgp key or email
   pub creators: Vec<CreatorId>,
+  /// Description can be markdown but not html. min 8, max 1024(1kb) chars
+  pub description: Characters,
   /// Tells which groups the Workflow belongs to
   pub groups: Vec<ForWhat>,
   /// A list of Segment definitions
@@ -67,12 +67,14 @@ pub struct WorkflowData {
 
 impl AnagolayStructureData for WorkflowData {
   fn validate(&self) -> Result<(), Characters> {
-    if self.name.len() < 4 || self.name.len() > 128 {
-      Err("WorkflowData.name: length must be between 4 and 128 characters".into())
-    } else if self.description.len() < 4 || self.description.len() > 1024 {
+    if self.name.len() < 8 || self.name.len() > 128 {
+      Err("WorkflowData.name: length must be between 8 and 128 characters".into())
+    } else if self.description.len() < 8 || self.description.len() > 1024 {
       Err("WorkflowData.description: length must be between 4 and 1024 characters".into())
-    } else if self.creators.len() != 1 {
-      Err("WorkflowData.creators: only Workflows with a single creator are supported at the moment".into())
+    } else if self.name.len() < 8 || self.name.len() > 128 {
+      Err("WorkflowData.name: length must be between 4 and 128 characters".into())
+    } else if self.version.len() == 0 {
+      Err("WorkflowData.version: cannot be blank".into())
     } else {
       Ok(())
     }
