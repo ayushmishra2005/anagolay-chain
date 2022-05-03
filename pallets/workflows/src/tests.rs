@@ -42,8 +42,8 @@ fn mock_request() -> (Workflow, WorkflowVersion) {
       entity_id: Some(wf.id.clone()),
       parent_id: None,
       artifacts: vec![AnagolayArtifactStructure {
-        artifact_type: WorkflowArtifactType::CRATE,
-        file_extension: "tgz".into(),
+        artifact_type: WorkflowArtifactType::Git,
+        file_extension: "git".into(),
         ipfs_cid: ArtifactId::from("bafkreibft6r6ijt7lxmbu2x3oq2s2ehwm5kz2nflwnlktdhcq2yfhgd4ku"),
       }],
     },

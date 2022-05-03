@@ -41,8 +41,8 @@ fn mock_request() -> (Operation, OperationVersion) {
       entity_id: Some(op.id.clone()),
       parent_id: None,
       artifacts: vec![AnagolayArtifactStructure {
-        artifact_type: OperationArtifactType::CRATE,
-        file_extension: "tgz".into(),
+        artifact_type: OperationArtifactType::Git,
+        file_extension: "git".into(),
         ipfs_cid: ArtifactId::from("bafkreibft6r6ijt7lxmbu2x3oq2s2ehwm5kz2nflwnlktdhcq2yfhgd4ku"),
       }],
     },

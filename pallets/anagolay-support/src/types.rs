@@ -17,7 +17,7 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 use cid::{multihash::MultihashGeneric, Cid};
 use codec::{Decode, Encode};
-use core::any::type_name_of_val;
+use core::{any::type_name_of_val, str::pattern::Pattern};
 use multibase::Base;
 use multihash::{Blake3_256, Code, Hasher};
 use sp_runtime::RuntimeDebug;
@@ -183,6 +183,17 @@ impl Characters {
   /// This `Characters` length
   pub fn len(&self) -> usize {
     self.0.len()
+  }
+
+  /// Splits this `Characters` using pat as delimeter
+  ///
+  /// # Arguments
+  /// * pat - Pattern to use as delimiter for the split
+  ///
+  /// # Return
+  /// Collection of splits of this `Characters` using pat as delimeter
+  pub fn split<'a, P: Pattern<'a>>(&'a self, pat: P) -> Vec<Characters> {
+    self.as_str().split(pat).map(|split| split.into()).collect()
   }
 }
 
@@ -384,7 +395,7 @@ impl<T: AnagolayStructureData, U: AnagolayStructureExtra> AnagolayStructure<T, U
 ///
 /// #[derive(Encode, Decode, Clone, PartialEq, Eq)]
 /// enum OperationArtifactType {
-///   CRATE, WASM, DOCS, GIT
+///   Wasm, Docs, Git
 /// }
 ///
 /// impl ArtifactType for OperationArtifactType {}
@@ -393,7 +404,7 @@ impl<T: AnagolayStructureData, U: AnagolayStructureExtra> AnagolayStructure<T, U
 ///
 /// #[derive(Encode, Decode, Clone, PartialEq, Eq)]
 /// enum ImageArtifactType {
-///   RAW
+///   Raw
 /// }
 ///
 /// impl ArtifactType for ImageArtifactType {}
@@ -433,7 +444,7 @@ impl AnagolayStructureExtra for AnagolayVersionExtra {}
 ///
 /// #[derive(Encode, Decode, Clone, PartialEq, Eq)]
 /// enum OperationArtifactType {
-///   CRATE, WASM, DOCS, GIT
+///   Wasm, Docs, Git
 /// }
 /// impl ArtifactType for OperationArtifactType {}
 ///
@@ -522,31 +533,34 @@ impl<T: ArtifactType> AnagolayStructureData for AnagolayVersionData<T> {
 ///
 /// #[derive(Encode, Decode, Clone, PartialEq, Eq)]
 /// enum OperationArtifactType {
-///   CRATE, WASM(WasmArtifactSubType), DOCS, GIT
+///   Wasm(WasmArtifactSubType), Docs, Git
 /// }
 /// impl ArtifactType for OperationArtifactType {}
 /// #[derive(Encode, Decode, Clone, PartialEq, Eq)]
 /// enum WorkflowArtifactType {
-///   CRATE, WASM(WasmArtifactSubType), DOCS, GIT
+///   Wasm(WasmArtifactSubType), Docs, Git
 /// }
 /// impl ArtifactType for WorkflowArtifactType {}
 ///
-/// let op_esm_artifact_type = OperationArtifactType::WASM(WasmArtifactSubType::ESM);
-/// let wf_esm_artifact_type = WorkflowArtifactType::WASM(WasmArtifactSubType::ESM);
+/// let op_esm_artifact_type = OperationArtifactType::Wasm(WasmArtifactSubType::Esm);
+/// let wf_esm_artifact_type = WorkflowArtifactType::Wasm(WasmArtifactSubType::Esm);
 /// ```
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
 pub enum WasmArtifactSubType {
   /// CommonJS module for the direct use in the nodejs env which doesn't have the ESM support. When
   /// Nodejs has native ESM support this should be used only for the legacy versions. Check
   /// [here](https://nodejs.org/api/esm.html) the Nodejs ESM status.
-  CJS,
+  Cjs,
   /// Native ES module, usually used with bundler software like webpack. You can use this just by
   /// including it, the wasm will be instantiated on require time. Example can be found
   /// [here](https://rustwasm.github.io/docs/wasm-bindgen/examples/hello-world.html) and official
   /// docs [here](https://rustwasm.github.io/docs/wasm-bindgen/reference/deployment.html#bundlers).
   /// For the official NODEJS support see [this doc](https://nodejs.org/api/esm.html)
   /// If you want to use this with nodejs, use the bundler.
-  ESM,
+  Esm,
+  /// Just a compiled WASM file without any acompanied JS or `.d.ts` files. You have to do all
+  /// things manual.
+  Wasm,
   /// This is an ES module with manual instantiation of the wasm. It doesn't include polyfills
   /// More info is on the
   /// [wasm-pack doc website](https://rustwasm.github.io/docs/wasm-bindgen/reference/deployment.html#without-a-bundler)
@@ -562,8 +576,5 @@ pub enum WasmArtifactSubType {
   /// }
   /// main().catch(console.error)
   /// ```
-  WEB,
-  /// Just a compiled WASM file without any acompanied JS or `.d.ts` files. You have to do all
-  /// things manual.
-  WASM,
+  Web,
 }
