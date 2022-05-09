@@ -22,7 +22,7 @@
 
 use crate as workflows;
 use crate::Config;
-use frame_support::{parameter_types, traits::UnixTime};
+use frame_support::{pallet_prelude::GenesisBuild, parameter_types, traits::UnixTime};
 use frame_system as system;
 use sp_core::H256;
 use sp_runtime::{
@@ -43,7 +43,7 @@ frame_support::construct_runtime!(
     {
         System: system::{Module, Call, Config, Storage, Event<T>},
         AnagolayTest: anagolay_support::{Module, Call, Storage},
-        WorkflowTest: workflows::{Module, Call, Storage, Event<T>},
+        WorkflowTest: workflows::{Module, Call, Storage, Event<T>, Config<T>},
     }
 );
 
@@ -94,6 +94,13 @@ impl Config for Test {
 impl anagolay_support::Config for Test {}
 
 // Build genesis storage according to the mock runtime.
-pub fn new_test_ext() -> sp_io::TestExternalities {
-  system::GenesisConfig::default().build_storage::<Test>().unwrap().into()
+pub fn new_test_ext(pallet_genesis: Option<crate::GenesisConfig<Test>>) -> sp_io::TestExternalities {
+  let mut t = system::GenesisConfig::default().build_storage::<Test>().unwrap();
+  if let Some(pg) = pallet_genesis {
+    pg.assimilate_storage(&mut t).unwrap();
+  }
+
+  let mut ext: sp_io::TestExternalities = t.into();
+  ext.execute_with(|| System::set_block_number(1));
+  ext
 }
