@@ -20,8 +20,9 @@ std = [
   'sp-core/std',
   'sp-runtime/std',
   'sp-std/std',
-  "sp-io/std",
-  "anagolay-support/std",
+  'sp-io/std',
+  'anagolay-support/std',
+  'serde',
 ]
 runtime-benchmarks = [
   'frame-benchmarking',
@@ -45,3 +46,4 @@ sp-runtime = { version = '3.0', default-features = false }
 sp-std = { version = '3.0', default-features = false }
 
 anagolay-support = { path = '../anagolay-support', default-features = false }
+serde = { version = '1.0', features = ['derive'], optional = true }

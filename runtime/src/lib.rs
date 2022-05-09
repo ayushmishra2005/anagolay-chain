@@ -358,9 +358,9 @@ construct_runtime!(
 
         // Used for the module anagolay
         Anagolay: anagolay_support::{Module},
-        Operations: operations::{Module, Call, Storage, Event<T>},
+        Operations: operations::{Module, Call, Storage, Event<T>, Config<T>},
 //        Statements: an_statements::{Module, Call, Storage, Event<T>},
-        Workflows: workflows::{Module, Call, Storage, Event<T>},
+        Workflows: workflows::{Module, Call, Storage, Event<T>, Config<T>},
 //        Poe: an_poe::{Module, Call, Storage, Event<T>},
     }
 );
