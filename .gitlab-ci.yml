@@ -27,8 +27,8 @@ workflow:
 # https://docs.gitlab.com/ee/ci/yaml/README.html#cache
 cache:
   key: $CI_COMMIT_REF_SLUG
-  paths:
-    - target/
+  # paths: # the target is too bog for normal speed upload
+  # - target/
   # policy: pull-push # default
 
 .build-push-oci-image: &build-push-oci-image
