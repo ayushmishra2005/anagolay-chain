@@ -40,7 +40,7 @@ impl<T: Config> Pallet<T> {
       block_number,
     };
 
-    OperationsByOperationIdAndAccountId::<T>::insert(operation.id.clone(), account_id.clone(), record);
+    OperationByOperationIdAndAccountId::<T>::insert(operation.id.clone(), account_id.clone(), record);
 
     Total::<T>::put(Self::total().saturating_add(1));
   }
@@ -68,9 +68,9 @@ impl<T: Config> Pallet<T> {
     let operation_id = &operation_version.data.entity_id.as_ref().unwrap();
     let operation_version_id = operation_version.id.to_owned();
 
-    VersionsByVersionId::<T>::insert(&operation_version_id, record);
+    VersionByVersionId::<T>::insert(&operation_version_id, record);
 
-    VersionsByOperationId::<T>::mutate(operation_id, |versions| {
+    VersionIdsByOperationId::<T>::mutate(operation_id, |versions| {
       versions.push(operation_version_id.clone());
     });
 

@@ -43,4 +43,4 @@ benchmarks! {
   }: _(RawOrigin::Signed(caller), op_id)
 }
 
-impl_benchmark_test_suite!(Operations, crate::mock::new_test_ext(), crate::mock::Test);
+impl_benchmark_test_suite!(Operations, crate::mock::new_test_ext(None), crate::mock::Test);

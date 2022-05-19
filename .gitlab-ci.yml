@@ -25,14 +25,11 @@ workflow:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
 
 # https://docs.gitlab.com/ee/ci/yaml/README.html#cache
-# cache:
-#   key: $CI_COMMIT_REF_SLUG
-#   paths:
-#     - target/
-#   policy: pull-push # default
-
-default:
-  cache: {}
+cache:
+  key: $CI_COMMIT_REF_SLUG
+  # paths: # the target is too bog for normal speed upload
+  # - target/
+  # policy: pull-push # default
 
 .build-push-oci-image: &build-push-oci-image
   image: quay.io/buildah/stable
@@ -110,8 +107,8 @@ oci-base:
   services:
     - docker:dind
   when: manual
-  only:
-    - main
+  # only:
+  #   - main
 
 # make a production grade image
 oci-release:
@@ -127,8 +124,8 @@ oci-release:
   services:
     - docker:dind
   when: manual
-  only:
-    - main
+  # only:
+  #   - main
 
 # build the docs and publish them
 docs-build-upload-to-ipfs:

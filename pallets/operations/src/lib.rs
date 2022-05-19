@@ -76,19 +76,20 @@ pub mod pallet {
 
   /// Retrieve the Operation Manifest with the AccountId ( which is the owner ) and OperationId.
   #[pallet::storage]
-  #[pallet::getter(fn operations_by_operation_id_and_account_id)]
-  pub type OperationsByOperationIdAndAccountId<T: Config> =
+  #[pallet::getter(fn operation_by_operation_id_and_account_id)]
+  pub type OperationByOperationIdAndAccountId<T: Config> =
     StorageDoubleMap<_, Blake2_128Concat, OperationId, Twox64Concat, T::AccountId, OperationRecord<T>, ValueQuery>;
 
   /// Retrieve all Versions for a single Operation Manifest.
   #[pallet::storage]
-  #[pallet::getter(fn versions_by_operation_id)]
-  pub type VersionsByOperationId<T: Config> = StorageMap<_, Blake2_128Concat, OperationId, Vec<VersionId>, ValueQuery>;
+  #[pallet::getter(fn version_ids_by_operation_id)]
+  pub type VersionIdsByOperationId<T: Config> =
+    StorageMap<_, Blake2_128Concat, OperationId, Vec<VersionId>, ValueQuery>;
 
   /// Retrieve the Version.
   #[pallet::storage]
-  #[pallet::getter(fn versions_by_version_id)]
-  pub type VersionsByVersionId<T: Config> =
+  #[pallet::getter(fn version_by_version_id)]
+  pub type VersionByVersionId<T: Config> =
     StorageMap<_, Blake2_128Concat, VersionId, OperationVersionRecord<T>, ValueQuery>;
 
   /// Total amount of Operations.
@@ -96,6 +97,57 @@ pub mod pallet {
   #[pallet::getter(fn total)]
   pub type Total<T: Config> = StorageValue<_, u64, ValueQuery>;
 
+  /// The genesis config type.
+  #[pallet::genesis_config]
+  pub struct GenesisConfig<T: Config> {
+    pub operations: Vec<OperationRecord<T>>,
+    pub versions: Vec<OperationVersionRecord<T>>,
+    pub total: u64,
+  }
+
+  /// The default value for the genesis config type.
+  #[cfg(feature = "std")]
+  impl<T: Config> Default for GenesisConfig<T> {
+    fn default() -> Self {
+      Self {
+        operations: Default::default(),
+        versions: Default::default(),
+        total: 0,
+      }
+    }
+  }
+
+  /// The build of genesis for the pallet.
+  #[pallet::genesis_build]
+  impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
+    fn build(&self) {
+      Total::<T>::set(self.total);
+      for op_record in &self.operations {
+        let operation_id = op_record.record.id.clone();
+        OperationByOperationIdAndAccountId::<T>::insert(&operation_id, &op_record.account_id, op_record);
+
+        for ver_record in &self.versions {
+          let version_id = ver_record.record.id.clone();
+          if ver_record
+            .record
+            .data
+            .entity_id
+            .clone()
+            .unwrap_or(OperationId::default()) ==
+            operation_id
+          {
+            VersionIdsByOperationId::<T>::mutate(&operation_id, |version_ids| {
+              version_ids.push(version_id.clone());
+            });
+
+            VersionByVersionId::<T>::insert(version_id, ver_record);
+
+            anagolay_support::Pallet::<T>::store_artifacts(&ver_record.record.data.artifacts);
+          }
+        }
+      }
+    }
+  }
   /// Events of the Operations pallet
   #[pallet::event]
   #[pallet::generate_deposit(pub(crate) fn deposit_event)]
@@ -169,12 +221,12 @@ pub mod pallet {
       let operation = Operation::new(operation_data);
 
       ensure!(
-        OperationsByOperationIdAndAccountId::<T>::iter_prefix_values(&operation.id).count() == 0,
+        OperationByOperationIdAndAccountId::<T>::iter_prefix_values(&operation.id).count() == 0,
         Error::<T>::OperationAlreadyExists
       );
       ensure!(
-        !VersionsByOperationId::<T>::contains_key(&operation.id) ||
-          VersionsByOperationId::<T>::get(&operation.id).is_empty(),
+        !VersionIdsByOperationId::<T>::contains_key(&operation.id) ||
+          VersionIdsByOperationId::<T>::get(&operation.id).is_empty(),
         Error::<T>::OperationAlreadyInitialized
       );
       ensure!(

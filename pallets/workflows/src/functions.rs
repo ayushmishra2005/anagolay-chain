@@ -36,7 +36,7 @@ impl<T: Config> Pallet<T> {
       block_number: *block_number,
     };
 
-    WorkflowsByWorkflowIdAndAccountId::<T>::insert(&workflow.id, &account_id, workflow_record.clone());
+    WorkflowByWorkflowIdAndAccountId::<T>::insert(&workflow.id, &account_id, workflow_record.clone());
 
     Total::<T>::put(Self::total().saturating_add(1));
   }
@@ -64,9 +64,9 @@ impl<T: Config> Pallet<T> {
     let workflow_id = &workflow_version.data.entity_id.as_ref().unwrap();
     let workflow_version_id = workflow_version.id.to_owned();
 
-    VersionsByVersionId::<T>::insert(&workflow_version_id, record);
+    VersionByVersionId::<T>::insert(&workflow_version_id, record);
 
-    VersionsByWorkflowId::<T>::mutate(workflow_id, |versions| {
+    VersionIdsByWorkflowId::<T>::mutate(workflow_id, |versions| {
       versions.push(workflow_version_id.clone());
     });
 

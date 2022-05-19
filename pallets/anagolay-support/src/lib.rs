@@ -19,6 +19,7 @@
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
 #![feature(type_name_of_val)]
+#![feature(pattern)]
 
 //! # Anagolay blockchain
 //! This is the support pallet for the anagolay blockchain. It factors common types and behaviors

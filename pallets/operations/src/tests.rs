@@ -19,9 +19,14 @@
 //! Tests for the module.
 
 use super::{mock::*, *};
-use crate::types::{Operation, OperationArtifactType, OperationData, OperationVersion, OperationVersionData};
-use anagolay_support::{AnagolayArtifactStructure, AnagolayStructureData, ArtifactId, OperationId, VersionId};
-use frame_support::{assert_noop, assert_ok};
+use crate::types::{
+  Operation, OperationArtifactType, OperationData, OperationRecord, OperationVersion, OperationVersionData,
+  OperationVersionRecord,
+};
+use anagolay_support::{
+  AnagolayArtifactStructure, AnagolayStructureData, AnagolayVersionExtra, ArtifactId, OperationId, VersionId,
+};
+use frame_support::{assert_noop, assert_ok, traits::UnixTime};
 
 fn mock_request() -> (Operation, OperationVersion) {
   let op = Operation {
@@ -41,19 +46,63 @@ fn mock_request() -> (Operation, OperationVersion) {
       entity_id: Some(op.id.clone()),
       parent_id: None,
       artifacts: vec![AnagolayArtifactStructure {
-        artifact_type: OperationArtifactType::CRATE,
-        file_extension: "tgz".into(),
+        artifact_type: OperationArtifactType::Git,
+        file_extension: "git".into(),
         ipfs_cid: ArtifactId::from("bafkreibft6r6ijt7lxmbu2x3oq2s2ehwm5kz2nflwnlktdhcq2yfhgd4ku"),
       }],
     },
-    extra: None,
+    extra: Some(AnagolayVersionExtra {
+      created_at: <Test as crate::Config>::TimeProvider::now().as_secs(),
+    }),
   };
   (op, op_ver)
 }
 
 #[test]
+fn operations_test_genesis() {
+  let (mut op, mut op_ver) = mock_request();
+  op.id = op.data.to_cid();
+  op_ver.data.entity_id = Some(op.id.clone());
+  op_ver.id = op_ver.data.to_cid();
+  let account_id: <Test as frame_system::Config>::AccountId = 1;
+  new_test_ext(Some(crate::GenesisConfig::<Test> {
+    operations: vec![OperationRecord::<Test> {
+      record: op.clone(),
+      account_id: account_id.clone(),
+      block_number: 1,
+    }],
+    versions: vec![OperationVersionRecord::<Test> {
+      record: op_ver.clone(),
+      account_id: account_id.clone(),
+      block_number: 1,
+    }],
+    total: 1,
+  }))
+  .execute_with(|| {
+    let operation = OperationByOperationIdAndAccountId::<Test>::get(&op.id, account_id);
+    assert_eq!(operation.record.data, op.data);
+    assert_eq!(operation.record.extra, op.extra);
+
+    let operation_version_ids = VersionIdsByOperationId::<Test>::get(&op.id);
+    assert_eq!(1, operation_version_ids.len());
+    assert_eq!(&op_ver.id, operation_version_ids.get(0).unwrap());
+
+    let artifacts = anagolay_support::Pallet::<Test>::get_artifacts();
+    assert_eq!(1, artifacts.len());
+    assert_eq!(op_ver.data.artifacts[0].ipfs_cid, *artifacts.get(0).unwrap());
+
+    let version = VersionByVersionId::<Test>::get(&op_ver.id);
+    assert_eq!(version.record.data, op_ver.data);
+    assert!(version.record.extra.is_some());
+
+    let operation_total = Total::<Test>::get();
+    assert_eq!(1, operation_total);
+  });
+}
+
+#[test]
 fn operations_create_operation() {
-  new_test_ext().execute_with(|| {
+  new_test_ext(None).execute_with(|| {
     let (op, mut op_ver) = mock_request();
     let origin = mock::Origin::signed(1);
     let res = OperationTest::create(origin, op.data.clone(), op_ver.data.clone());
@@ -64,19 +113,19 @@ fn operations_create_operation() {
     op_ver.data.entity_id = Some(op_id.clone());
     let op_ver_id = &op_ver.data.to_cid();
 
-    let operation = OperationsByOperationIdAndAccountId::<Test>::get(op_id, 1);
+    let operation = OperationByOperationIdAndAccountId::<Test>::get(op_id, 1);
     assert_eq!(operation.record.data, op.data);
     assert_eq!(operation.record.extra, op.extra);
 
-    let operation_versions = VersionsByOperationId::<Test>::get(op_id);
-    assert_eq!(1, operation_versions.len());
-    assert_eq!(op_ver_id, operation_versions.get(0).unwrap());
+    let operation_version_ids = VersionIdsByOperationId::<Test>::get(op_id);
+    assert_eq!(1, operation_version_ids.len());
+    assert_eq!(op_ver_id, operation_version_ids.get(0).unwrap());
 
     let artifacts = anagolay_support::Pallet::<Test>::get_artifacts();
     assert_eq!(1, artifacts.len());
     assert_eq!(op_ver.data.artifacts[0].ipfs_cid, *artifacts.get(0).unwrap());
 
-    let version = VersionsByVersionId::<Test>::get(op_ver_id);
+    let version = VersionByVersionId::<Test>::get(op_ver_id);
     assert_eq!(version.record.data, op_ver.data);
     assert!(version.record.extra.is_some());
 
@@ -87,7 +136,7 @@ fn operations_create_operation() {
 
 #[test]
 fn operations_create_operation_error_on_duplicate_operation() {
-  new_test_ext().execute_with(|| {
+  new_test_ext(None).execute_with(|| {
     let (op, op_ver) = mock_request();
     let res = OperationTest::create(mock::Origin::signed(1), op.data.clone(), op_ver.data.clone());
     assert_ok!(res);
@@ -98,8 +147,8 @@ fn operations_create_operation_error_on_duplicate_operation() {
 }
 
 #[test]
-fn operations_create_operation_error_reusing_package() {
-  new_test_ext().execute_with(|| {
+fn operations_create_operation_error_reusing_artifact() {
+  new_test_ext(None).execute_with(|| {
     let (op, op_ver) = mock_request();
 
     anagolay_support::Pallet::<Test>::store_artifacts(&op_ver.data.artifacts);
@@ -112,7 +161,7 @@ fn operations_create_operation_error_reusing_package() {
 
 #[test]
 fn operations_create_operation_error_mixing_operations() {
-  new_test_ext().execute_with(|| {
+  new_test_ext(None).execute_with(|| {
     let (op_a, op_a_ver) = mock_request();
 
     let res = OperationTest::create(mock::Origin::signed(1), op_a.data.clone(), op_a_ver.data.clone());
@@ -141,7 +190,7 @@ fn operations_create_operation_error_mixing_operations() {
 
 #[test]
 fn operations_create_operation_error_bad_request() {
-  new_test_ext().execute_with(|| {
+  new_test_ext(None).execute_with(|| {
     let (mut op, mut op_ver) = mock_request();
     op.data.name = "this_is_a_very_very_very_very_very_very_very_very_very_very_looooong_operation_name_that_does_not_respect_maximum_length_constraint".into();
     let res = OperationTest::create(mock::Origin::signed(1), op.data.clone(), op_ver.data.clone());
@@ -154,6 +203,24 @@ fn operations_create_operation_error_bad_request() {
 }
 
 #[test]
+fn operations_create_operation_with_config() {
+  new_test_ext(None).execute_with(|| {
+    let (mut op, op_ver) = mock_request();
+    op.data
+      .config
+      .insert("test_key".into(), vec!["test_val0".into(), "test_val1".into()]);
+    let res = OperationTest::create(mock::Origin::signed(1), op.data.clone(), op_ver.data.clone());
+    assert_ok!(res);
+
+    let op_id = &op.data.to_cid();
+    let stored_op = OperationByOperationIdAndAccountId::<Test>::get(op_id, 1);
+    let mut stored_op_keys = stored_op.record.data.config.into_keys();
+    let mut op_keys = op.data.config.into_keys();
+    assert_eq!(stored_op_keys.next().unwrap(), op_keys.next().unwrap());
+  });
+}
+
+#[test]
 fn test_template() {
-  new_test_ext().execute_with(|| {});
+  new_test_ext(None).execute_with(|| {});
 }

@@ -78,27 +78,79 @@ pub mod pallet {
     type TimeProvider: UnixTime;
   }
 
-  /// Retrieve the Workflow Manifest with the AccountId ( which is the owner ) and WorkflowId.
+  /// Retrieve the Workflow Manifest with the WorkflowId and AccountId ( which is the owner )
   #[pallet::storage]
-  #[pallet::getter(fn workflows_by_account_id_and_workflow_id)]
-  pub type WorkflowsByWorkflowIdAndAccountId<T: Config> =
+  #[pallet::getter(fn workflow_by_workflow_id_and_account_id)]
+  pub type WorkflowByWorkflowIdAndAccountId<T: Config> =
     StorageDoubleMap<_, Blake2_128Concat, WorkflowId, Twox64Concat, T::AccountId, WorkflowRecord<T>, ValueQuery>;
 
   /// Retrieve all Versions for a single Workflow Manifest.
   #[pallet::storage]
-  #[pallet::getter(fn versions_by_operation_id)]
-  pub type VersionsByWorkflowId<T: Config> = StorageMap<_, Blake2_128Concat, WorkflowId, Vec<VersionId>, ValueQuery>;
+  #[pallet::getter(fn version_ids_by_workflow_id)]
+  pub type VersionIdsByWorkflowId<T: Config> = StorageMap<_, Blake2_128Concat, WorkflowId, Vec<VersionId>, ValueQuery>;
 
   /// Retrieve the Version.
   #[pallet::storage]
-  #[pallet::getter(fn versions_by_version_id)]
-  pub type VersionsByVersionId<T: Config> =
+  #[pallet::getter(fn version_by_version_id)]
+  pub type VersionByVersionId<T: Config> =
     StorageMap<_, Blake2_128Concat, VersionId, WorkflowVersionRecord<T>, ValueQuery>;
 
   /// Amount of saved workflows
   #[pallet::storage]
   #[pallet::getter(fn total)]
-  pub type Total<T: Config> = StorageValue<_, u32, ValueQuery>;
+  pub type Total<T: Config> = StorageValue<_, u64, ValueQuery>;
+
+  /// The genesis config type.
+  #[pallet::genesis_config]
+  pub struct GenesisConfig<T: Config> {
+    pub workflows: Vec<WorkflowRecord<T>>,
+    pub versions: Vec<WorkflowVersionRecord<T>>,
+    pub total: u64,
+  }
+
+  /// The default value for the genesis config type.
+  #[cfg(feature = "std")]
+  impl<T: Config> Default for GenesisConfig<T> {
+    fn default() -> Self {
+      Self {
+        workflows: Default::default(),
+        versions: Default::default(),
+        total: 0,
+      }
+    }
+  }
+
+  /// The build of genesis for the pallet.
+  #[pallet::genesis_build]
+  impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
+    fn build(&self) {
+      Total::<T>::set(self.total);
+      for wf_record in &self.workflows {
+        let workflow_id = wf_record.record.id.clone();
+        WorkflowByWorkflowIdAndAccountId::<T>::insert(&workflow_id, &wf_record.account_id, wf_record);
+
+        for ver_record in &self.versions {
+          let version_id = ver_record.record.id.clone();
+          if ver_record
+            .record
+            .data
+            .entity_id
+            .clone()
+            .unwrap_or(WorkflowId::default()) ==
+            workflow_id
+          {
+            VersionIdsByWorkflowId::<T>::mutate(&workflow_id, |version_ids| {
+              version_ids.push(version_id.clone());
+            });
+
+            VersionByVersionId::<T>::insert(version_id, ver_record);
+
+            anagolay_support::Pallet::<T>::store_artifacts(&ver_record.record.data.artifacts);
+          }
+        }
+      }
+    }
+  }
 
   /// Events of the Workflow pallet
   #[pallet::event]
@@ -173,12 +225,12 @@ pub mod pallet {
       let workflow = Workflow::new(workflow_data);
 
       ensure!(
-        WorkflowsByWorkflowIdAndAccountId::<T>::iter_prefix_values(&workflow.id).count() == 0,
+        WorkflowByWorkflowIdAndAccountId::<T>::iter_prefix_values(&workflow.id).count() == 0,
         Error::<T>::WorkflowAlreadyExists
       );
       ensure!(
-        !VersionsByWorkflowId::<T>::contains_key(&workflow.id) ||
-          VersionsByWorkflowId::<T>::get(&workflow.id).is_empty(),
+        !VersionIdsByWorkflowId::<T>::contains_key(&workflow.id) ||
+          VersionIdsByWorkflowId::<T>::get(&workflow.id).is_empty(),
         Error::<T>::WorkflowAlreadyInitialized
       );
       ensure!(

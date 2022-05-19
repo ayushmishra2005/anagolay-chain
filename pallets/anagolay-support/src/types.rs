@@ -17,7 +17,7 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 use cid::{multihash::MultihashGeneric, Cid};
 use codec::{Decode, Encode};
-use core::any::type_name_of_val;
+use core::{any::type_name_of_val, str::pattern::Pattern};
 use multibase::Base;
 use multihash::{Blake3_256, Code, Hasher};
 use sp_runtime::RuntimeDebug;
@@ -43,6 +43,7 @@ mod private {
   /// It follows NewType pattern to provide conversion to and from Vec<u8> for (de)serialization but
   /// also to provide additional behaviour, like validation.
   #[derive(Encode, Decode, Clone, PartialEq, Eq, Ord, PartialOrd, Debug)]
+  #[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
   pub struct GenericId(pub Vec<u8>);
 
   impl From<GenericId> for Vec<u8> {
@@ -95,6 +96,7 @@ mod private {
 /// assert_eq!("hello2world", chars.concat_u8(2u8).concat("world").as_str());
 /// ```
 #[derive(Encode, Decode, Clone, PartialEq, Eq, Ord, PartialOrd, Debug)]
+#[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
 pub struct Characters(Vec<u8>);
 
 impl From<&str> for Characters {
@@ -184,6 +186,17 @@ impl Characters {
   pub fn len(&self) -> usize {
     self.0.len()
   }
+
+  /// Splits this `Characters` using pat as delimeter
+  ///
+  /// # Arguments
+  /// * pat - Pattern to use as delimiter for the split
+  ///
+  /// # Return
+  /// Collection of splits of this `Characters` using pat as delimeter
+  pub fn split<'a, P: Pattern<'a>>(&'a self, pat: P) -> Vec<Characters> {
+    self.as_str().split(pat).map(|split| split.into()).collect()
+  }
 }
 
 /// Placeholder for SSI and DID
@@ -203,6 +216,7 @@ pub type VersionId = private::GenericId;
 
 /// List of equipment that needs workflows generated
 #[derive(Encode, Decode, Clone, PartialEq, Eq, Ord, PartialOrd, Debug)]
+#[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
 pub enum ForWhat {
   /// We are creating it For what? This can be a part of the group
   GENERIC, // 0
@@ -224,6 +238,7 @@ impl Default for ForWhat {
 /// Info, this is what gets stored. The Generic `A` is usally the `AccountId` and `B` is
 /// `BlockNumber`
 #[derive(Default, Encode, Decode, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
 pub struct AnagolayRecord<T, A, B> {
   pub record: T,
   pub account_id: A,
@@ -293,6 +308,7 @@ pub trait AnagolayStructureExtra: Clone + PartialEq + Eq {}
 
 /// Generic structure representing an Anagolay entity
 #[derive(Encode, Decode, Clone, PartialEq, Eq, Debug)]
+#[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
 pub struct AnagolayStructure<T: AnagolayStructureData, U: AnagolayStructureExtra> {
   pub id: private::GenericId,
   pub data: T,
@@ -384,7 +400,7 @@ impl<T: AnagolayStructureData, U: AnagolayStructureExtra> AnagolayStructure<T, U
 ///
 /// #[derive(Encode, Decode, Clone, PartialEq, Eq)]
 /// enum OperationArtifactType {
-///   CRATE, WASM, DOCS, GIT
+///   Wasm, Docs, Git
 /// }
 ///
 /// impl ArtifactType for OperationArtifactType {}
@@ -393,7 +409,7 @@ impl<T: AnagolayStructureData, U: AnagolayStructureExtra> AnagolayStructure<T, U
 ///
 /// #[derive(Encode, Decode, Clone, PartialEq, Eq)]
 /// enum ImageArtifactType {
-///   RAW
+///   Raw
 /// }
 ///
 /// impl ArtifactType for ImageArtifactType {}
@@ -404,6 +420,7 @@ pub trait ArtifactType: Encode + Decode + Clone + PartialEq + Eq {}
 
 /// Operation Version artifact
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
+#[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
 pub struct AnagolayArtifactStructure<T: ArtifactType> {
   /// Type of the artifact
   pub artifact_type: T,
@@ -414,6 +431,7 @@ pub struct AnagolayArtifactStructure<T: ArtifactType> {
 }
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
+#[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
 /// Extra information (non hashed) for an entity Version
 pub struct AnagolayVersionExtra {
   pub created_at: u64,
@@ -433,7 +451,7 @@ impl AnagolayStructureExtra for AnagolayVersionExtra {}
 ///
 /// #[derive(Encode, Decode, Clone, PartialEq, Eq)]
 /// enum OperationArtifactType {
-///   CRATE, WASM, DOCS, GIT
+///   Wasm, Docs, Git
 /// }
 /// impl ArtifactType for OperationArtifactType {}
 ///
@@ -441,6 +459,7 @@ impl AnagolayStructureExtra for AnagolayVersionExtra {}
 /// type OperationVersion = AnagolayStructure<OperationVersionData, AnagolayVersionExtra>;
 /// ```
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
+#[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
 pub struct AnagolayVersionData<T: ArtifactType> {
   /// The id of the Operation, Workflow or other entity to which this Version is
   /// associated. __This field is read-only__
@@ -522,31 +541,35 @@ impl<T: ArtifactType> AnagolayStructureData for AnagolayVersionData<T> {
 ///
 /// #[derive(Encode, Decode, Clone, PartialEq, Eq)]
 /// enum OperationArtifactType {
-///   CRATE, WASM(WasmArtifactSubType), DOCS, GIT
+///   Wasm(WasmArtifactSubType), Docs, Git
 /// }
 /// impl ArtifactType for OperationArtifactType {}
 /// #[derive(Encode, Decode, Clone, PartialEq, Eq)]
 /// enum WorkflowArtifactType {
-///   CRATE, WASM(WasmArtifactSubType), DOCS, GIT
+///   Wasm(WasmArtifactSubType), Docs, Git
 /// }
 /// impl ArtifactType for WorkflowArtifactType {}
 ///
-/// let op_esm_artifact_type = OperationArtifactType::WASM(WasmArtifactSubType::ESM);
-/// let wf_esm_artifact_type = WorkflowArtifactType::WASM(WasmArtifactSubType::ESM);
+/// let op_esm_artifact_type = OperationArtifactType::Wasm(WasmArtifactSubType::Esm);
+/// let wf_esm_artifact_type = WorkflowArtifactType::Wasm(WasmArtifactSubType::Esm);
 /// ```
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
+#[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
 pub enum WasmArtifactSubType {
   /// CommonJS module for the direct use in the nodejs env which doesn't have the ESM support. When
   /// Nodejs has native ESM support this should be used only for the legacy versions. Check
   /// [here](https://nodejs.org/api/esm.html) the Nodejs ESM status.
-  CJS,
+  Cjs,
   /// Native ES module, usually used with bundler software like webpack. You can use this just by
   /// including it, the wasm will be instantiated on require time. Example can be found
   /// [here](https://rustwasm.github.io/docs/wasm-bindgen/examples/hello-world.html) and official
   /// docs [here](https://rustwasm.github.io/docs/wasm-bindgen/reference/deployment.html#bundlers).
   /// For the official NODEJS support see [this doc](https://nodejs.org/api/esm.html)
   /// If you want to use this with nodejs, use the bundler.
-  ESM,
+  Esm,
+  /// Just a compiled WASM file without any acompanied JS or `.d.ts` files. You have to do all
+  /// things manual.
+  Wasm,
   /// This is an ES module with manual instantiation of the wasm. It doesn't include polyfills
   /// More info is on the
   /// [wasm-pack doc website](https://rustwasm.github.io/docs/wasm-bindgen/reference/deployment.html#without-a-bundler)
@@ -562,8 +585,5 @@ pub enum WasmArtifactSubType {
   /// }
   /// main().catch(console.error)
   /// ```
-  WEB,
-  /// Just a compiled WASM file without any acompanied JS or `.d.ts` files. You have to do all
-  /// things manual.
-  WASM,
+  Web,
 }

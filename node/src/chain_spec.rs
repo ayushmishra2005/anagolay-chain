@@ -131,5 +131,7 @@ fn testnet_genesis(
       authorities: initial_authorities.iter().map(|x| (x.1.clone(), 1)).collect(),
     }),
     sudo: Some(SudoConfig { key: root_key }),
+    operations: Default::default(),
+    workflows: Default::default(),
   }
 }
