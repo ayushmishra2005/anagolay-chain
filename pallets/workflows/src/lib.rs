@@ -41,7 +41,7 @@ mod benchmarking;
 mod functions;
 mod mock;
 mod tests;
-mod types;
+pub mod types;
 pub mod weights;
 pub use pallet::*;
 pub use weights::WeightInfo;
