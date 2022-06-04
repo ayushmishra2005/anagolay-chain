@@ -78,7 +78,7 @@ cache:
   before_script:
     - echo "Downloading anagolay ipfs CLI which works with the ipfsAuthProxy."
     - |
-      curl https://ipfs.anagolay.network/ipfs/bafybeiebighwouxt3vkttuhfcwb3dgr7vzxpujlqfzvngt7omnrizjajfy > /usr/local/bin/ipfsCli
+      curl https://ipfs.anagolay.network/ipfs/bafybeifnjzcbu76ivm22w3x37pnqqnha753ity5divosgvdnfu5ybsquji > /usr/local/bin/ipfsCli
       chmod +x /usr/local/bin/ipfsCli
 
 .compiler-info: &compiler-info
@@ -138,9 +138,9 @@ docs-build-upload-to-ipfs:
     - makers docs-flow
 
     - echo "Uploading to IPFS ..."
-    - ipfsCli upload --pin --onlyCid docs/api  > ANAGOLAY_DOCS_CID
+    - ipfsCli add --pin --onlyCid docs/api  > ANAGOLAY_DOCS_CID
     - echo "Published with the CID - $(cat ANAGOLAY_DOCS_CID)"
-    - echo "https://ipfs.anagolay.network/ipfs/$(cat ANAGOLAY_DOCS_CID)/anagolay/index.html"
+    - echo "https://$(cat ANAGOLAY_DOCS_CID).ipfs.anagolay.network/anagolay/index.html"
   when: manual
   # only:
   # - main
