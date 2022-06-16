@@ -15,4 +15,5 @@ apt-get install -y --no-install-recommends \
   libffi-dev \
   pkg-config \
   gcc \
-  build-essential
+  build-essential \
+  direnv

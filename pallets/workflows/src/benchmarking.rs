@@ -19,13 +19,13 @@
 //! Benchmarking for Workflow Pallet
 
 #![cfg(feature = "runtime-benchmarks")]
-
 use super::*;
-use anagolay_support::AnagolayVersionData;
+use crate::types::{Workflow, WorkflowArtifactType, WorkflowData, WorkflowVersion, WorkflowVersionData};
+use anagolay_support::{AnagolayArtifactStructure, AnagolayVersionExtra, ArtifactId, VersionId, WorkflowId};
 use frame_benchmarking::{benchmarks, impl_benchmark_test_suite, whitelisted_caller};
+use frame_support::traits::UnixTime;
 use frame_system::RawOrigin;
 use sp_std::{boxed::Box, vec, vec::Vec};
-use types::*;
 
 #[allow(unused)]
 use crate::Pallet as Workflows;
@@ -33,10 +33,31 @@ use crate::Pallet as Workflows;
 benchmarks! {
   create {
     let caller: T::AccountId = whitelisted_caller();
-    let wf = WorkflowData::default();
-    let wf_ver = AnagolayVersionData::default();
-  }: _(RawOrigin::Signed(caller), wf, wf_ver)
-
+    let wf = Workflow {
+      id: WorkflowId::from("bafkr4ih2xmsije6aa6yfwjdfmztnnkbb6ip56g3ojfcyfgjx6jsh6bogoe"),
+      data: WorkflowData {
+        name: "wf_aaaaa".into(),
+        description: "wf_aaaaa operation description".into(),
+        ..WorkflowData::default()
+      },
+      extra: None,
+    };
+    let wf_ver = WorkflowVersion {
+      id: VersionId::from("bafybeihc2e5rshwlkcg47uojrhtw7dwhyq2cxwivf3sysfnx5jtuuafvia"),
+      data: WorkflowVersionData {
+        entity_id: Some(wf.id.clone()),
+        parent_id: None,
+        artifacts: vec![AnagolayArtifactStructure {
+          artifact_type: WorkflowArtifactType::Git,
+          file_extension: "git".into(),
+          ipfs_cid: ArtifactId::from("bafkreibft6r6ijt7lxmbu2x3oq2s2ehwm5kz2nflwnlktdhcq2yfhgd4ku"),
+        }],
+      },
+      extra: Some(AnagolayVersionExtra {
+        created_at: <T as Config>::TimeProvider::now().as_secs(),
+      }),
+    };
+  }: _(RawOrigin::Signed(caller), wf.data, wf_ver.data)
 }
 
 impl_benchmark_test_suite!(Workflows, crate::mock::new_test_ext(None), crate::mock::Test);

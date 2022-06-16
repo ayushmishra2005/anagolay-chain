@@ -1,11 +1,15 @@
 #!/usr/bin/env bash
 
 set -eu
+
+PROJECT_ROOT=$(git rev-parse --show-toplevel)
+cd $PROJECT_ROOT
+
 chain="${1:-dev}"
 
 echo "1. Building the Anagolay with release and benchmarks..."
 
-cargo make build-release-benchmarks
+makers  --profile=production build-release-benchmarks
 
 echo "2. Running the benchmarks for all pallets indivitually."
 for i in $(ls pallets); do
@@ -19,18 +23,18 @@ echo "Done!"
 
 echo "2. Benchmarking all pallets ⚒⚒"
 
-./target/release/anagolay benchmark \
-  --chain="${chain}" \
-  --steps=50 \
-  --repeat=100 \
-  --pallet="*" \
-  --extrinsic=* \
-  --execution=wasm \
-  --wasm-execution=compiled \
-  --heap-pages=4096 \
-  --output=./runtime/src/weights/ \
-  --template=./templates/module-weight-template.hbs
+# ./target/release/anagolay benchmark \
+#   --chain="${chain}" \
+#   --steps=50 \
+#   --repeat=100 \
+#   --pallet="*" \
+#   --extrinsic=* \
+#   --execution=wasm \
+#   --wasm-execution=compiled \
+#   --heap-pages=4096 \
+#   --output=./runtime/src/weights/ \
+#   --template=./templates/module-weight-template.hbs
 
 # # since benchmark generates a weight.rs file that may or may not cargo fmt'ed.
 # # so do cargo fmt here.
-cargo make fmt
+# makers format

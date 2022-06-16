@@ -16,13 +16,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-//! an_poe pallet is the interface for the creation and management of Proofs of Existence.
-
+//! `poe` pallet is the interface for the creation and management of Proofs of existence.
+//!
+//! Proofs of existence is a structured final output of the Workflow.
+//! The pallet also deals with storage of perceptual hashes.
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use anagolay_support::GenericId;
-use workflows::PutInStorage;
 mod benchmarking;
 mod functions;
 mod mock;
@@ -37,7 +37,8 @@ pub use weights::WeightInfo;
 #[frame_support::pallet]
 pub mod pallet {
   use super::*;
-  use crate::types::ProofRecord;
+  use crate::types::{ProofData, ProofRecord};
+  use anagolay_support::{AnagolayStructureData, Characters, ProofId};
   use frame_support::pallet_prelude::*;
   use frame_system::pallet_prelude::*;
   use sp_runtime::traits::Hash;
@@ -47,62 +48,66 @@ pub mod pallet {
   #[pallet::generate_store(pub(super) trait Store)]
   pub struct Pallet<T>(_);
 
+  /// The pallet's configuration trait.
   #[pallet::config]
-  ///The pallet's configuration trait.
   pub trait Config: frame_system::Config + workflows::Config {
     /// The overarching event type.
     type Event: From<Event<Self>>
       + Into<<Self as frame_system::Config>::Event>
       + IsType<<Self as frame_system::Config>::Event>;
-    // type ExternalWorkflowsStorage: PutInStorage<Self::AccountId, Self::BlockNumber>;
-    type ExternalWorkflowsStorage: PutInStorage;
 
     /// Weight information for extrinsics for this pallet.
     type WeightInfo: WeightInfo;
   }
 
+  /// Retrieve the Proof with the ProofId and the AccountId
   #[pallet::storage]
-  #[pallet::getter(fn proofs)]
-  /// PoE Proofs
-  pub type Proofs<T: Config> =
-    StorageDoubleMap<_, Blake2_128Concat, GenericId, Twox64Concat, T::AccountId, ProofRecord<T>, ValueQuery>;
+  #[pallet::getter(fn proof_by_proof_id_and_account_id)]
+  pub type ProofByProofIdAndAccountId<T: Config> =
+    StorageDoubleMap<_, Blake2_128Concat, ProofId, Twox64Concat, T::AccountId, ProofRecord<T>, ValueQuery>;
 
+  /// Amount of saved Proofs
   #[pallet::storage]
-  #[pallet::getter(fn proofs_count)]
-  /// Proofs count
-  pub(super) type ProofsCount<T: Config> = StorageValue<_, u128, ValueQuery>;
+  #[pallet::getter(fn proof_total)]
+  pub(super) type ProofTotal<T: Config> = StorageValue<_, u128, ValueQuery>;
 
+  /// Retrieve the PhashInfo with its digest and the AccountId
   #[pallet::storage]
-  #[pallet::getter(fn p_hashes)]
-  /// Perceptual hash finder hash(phash) : (PerceptualHash, ProofId)
-  pub(super) type PHashes<T: Config> =
+  #[pallet::getter(fn phash_by_hash_and_account_id)]
+  pub(super) type PhashByHashAndAccountId<T: Config> =
     StorageDoubleMap<_, Blake2_128Concat, T::Hash, Twox64Concat, T::AccountId, PhashInfo, ValueQuery>;
 
-  #[pallet::storage]
-  #[pallet::getter(fn phash_count)]
   /// PHashes count
-  pub(super) type PHashCount<T: Config> = StorageValue<_, u128, ValueQuery>;
+  #[pallet::storage]
+  #[pallet::getter(fn phash_total)]
+  pub(super) type PhashTotal<T: Config> = StorageValue<_, u128, ValueQuery>;
 
+  /// Events of the Poe pallet
   #[pallet::event]
   #[pallet::generate_deposit(pub(crate) fn deposit_event)]
   #[pallet::metadata(T::AccountId = "AccountId", T::Hash = "Hash")]
   pub enum Event<T: Config> {
-    /// Proof is created and claimed . \{owner, cid}\
-    ProofCreated(T::AccountId, GenericId),
-    /// Phash is created. \{owner, pHash}\
+    /// Proof is created and claimed
+    ProofCreated(T::AccountId, ProofId),
+    /// Phash is created
     PhashCreated(T::AccountId, T::Hash),
+    /// Bad request error occurs and this event propagates a detailed description
+    BadRequestError(T::AccountId, Characters),
   }
 
+  /// Errors of the Poe pallet
   #[pallet::error]
   pub enum Error<T> {
-    ///This proof has already been claimed
+    /// This proof has already been claimed
     ProofAlreadyClaimed,
-    ///The proof does not exist, so it cannot be revoked
+    /// The proof does not exist, so it cannot be revoked
     NoSuchProof,
-    ///ForWhat mismatch
-    ProofRuleTypeMismatch,
-    ///PHash + ProofId already exist
+    /// The Workflow groups don't match the Proof groups
+    ProofWorkflowTypeMismatch,
+    /// PHash and ProofId combination already exist
     PHashAndProofIdComboAlreadyExist,
+    /// A parameter of the request is invalid or does not respect a given constraint
+    BadRequest,
   }
 
   #[pallet::hooks]
@@ -111,40 +116,52 @@ pub mod pallet {
   #[pallet::call]
   impl<T: Config> Pallet<T> {
     /// Create proof and claim
+    ///
+    /// # Arguments
+    /// * origin - the call origin
+    /// * proof_data - the data section of the Proof
+    ///
+    /// # Errors
+    /// * `ProofWorkflowTypeMismatch` - if the Workflow groups don't match the Proof groups
+    /// * `ProofAlreadyClaimed` - if the Proof is already registered as claimed
+    ///
+    /// # Return
+    /// `DispatchResultWithPostInfo` containing Unit type
     #[pallet::weight(<T as Config>::WeightInfo::create_proof())]
-    pub(super) fn create_proof(origin: OriginFor<T>, proof: Proof) -> DispatchResultWithPostInfo {
+    pub fn create_proof(origin: OriginFor<T>, proof_data: ProofData) -> DispatchResultWithPostInfo {
       let sender = ensure_signed(origin.clone())?;
 
-      let rule_id = &proof.data.rule_id;
+      let proof_validation = proof_data.validate();
+      if let Err(ref message) = proof_validation {
+        Self::deposit_event(Event::BadRequestError(sender.clone(), message.clone()));
+      }
+      ensure!(proof_validation.is_ok(), Error::<T>::BadRequest);
+
+      let proof = Proof::new(proof_data);
+
+      let workflow_id = &proof.data.workflow_id;
 
       let proof_id = proof.id.clone();
 
-      let rule_record = workflows::Pallet::<T>::workflows(rule_id, &sender);
+      let workflow = workflows::Pallet::<T>::workflow_by_workflow_id_and_account_id(workflow_id, &sender);
+
+      let current_block = <frame_system::Pallet<T>>::block_number();
 
       // @TODO somehow figure this out. we don't need it NOW but must be done before the Milestone 2 is
       // submitted ensure!(&rule_record, Error::<T>::NoSuchRule);
 
       // The types must match
-      if proof.data.groups != rule_record.record.data.groups {
-        ensure!(false, Error::<T>::ProofRuleTypeMismatch);
+      if proof.data.groups != workflow.record.data.groups {
+        ensure!(false, Error::<T>::ProofWorkflowTypeMismatch);
       }
 
       // Proof exists?
       ensure!(
-        !Proofs::<T>::contains_key(&proof_id, &sender),
+        !ProofByProofIdAndAccountId::<T>::contains_key(&proof_id, &sender),
         Error::<T>::ProofAlreadyClaimed
       );
 
-      let proof_info = ProofRecord::<T> {
-        record: proof.clone(),
-        account_id: sender.clone(),
-        block_number: <frame_system::Pallet<T>>::block_number(), /* Call the `system` pallet to get the current block
-                                                                  * number */
-      };
-
-      Proofs::<T>::insert(&proof_id, &sender, proof_info);
-
-      Self::increase_proof_count();
+      Self::do_create_proof(&proof, &sender, current_block);
 
       // Emit an event that the proof was created
       Self::deposit_event(Event::ProofCreated(sender, proof_id));
@@ -154,29 +171,39 @@ pub mod pallet {
 
     /// INDEX storage, save the connection phash <-> proofId for hamming/leven distance calc.
     /// Eventually refactor this, for now leave it
+    ///
+    /// # Arguments
+    /// * origin - the call origin
+    /// * phash_info - the perceptive hash information
+    ///
+    /// # Errors
+    /// * `NoSuchProof` - if there is no such Proof as indicated in the phash_info
+    /// * `PHashAndProofIdComboAlreadyExist` - if the relation between the perceptive hash and the
+    ///   proof is already existing
+    ///
+    /// # Return
+    /// `DispatchResultWithPostInfo` containing Unit type
     #[pallet::weight(<T as Config>::WeightInfo::save_phash())]
-    pub(super) fn save_phash(origin: OriginFor<T>, payload_data: PhashInfo) -> DispatchResultWithPostInfo {
+    pub fn save_phash(origin: OriginFor<T>, phash_info: PhashInfo) -> DispatchResultWithPostInfo {
       let sender = ensure_signed(origin)?;
 
       // Check is do we have the proof, can't add without
       ensure!(
-        Proofs::<T>::contains_key(&payload_data.proof_id, &sender),
+        ProofByProofIdAndAccountId::<T>::contains_key(&phash_info.proof_id, &sender),
         Error::<T>::NoSuchProof
       );
 
-      let payload_data_digest = payload_data.using_encoded(<T as frame_system::Config>::Hashing::hash);
+      let phash_info_digest = phash_info.using_encoded(<T as frame_system::Config>::Hashing::hash);
 
       ensure!(
-        !PHashes::<T>::contains_key(&payload_data_digest, &sender),
+        !PhashByHashAndAccountId::<T>::contains_key(&phash_info_digest, &sender),
         Error::<T>::PHashAndProofIdComboAlreadyExist
       );
 
-      PHashes::<T>::insert(&payload_data_digest, &sender, payload_data.clone());
-
-      Self::increase_phash_count();
+      Self::do_save_phash(&phash_info, &phash_info_digest, &sender);
 
       // Emit an event that the proof was created
-      Self::deposit_event(Event::PhashCreated(sender, payload_data_digest));
+      Self::deposit_event(Event::PhashCreated(sender, phash_info_digest));
 
       Ok(().into())
     }

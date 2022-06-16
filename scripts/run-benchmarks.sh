@@ -2,6 +2,9 @@
 
 set -eux
 
+PROJECT_ROOT=$(git rev-parse --show-toplevel)
+cd $PROJECT_ROOT
+
 chain="${1:-dev}"
 pallet=$2
 build_and_run="${3:-true}"
@@ -39,4 +42,4 @@ else
 fi
 # # since benchmark generates a weight.rs file that may or may not cargo fmt'ed.
 # # so do cargo fmt here.
-cargo make fmt
+makers format

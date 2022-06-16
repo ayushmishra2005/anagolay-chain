@@ -20,6 +20,7 @@
 
 #![cfg(feature = "runtime-benchmarks")]
 use super::*;
+use anagolay_support::AnagolayStructureData;
 use frame_benchmarking::{benchmarks, impl_benchmark_test_suite, whitelisted_caller};
 use frame_system::RawOrigin;
 use sp_std::{boxed::Box, vec, vec::Vec};
@@ -32,34 +33,22 @@ benchmarks! {
   create_copyright{
     //Initializing benchmark for Copyright Extrinsic
     let caller: T::AccountId = whitelisted_caller();
-    let copyright_statement = AnagolayStatement {
-      id: vec![1],
-      data: StatementData::default(),
-      extra: None,
-    };
+    let copyright_statement = StatementData::default();
   }: _(RawOrigin::Signed(caller), copyright_statement)
 
   create_ownership{
     //Initializing benchmark for Ownership Extrinsic
     let caller: T::AccountId = whitelisted_caller();
-    let mut ownership_statement = AnagolayStatement {
-      id: vec![1],
-      data: StatementData::default(),
-      extra: None,
-    };
-    ownership_statement.data.claim.claim_type = AnagolayClaimType::Ownership;
+    let mut ownership_statement = StatementData::default();
+    ownership_statement.claim.claim_type = ClaimType::Ownership;
 
   }: _(RawOrigin::Signed(caller), ownership_statement)
 
   revoke{
     //Initializing benchmark for Revoke Extrinsic
     let caller: T::AccountId = whitelisted_caller();
-    let statements = AnagolayStatement {
-      id: vec![1],
-      data: StatementData::default(),
-      extra: None,
-    };
-    let statement_id = statements.id.clone();
+    let statements = StatementData::default();
+    let statement_id = statements.to_cid();
     crate::Pallet::<T>::create_copyright(RawOrigin::Signed(caller.clone()).into(), statements)?;
   }: _(RawOrigin::Signed(caller), statement_id)
 }

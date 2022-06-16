@@ -3,11 +3,15 @@ members = [
   'node',
   'pallets/anagolay-support',
   'pallets/operations',
-  #  'pallets/statements',
+  'pallets/statements',
   'pallets/workflows',
-  #  'pallets/poe',
+  'pallets/poe',
   'runtime',
 ]
+
+[profile.dev]
+incremental = true
+codegen-units = 16
 
 [profile.release]
 opt-level = 3

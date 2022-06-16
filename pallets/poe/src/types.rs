@@ -17,8 +17,8 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 use anagolay_support::{
-  AnagolayRecord, AnagolayStructure, AnagolayStructureData, AnagolayStructureExtra, CreatorId,
-  ForWhat, GenericId,
+  AnagolayRecord, AnagolayStructure, AnagolayStructureData, AnagolayStructureExtra, Characters, CreatorId, ForWhat,
+  ProofId, WorkflowId,
 };
 use codec::{Decode, Encode};
 use sp_runtime::RuntimeDebug;
@@ -26,42 +26,49 @@ use sp_std::{clone::Clone, default::Default, vec, vec::Vec};
 
 /// key-value where key is Operation.op and value is fn(Operation)
 #[derive(Default, Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
-// #[cfg_attr(feature = "std", derive(Debug))]
 pub struct ProofParams {
   /// Operation.name, hex encoded using Parity scale codec
-  k: Vec<u8>,
+  k: Characters,
   /// operation Output value serialized using cbor and represented as CID
   v: Vec<u8>,
 }
 
-/// PHash Info, what gets stored
+/// Perceptive hash information, what gets stored
 #[derive(Encode, Decode, Clone, PartialEq, Default, RuntimeDebug)]
-// #[cfg_attr(feature = "std", derive(Debug))]
 pub struct PhashInfo {
+  /// The perceptive hash bytes
   pub p_hash: Vec<u8>,
-  pub proof_id: GenericId,
+  /// The id of the proof associated to this perceptive hash
+  pub proof_id: ProofId,
 }
 
 /// Proof Incoming data
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
-// #[cfg_attr(feature = "std", derive(Debug))]
 pub struct ProofData {
-  pub rule_id: GenericId,
-  // which rule is executed
-  prev_id: GenericId,
+  /// The id of the Workflow that generated this Proof
+  pub workflow_id: WorkflowId,
+  /// which workflow is executed
+  prev_id: WorkflowId,
+  /// Identifier of the creator user or system as a reference to his account id on the blockchain,
+  /// pgp key or email
   creator: CreatorId,
+  /// Tells which groups the Proof belongs to
   pub groups: Vec<ForWhat>,
-  // must be the same as for the rule
+  /// must be the same as for the Workflow
   params: Vec<ProofParams>,
 }
 
-impl AnagolayStructureData for ProofData {}
+impl AnagolayStructureData for ProofData {
+  fn validate(&self) -> Result<(), Characters> {
+    Ok(())
+  }
+}
 
 impl Default for ProofData {
   fn default() -> Self {
     ProofData {
-      rule_id: GenericId::default(),
-      prev_id: GenericId::default(),
+      workflow_id: WorkflowId::default(),
+      prev_id: WorkflowId::default(),
       groups: vec![ForWhat::default()],
       creator: CreatorId::default(),
       params: vec![],
@@ -75,8 +82,7 @@ impl AnagolayStructureExtra for ProofExtra {}
 
 /// PoE Proof
 pub type Proof = AnagolayStructure<ProofData, ProofExtra>;
-pub type ProofRecord<T> = AnagolayRecord<
-  Proof,
-  <T as frame_system::Config>::AccountId,
-  <T as frame_system::Config>::BlockNumber,
->;
+
+/// Storage record type
+pub type ProofRecord<T> =
+  AnagolayRecord<Proof, <T as frame_system::Config>::AccountId, <T as frame_system::Config>::BlockNumber>;

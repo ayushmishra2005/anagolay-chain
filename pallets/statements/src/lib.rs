@@ -16,14 +16,15 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-//! an_statements pallet is the interface for the creation and management of Statements.
+//! statements pallet is the interface for the creation and management of Statements.
+//! Statement is a record that proves the truthfulness of the Claim using user's cryptographic
+//! Signatures. On Anagolay every Statement is the product of a transparent process we call
+//! Workflow. At this time we support two types of statements, Copyright and Ownership, more will be
+//! added when we see the need for it and practical usecase. The types are part of the network and
+//! cannot be deleted, updated or removed by users or validators
 
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
-
-use anagolay_support::GenericId;
-
-// use frame_support::debug;
 
 mod benchmarking;
 mod functions;
@@ -38,7 +39,8 @@ pub use weights::WeightInfo;
 #[frame_support::pallet]
 pub mod pallet {
   use super::*;
-  use crate::types::{AnagolayClaimType, AnagolayStatement, AnagolayStatementRecord};
+  use crate::types::{ClaimType, Statement, StatementData, StatementRecord};
+  use anagolay_support::{AnagolayStructureData, Characters, ProofId, StatementId};
   use frame_support::pallet_prelude::*;
   use frame_system::pallet_prelude::*;
   use sp_std::vec::Vec;
@@ -47,6 +49,7 @@ pub mod pallet {
   #[pallet::generate_store(pub(super) trait Store)]
   pub struct Pallet<T>(_);
 
+  /// Config of the statements pallet
   #[pallet::config]
   pub trait Config: frame_system::Config {
     /// The overarching event type.
@@ -58,78 +61,77 @@ pub mod pallet {
     type WeightInfo: WeightInfo;
   }
 
+  /// Retrieve a Statement with the Statement Id and the Account Id
+  #[pallet::storage]
+  #[pallet::getter(fn statement_by_statement_id_and_account_id)]
+  pub type StatementByStatementIdAndAccountId<T: Config> =
+    StorageDoubleMap<_, Blake2_128Concat, StatementId, Twox64Concat, T::AccountId, StatementRecord<T>, ValueQuery>;
+
+  /// Retrieve the parent Statement Id given a Statement Id
+  /// If the StatementB has a parent StatementA in `prev_id` field this will be
+  /// StatementA id
+  /// Example:
+  ///
+  /// ```ts
+  /// const aStatement = {
+  ///   //   ... normal as the rest,
+  ///   prev_id: None
+  /// }
+  ///
+  /// const bStatement = {
+  ///   //  ... normal as the rest,
+  ///   prev_id: Some(aStatement.id)
+  /// }```
+  ///
+  /// So this will be a map of StatementId to StatementId (parent)
+  /// It's used to quickly check upon revoke: the revoke of `aStatement` it will fail,
+  /// because it is the parent of the `bStatement`
+  #[pallet::storage]
+  #[pallet::getter(fn parent_statement_id_by_statement_id)]
+  pub type ParentStatementIdByStatementId<T: Config> =
+    StorageMap<_, Blake2_128Concat, StatementId, StatementId, ValueQuery>;
+
+  /// Amount of saved Statements
+  #[pallet::storage]
+  #[pallet::getter(fn total)]
+  pub type Total<T: Config> = StorageValue<_, u128, ValueQuery>;
+
+  /// List of the statements connected to the Proof. If the statement claim is 100% then there will
+  /// be only one entry, if it's not then as many entries is needed to get to 100%
+  #[pallet::storage]
+  #[pallet::getter(fn statement_ids_by_proof_id)]
+  pub type StatementIdsByProofId<T: Config> = StorageMap<_, Blake2_128Concat, ProofId, Vec<StatementId>, ValueQuery>;
+
+  /// Events of the Statements pallet
+  #[pallet::event]
+  #[pallet::generate_deposit(pub(super) fn deposit_event)]
+  #[pallet::metadata(T::AccountId = "AccountId")]
+  pub enum Event<T: Config> {
+    /// Copyright is created
+    CopyrightCreated(T::AccountId, StatementId),
+    /// Ownership is created
+    OwnershipCreated(T::AccountId, StatementId),
+    /// Statement revoked
+    StatementRevoked(T::AccountId, StatementId),
+    /// Bad request error occurs and this event propagates a detailed description
+    BadRequestError(T::AccountId, Characters),
+  }
+
+  /// Errors of the Statements pallet
   #[pallet::error]
   pub enum Error<T> {
     /// Wrong claim type
     WrongClaimType,
     /// Proof already has this statement
     ProofHasStatement,
-    /// Statement doesn't exits.
+    /// Statement doesn't exist.
     NoSuchStatement,
     /// Statement has child statement and it cannot be revoked
     StatementHasChildStatement,
     /// Create child statement is not yet supported
     CreatingChildStatementNotSupported,
-  }
-
-  #[pallet::storage]
-  #[pallet::getter(fn statements)]
-  /// ALL statements
-  pub type Statements<T: Config> = StorageDoubleMap<
-    _,
-    Blake2_128Concat,
-    GenericId,
-    Twox64Concat,
-    T::AccountId,
-    AnagolayStatementRecord<T>,
-    ValueQuery,
-  >;
-
-  #[pallet::storage]
-  #[pallet::getter(fn prev_statement)]
-  /// Statement to previous statement index table for quick check.
-  /// The StatementB has a parent StatementA in `prev_id` field this will be
-  /// Example:
-
-  /// ```ts
-  /// const aStatement = {
-  ///   //   ... normal as the rest,
-  ///   prev_id: ''
-  /// }
-
-  /// const bStatement = {
-  ///   //  ... normal as the rest,
-  ///   prev_id: aStatement.id
-  /// }```
-
-  /// so this will be a map of bStatement.GenericId => aStatement.GenericId
-  /// And now if we try to revoke the `aStatement` it will fail,
-  /// because it is the part of the `bStatement`
-  pub type StatementToPrevious<T: Config> =
-    StorageMap<_, Blake2_128Concat, GenericId, GenericId, ValueQuery>;
-
-  #[pallet::storage]
-  #[pallet::getter(fn statements_count)]
-  /// Amount of saved statements
-  pub type StatementsCount<T: Config> = StorageValue<_, u128, ValueQuery>;
-
-  #[pallet::storage]
-  #[pallet::getter(fn proof_valid_statement)]
-  /// List of the statements connected to the Proof. If the statement claim is 100% then there
-  /// will be only one entry, if it's not then as many entries is needed to get to 100%
-  pub type ProofValidStatements<T: Config> =
-    StorageMap<_, Blake2_128Concat, GenericId, Vec<GenericId>, ValueQuery>;
-
-  #[pallet::event]
-  #[pallet::generate_deposit(pub(super) fn deposit_event)]
-  #[pallet::metadata(T::AccountId = "AccountId")]
-  pub enum Event<T: Config> {
-    /// Copyright is created. [who, CID]
-    CopyrightCreated(T::AccountId, GenericId),
-    /// Ownership is created. [who, CID]
-    OwnershipCreated(T::AccountId, GenericId),
-    /// Statement revoked. [who, CID]
-    StatementRevoked(T::AccountId, GenericId),
+    /// A parameter of the request is invalid or does not respect a given constraint
+    BadRequest,
   }
 
   #[pallet::hooks]
@@ -137,34 +139,56 @@ pub mod pallet {
 
   #[pallet::call]
   impl<T: Config> Pallet<T> {
-    /// Create Copyright
+    /// Create Copyright.
+    ///
+    /// On Anagolay Copyright statement is a exclusive right that holder claims over a subject in
+    /// question.
+    ///
+    /// # Arguments
+    /// * origin - the call origin
+    /// * statement_data - the data section of the Statement
+    ///
+    /// # Errors
+    /// * `WrongClaimType` - if the Statement type is not[`ClaimType::Copyright`]
+    /// * `CreatingChildStatementNotSupported` - creating child Statements is not supported at the
+    ///   moment
+    /// * `ProofHasStatement` - the Statement is already associated to an existing Proof
+    /// * `BadRequest` - if the request is invalid or does not respect a given constraint
+    ///
+    /// # Return
+    /// `DispatchResultWithPostInfo` containing Unit type
     #[pallet::weight(<T as Config>::WeightInfo::create_copyright())]
-    pub(super) fn create_copyright(
-      origin: OriginFor<T>,
-      statement: AnagolayStatement,
-    ) -> DispatchResultWithPostInfo {
+    pub fn create_copyright(origin: OriginFor<T>, statement_data: StatementData) -> DispatchResultWithPostInfo {
       // DispatchResult
       let sender = ensure_signed(origin)?;
       let current_block = <frame_system::Pallet<T>>::block_number();
 
+      let statement_validation = statement_data.validate();
+      if let Err(ref message) = statement_validation {
+        Self::deposit_event(Event::BadRequestError(sender.clone(), message.clone()));
+      }
+      ensure!(statement_validation.is_ok(), Error::<T>::BadRequest);
+
       // Statement must be of type copyright
       ensure!(
-        statement.data.claim.claim_type == AnagolayClaimType::Copyright,
+        statement_data.claim.claim_type == ClaimType::Copyright,
         Error::<T>::WrongClaimType
       );
 
       // Ensure that previous statement is empty. we do not allow updating the statements at this point
       ensure!(
-        statement.data.claim.prev_id.is_empty(),
+        statement_data.claim.prev_id.is_none(),
         Error::<T>::CreatingChildStatementNotSupported
       );
 
       // Ensure that ProofValidStatements has or not the statement
-      Self::is_proof_statement_list_empty(&statement)?;
+      Self::is_proof_statement_list_empty(&statement_data)?;
+
+      let statement = Statement::new(statement_data);
 
       // Do we have such a statement?
       ensure!(
-        !Statements::<T>::contains_key(&statement.id, &sender),
+        !StatementByStatementIdAndAccountId::<T>::contains_key(&statement.id, &sender),
         Error::<T>::ProofHasStatement
       );
 
@@ -181,33 +205,55 @@ pub mod pallet {
       Ok(().into())
     }
 
-    /// Create Ownership
+    /// Create Ownership.
+    ///
+    /// On Anagolay Ownership statement is a exclusive right that holder claims over a subject in
+    /// question.
+    ///
+    /// # Arguments
+    /// * origin - the call origin
+    /// * statement_data - the data section of the Statement
+    ///
+    /// # Errors
+    /// * `WrongClaimType` - if the Statement type is not [`ClaimType::Ownership`]
+    /// * `CreatingChildStatementNotSupported` - creating child Statements is not supported at the
+    ///   moment
+    /// * `ProofHasStatement` - the Statement is already associated to an existing Proof
+    /// * `BadRequest` - if the request is invalid or does not respect a given constraint
+    ///
+    /// # Return
+    /// `DispatchResultWithPostInfo` containing Unit type
     #[pallet::weight(<T as Config>::WeightInfo::create_ownership())]
-    pub(super) fn create_ownership(
-      origin: OriginFor<T>,
-      statement: AnagolayStatement,
-    ) -> DispatchResultWithPostInfo {
+    pub fn create_ownership(origin: OriginFor<T>, statement_data: StatementData) -> DispatchResultWithPostInfo {
       let sender = ensure_signed(origin)?;
       let current_block = <frame_system::Pallet<T>>::block_number();
 
+      let statement_validation = statement_data.validate();
+      if let Err(ref message) = statement_validation {
+        Self::deposit_event(Event::BadRequestError(sender.clone(), message.clone()));
+      }
+      ensure!(statement_validation.is_ok(), Error::<T>::BadRequest);
+
       // Statement must be of type ownership
       ensure!(
-        statement.data.claim.claim_type == AnagolayClaimType::Ownership,
+        statement_data.claim.claim_type == ClaimType::Ownership,
         Error::<T>::WrongClaimType
       );
 
       // Ensure that previous statement is empty. we do not allow updating the statements at this point
       ensure!(
-        statement.data.claim.prev_id.is_empty(),
+        statement_data.claim.prev_id.is_none(),
         Error::<T>::CreatingChildStatementNotSupported
       );
 
       // Ensure that ProofValidStatements has or not the statement
-      Self::is_proof_statement_list_empty(&statement)?;
+      Self::is_proof_statement_list_empty(&statement_data)?;
+
+      let statement = Statement::new(statement_data);
 
       // Do we have such a statement
       ensure!(
-        !Statements::<T>::contains_key(&statement.id, &sender),
+        !StatementByStatementIdAndAccountId::<T>::contains_key(&statement.id, &sender),
         Error::<T>::ProofHasStatement
       );
 
@@ -225,22 +271,32 @@ pub mod pallet {
     }
 
     /// Allow the owner to revoke their statement.
+    ///
+    ///
+    /// # Arguments
+    /// * origin - the call origin
+    /// * statement_id - the id of the Statement to revoke
+    ///
+    /// # Errors
+    /// * `NoSuchStatement` - if the Statement cannot be revoked since it does not exist
+    /// * `StatementHasChildStatement` - if the Statement cannot be revoked since it has child
+    ///   statement
+    ///
+    /// # Return
+    /// `DispatchResultWithPostInfo` containing Unit type
     #[pallet::weight(<T as Config>::WeightInfo::revoke())]
-    pub(super) fn revoke(
-      origin: OriginFor<T>,
-      statement_id: GenericId,
-    ) -> DispatchResultWithPostInfo {
+    pub(super) fn revoke(origin: OriginFor<T>, statement_id: StatementId) -> DispatchResultWithPostInfo {
       let sender = ensure_signed(origin)?;
 
       // Verify that the specified statement has been claimed.
       ensure!(
-        Statements::<T>::contains_key(&statement_id, &sender),
+        StatementByStatementIdAndAccountId::<T>::contains_key(&statement_id, &sender),
         Error::<T>::NoSuchStatement
       );
 
       // Ensure Statement to previous statement index is not present | no child statements support atm
       ensure!(
-        !StatementToPrevious::<T>::contains_key(&statement_id),
+        !ParentStatementIdByStatementId::<T>::contains_key(&statement_id),
         Error::<T>::StatementHasChildStatement
       );
 

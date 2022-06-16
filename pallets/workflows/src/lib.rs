@@ -37,14 +37,19 @@
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
 
+#[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
 mod functions;
-mod mock;
-mod tests;
+
 pub mod types;
 pub mod weights;
 pub use pallet::*;
 pub use weights::WeightInfo;
+
+#[cfg(test)]
+mod mock;
+#[cfg(test)]
+mod tests;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -152,7 +157,7 @@ pub mod pallet {
     }
   }
 
-  /// Events of the Workflow pallet
+  /// Events of the Workflows pallet
   #[pallet::event]
   #[pallet::generate_deposit(pub(super)fn deposit_event)]
   #[pallet::metadata(T::AccountId = "AccountId")]
@@ -163,7 +168,7 @@ pub mod pallet {
     BadRequestError(T::AccountId, Characters),
   }
 
-  /// Errors of the Operations pallet
+  /// Errors of the Workflows pallet
   #[pallet::error]
   pub enum Error<T> {
     /// Workflow Manifest already exists.
@@ -204,7 +209,7 @@ pub mod pallet {
     /// # Return
     /// `DispatchResultWithPostInfo` containing Unit type
     #[pallet::weight(<T as Config>::WeightInfo::create())]
-    pub(super) fn create(
+    pub fn create(
       origin: OriginFor<T>,
       workflow_data: WorkflowData,
       version_data: WorkflowVersionData,

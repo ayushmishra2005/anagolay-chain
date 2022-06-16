@@ -17,32 +17,32 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 use anagolay_support::{
-  AnagolayRecord, AnagolayStructure, AnagolayStructureData, AnagolayStructureExtra, CreatorId,
-  GenericId,
+  AnagolayRecord, AnagolayStructure, AnagolayStructureData, AnagolayStructureExtra, Characters, CreatorId, ProofId,
+  SignatureId, StatementId, WorkflowId,
 };
 use codec::{Decode, Encode};
 use sp_runtime::RuntimeDebug;
 use sp_std::{clone::Clone, default::Default, vec::Vec};
 
-/// Anagolay Signature
+/// Signature
 #[derive(Default, Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
-pub struct AnagolaySignature {
+pub struct Signature {
   /// signing key in urn/did format 'urn:pgp:9cdf8dd38531511968c8d8cb524036585b62f15b'
-  pub sig_key: Vec<u8>,
+  pub sig_key: Characters,
   /// Signature sign(prepared_statement, pvtKey(sigKey)) and encoded using multibase
   /// https://gitlab.com/sensio_group/sensio-faas/-/blob/master/sp-api/src/plugins/copyright/helpers.ts#L76
   pub sig: Vec<u8>,
   /// Content identifier of the sig field -- CID(sig)
-  pub cid: GenericId,
+  pub cid: SignatureId,
 }
 
-/// Anagolay Signatures
+/// Signatures
 #[derive(Default, Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
-pub struct AnagolaySignatures {
-  pub holder: AnagolaySignature,
-  pub issuer: AnagolaySignature,
+pub struct Signatures {
+  pub holder: Signature,
+  pub issuer: Signature,
 }
-/// Anagolay Claim Proportion
+/// Claim Proportion
 #[derive(Default, Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
 pub struct Proportion {
   /// Proportion sign, can be %
@@ -50,7 +50,7 @@ pub struct Proportion {
   pub name: Vec<u8>,
   pub value: Vec<u8>,
 }
-/// Anagolay Validity
+/// Validity
 #[derive(Default, Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
 pub struct Validity {
   /// When the validity starts, this should be DATE_TIME
@@ -76,7 +76,7 @@ impl Default for ExpirationType {
   }
 }
 
-/// Anagolay Claim Expiration
+/// Claim Expiration
 #[derive(Default, Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
 pub struct Expiration {
   ///Possible Expiration types
@@ -85,54 +85,63 @@ pub struct Expiration {
   pub value: Vec<u8>,
 }
 
-/// Anagolay Claim types
+/// Claim types
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
-pub enum AnagolayClaimType {
+pub enum ClaimType {
   Copyright,
   Ownership,
 }
 
-impl Default for AnagolayClaimType {
+impl Default for ClaimType {
   fn default() -> Self {
-    AnagolayClaimType::Copyright
+    ClaimType::Copyright
   }
 }
 
-/// Anagolay Generic Claim
+/// Generic Claim
 #[derive(Default, Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
-pub struct AnagolayClaim {
-  /// Prev Anagolay Statement id in case this statement is revoked or changed
-  pub prev_id: GenericId,
+pub struct Claim {
+  /// Prev Statement id in case this statement is revoked or changed
+  pub prev_id: Option<StatementId>,
   /// PoE id of the record in question.
-  pub poe_id: GenericId,
-  /// Implemented rule
-  pub rule_id: GenericId,
+  pub poe_id: ProofId,
+  /// Implemented workflow id
+  pub workflow_id: WorkflowId,
   /// In which proportion the statement is held
   pub proportion: Proportion,
-  /// ATM this is the same as poe_id @TODO this should be unique representation of the subject that is NOT poe
-  pub subject_id: GenericId,
-  /// ATM this is the did representation of the substrate based account in format 'did:substrate:5EJA1oSrTx7xYMBerrUHLNktA3P89YHJBeTrevotTQab6gEY/anagolay-network'
+  /// ATM this is the same as poe_id @TODO this should be unique representation of the subject that
+  /// is NOT poe
+  pub subject_id: ProofId,
+  /// ATM this is the did representation of the substrate based account in format
+  /// 'did:substrate:5EJA1oSrTx7xYMBerrUHLNktA3P89YHJBeTrevotTQab6gEY/anagolay-network'
   pub holder: CreatorId,
-  /// ATM this is the did representation of the substrate based account in format 'did:substrate:Hcd78R7frJfUZHsqgpPEBLeiCZxV29uyyyURaPxB71ojNjy/anagolay-network'
-  pub issuer: Vec<u8>,
+  /// ATM this is the did representation of the substrate based account in format
+  /// 'did:substrate:Hcd78R7frJfUZHsqgpPEBLeiCZxV29uyyyURaPxB71ojNjy/anagolay-network'
+  pub issuer: CreatorId,
   /// Generic type, ATM is Copyright or Ownership
-  pub claim_type: AnagolayClaimType,
+  pub claim_type: ClaimType,
   /// How long this statement is valid
   pub valid: Validity,
   /// Setting when the statement should end
   pub expiration: Expiration,
-  /// What happens after the expiration? this is default rule or smart contract that automatically does stuff,
-  /// like move it to the public domain, transfer to relatives etc... need better definition
+  /// What happens after the expiration? this is default rule or smart contract that automatically
+  /// does stuff, like move it to the public domain, transfer to relatives etc... need better
+  /// definition
   pub on_expiration: Vec<u8>,
 }
 
 /// Copyright data
 #[derive(Default, Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
 pub struct StatementData {
-  pub signatures: AnagolaySignatures,
-  pub claim: AnagolayClaim,
+  pub signatures: Signatures,
+  pub claim: Claim,
 }
-impl AnagolayStructureData for StatementData {}
+
+impl AnagolayStructureData for StatementData {
+  fn validate(&self) -> Result<(), Characters> {
+    Ok(())
+  }
+}
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
 pub struct StatementExtra {}
@@ -143,9 +152,6 @@ impl Default for StatementExtra {
   }
 }
 
-pub type AnagolayStatement = AnagolayStructure<StatementData, StatementExtra>;
-pub type AnagolayStatementRecord<T> = AnagolayRecord<
-  AnagolayStatement,
-  <T as frame_system::Config>::AccountId,
-  <T as frame_system::Config>::BlockNumber,
->;
+pub type Statement = AnagolayStructure<StatementData, StatementExtra>;
+pub type StatementRecord<T> =
+  AnagolayRecord<Statement, <T as frame_system::Config>::AccountId, <T as frame_system::Config>::BlockNumber>;

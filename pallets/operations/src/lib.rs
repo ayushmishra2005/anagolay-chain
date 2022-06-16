@@ -32,6 +32,7 @@
 use sp_std::vec::Vec;
 
 // use frame_support::debug;
+#[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
 mod functions;
 pub mod types;

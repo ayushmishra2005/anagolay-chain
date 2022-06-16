@@ -211,6 +211,15 @@ pub type OperationId = private::GenericId;
 /// The type used for a Workflow ID
 pub type WorkflowId = private::GenericId;
 
+/// The type used for a Statement ID
+pub type StatementId = private::GenericId;
+
+/// The type used for a Proof ID
+pub type ProofId = private::GenericId;
+
+/// The type used for a Signature ID
+pub type SignatureId = private::GenericId;
+
 /// The type used for any entity Version ID
 pub type VersionId = private::GenericId;
 
