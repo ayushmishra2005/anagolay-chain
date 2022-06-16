@@ -104,6 +104,7 @@ oci-base:
     PRODUCT: ci-linux
     STAGE: prod
     VERSION: $CI_COMMIT_SHORT_SHA
+    GIT_STRATEGY: clone
   services:
     - docker:dind
   when: manual
@@ -121,6 +122,7 @@ oci-release:
     STAGE: prod
     VERSION: $CI_COMMIT_SHORT_SHA
     CI_LINUX_TAG: 050979ef
+    GIT_STRATEGY: clone
   services:
     - docker:dind
   when: manual
