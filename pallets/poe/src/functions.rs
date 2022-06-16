@@ -16,28 +16,42 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 use super::*;
+use crate::types::ProofRecord;
 
 impl<T: Config> Pallet<T> {
-  /// Increase the count
+  /// Inserts the Proof into the `ProofByProofIdAndAccountId` storage
+  /// Increases the `ProofTotal` count
   ///
-  /// Does no checks!
+  /// Does no checks.
   ///
-  /// Returns the new Total proof count
-  pub fn increase_proof_count() -> u128 {
-    let count = Self::proofs_count();
-    let new_count = &count + 1;
-    <ProofsCount<T>>::put(new_count);
-    new_count
+  /// # Arguments
+  ///  * proof - The Proof to insert
+  ///  * account_id - The owner of the Operation
+  ///  * block_number - Current block
+  pub fn do_create_proof(proof: &Proof, account_id: &T::AccountId, block_number: T::BlockNumber) {
+    let record = ProofRecord::<T> {
+      record: proof.clone(),
+      account_id: account_id.clone(),
+      block_number,
+    };
+
+    ProofByProofIdAndAccountId::<T>::insert(&proof.id, &account_id, record);
+
+    ProofTotal::<T>::put(Self::proof_total().saturating_add(1));
   }
-  /// Increase the count
+
+  /// Inserts the Phash into the `PhashByHashAndAccountId` storage
+  /// Increases the `PhashTotal` count
   ///
-  /// Does no checks!
+  /// Does no checks.
   ///
-  /// Returns the new Total phash count
-  pub fn increase_phash_count() -> u128 {
-    let count = Self::phash_count();
-    let new_count = &count + 1;
-    <PHashCount<T>>::put(new_count);
-    new_count
+  /// # Arguments
+  ///  * phash - The perceptual hash to save
+  ///  * hash - encoded perceptual hash to use as key
+  ///  * account_id - The owner of the Operation
+  pub fn do_save_phash(phash: &PhashInfo, hash: &<T as frame_system::Config>::Hash, account_id: &T::AccountId) {
+    PhashByHashAndAccountId::<T>::insert(&hash, &account_id, phash.clone());
+
+    PhashTotal::<T>::put(Self::phash_total().saturating_add(1));
   }
 }

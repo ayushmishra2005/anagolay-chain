@@ -4,7 +4,7 @@ repository = 'https://gitlab.com/anagolay/anagolay/'
 homepage = 'https://anagolay.network/pallet/poe'
 edition = '2018'
 license-file = "./LICENSE"
-name = 'an-poe'
+name = 'poe'
 version = '0.1.0'
 
 [package.metadata.docs.rs]

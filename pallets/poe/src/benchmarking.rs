@@ -21,10 +21,12 @@
 #![cfg(feature = "runtime-benchmarks")]
 
 use super::*;
+use anagolay_support::AnagolayStructureData;
 use frame_benchmarking::{benchmarks, impl_benchmark_test_suite, whitelisted_caller};
 use frame_system::RawOrigin;
 use sp_std::{boxed::Box, prelude::*, vec::Vec};
 
+use crate::types::ProofData;
 #[allow(unused)]
 use crate::Pallet as Poe;
 
@@ -33,18 +35,18 @@ const PERCEPTUAL_HASH: &[u8] = b"0x303030303030303030313130303030303030303030303
 benchmarks! {
     create_proof {
         let caller: T::AccountId = whitelisted_caller();
-        let proof = Proof::default();
-    }: _(RawOrigin::Signed(caller), proof)
+        let proof_data = ProofData::default();
+    }: _(RawOrigin::Signed(caller), proof_data)
 
     save_phash {
         let caller: T::AccountId = whitelisted_caller();
-        let proof = Proof::default();
+        let proof_data = ProofData::default();
         let phash = PERCEPTUAL_HASH.to_vec();
         let p_hash_payload = PhashInfo {
             p_hash: phash.clone(),
-            proof_id: proof.id.clone(),
+            proof_id: proof_data.to_cid(),
         };
-        crate::Pallet::<T>::create_proof(RawOrigin::Signed(caller.clone()).into(), proof)?;
+        crate::Pallet::<T>::create_proof(RawOrigin::Signed(caller.clone()).into(), proof_data)?;
     }: _(RawOrigin::Signed(caller), p_hash_payload)
 }
 

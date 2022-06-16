@@ -321,10 +321,10 @@ impl operations::Config for Runtime {
   type TimeProvider = timestamp::Pallet<Runtime>;
 }
 
-//impl an_statements::Config for Runtime {
-//  type Event = Event;
-//  type WeightInfo = an_statements::weights::AnagolayWeight<Runtime>;
-//}
+impl statements::Config for Runtime {
+  type Event = Event;
+  type WeightInfo = statements::weights::AnagolayWeight<Runtime>;
+}
 
 impl workflows::Config for Runtime {
   type Event = Event;
@@ -332,11 +332,10 @@ impl workflows::Config for Runtime {
   type TimeProvider = timestamp::Pallet<Runtime>;
 }
 
-//impl an_poe::Config for Runtime {
-//  type Event = Event;
-//  type ExternalRulesStorage = an_rules::Pallet<Runtime>;
-//  type WeightInfo = an_poe::weights::AnagolayWeight<Runtime>;
-//}
+impl poe::Config for Runtime {
+  type Event = Event;
+  type WeightInfo = poe::weights::AnagolayWeight<Runtime>;
+}
 
 construct_runtime!(
     pub enum Runtime where
@@ -359,9 +358,9 @@ construct_runtime!(
         // Used for the module anagolay
         Anagolay: anagolay_support::{Module},
         Operations: operations::{Module, Call, Storage, Event<T>, Config<T>},
-//        Statements: an_statements::{Module, Call, Storage, Event<T>},
+        Statements: statements::{Module, Call, Storage, Event<T>},
         Workflows: workflows::{Module, Call, Storage, Event<T>, Config<T>},
-//        Poe: an_poe::{Module, Call, Storage, Event<T>},
+        Poe: poe::{Module, Call, Storage, Event<T>},
     }
 );
 
@@ -550,11 +549,11 @@ impl_runtime_apis! {
 
             add_benchmark!(params, batches, operations, Operations);
 
-//            add_benchmark!(params, batches, an_poe, Poe);
+            add_benchmark!(params, batches, poe, Poe);
 
             add_benchmark!(params, batches, workflows, Workflows);
 
-//            add_benchmark!(params, batches, an_statements, Statements);
+            add_benchmark!(params, batches, statements, Statements);
 
             if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
             Ok(batches)

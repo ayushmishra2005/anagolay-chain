@@ -23,9 +23,9 @@ runtime-benchmarks = [
   'sp-runtime/runtime-benchmarks',
   'system/runtime-benchmarks',
   'operations/runtime-benchmarks',
-  #  'an-poe/runtime-benchmarks',
+  'poe/runtime-benchmarks',
   'workflows/runtime-benchmarks',
-  #  'an-statements/runtime-benchmarks',
+  'statements/runtime-benchmarks',
 ]
 std = [
   'aura/std',
@@ -54,8 +54,8 @@ std = [
   'transaction-payment/std',
   'anagolay-support/std',
   'operations/std',
-  #  'an-statements/std',
-  #  'an-poe/std',
+  'statements/std',
+  'poe/std',
   'workflows/std',
 ]
 
@@ -96,5 +96,5 @@ smallvec = "1.6.1"
 anagolay-support = { path = '../pallets/anagolay-support', default-features = false }
 operations = { path = '../pallets/operations', default-features = false }
 workflows = { path = '../pallets/workflows', default-features = false }
-# an-statements = { path = '../pallets/statements', default-features = false, package = 'an-statements' }
-# an-poe = { path = '../pallets/poe', default-features = false, package = 'an-poe' }
+statements = { path = '../pallets/statements', default-features = false }
+poe = { path = '../pallets/poe', default-features = false }

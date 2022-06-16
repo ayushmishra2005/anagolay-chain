@@ -22,12 +22,13 @@
 
 use crate as poe;
 use crate::Config;
-use frame_support::parameter_types;
+use frame_support::{parameter_types, traits::UnixTime};
 use sp_core::H256;
 use sp_runtime::{
   testing::Header,
   traits::{BlakeTwo256, IdentityLookup},
 };
+use std::time::Duration;
 
 use frame_system as system;
 
@@ -77,16 +78,26 @@ impl system::Config for Test {
   type SS58Prefix = SS58Prefix;
 }
 
+pub struct MockTime {}
+
+impl UnixTime for MockTime {
+  fn now() -> Duration {
+    core::time::Duration::from_millis(1000)
+  }
+}
+
 impl Config for Test {
   type Event = ();
-  type ExternalWorkflowsStorage = workflows::Pallet<Test>;
   type WeightInfo = ();
 }
 
 impl workflows::Config for Test {
   type Event = ();
   type WeightInfo = ();
+  type TimeProvider = MockTime;
 }
+
+impl anagolay_support::Config for Test {}
 
 // Build genesis storage according to the mock runtime.
 pub fn new_test_ext() -> sp_io::TestExternalities {

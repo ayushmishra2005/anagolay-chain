@@ -1,11 +1,10 @@
-image:
-  file: ./devops/workspaces/.gitpod.Dockerfile
 tasks:
-  - name: install the remote-signer
+  - name: instal deps
     init: |
-      sudo sh -c 'curl https://ipfs.anagolay.network/ipfs/bafybeiarhwobvpvz76iy6clqaf3ub7yc4rvvkydmimh652r2svdaznubrq > /usr/local/bin/remote-signer && chmod +x /usr/local/bin/remote-signer' \
-      && git config --global gpg.program "remote-signer" \
-      && git config --global commit.gpgsign true
+      bash ./scripts/setup-dev-env.sh \
+      && gp env SCCACHE_S3_KEY_PREFIX=anagolay_runtime \
+      && gp env RUSTC_WRAPPER=/usr/local/bin/sccache \
+      && sccache --show-stats
 
 vscode:
   extensions:

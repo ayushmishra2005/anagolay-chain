@@ -1,6 +1,6 @@
 # must see before chaning https://rust-lang.github.io/rustup-components-history/
 [toolchain]
-channel    = "nightly-2022-05-28"
+channel = "nightly-2022-05-28"
 components = ["rustfmt", "rustc-dev", "rust-std", "rust-analysis", "rust-src"]
-targets    = ["wasm32-unknown-unknown", "x86_64-unknown-linux-gnu"]
-profile    = "default"
+targets = ["wasm32-unknown-unknown", "x86_64-unknown-linux-gnu"]
+profile = "default"

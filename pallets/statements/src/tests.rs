@@ -21,14 +21,15 @@
 #![cfg(test)]
 
 use super::{mock::*, *};
-use crate::types::{AnagolayClaimType, AnagolayStatement};
+use crate::types::{ClaimType, StatementData};
+use anagolay_support::{AnagolayStructureData, StatementId};
 use frame_support::{assert_noop, assert_ok};
 
 #[test]
 fn statements_create_ownership() {
   new_test_ext().execute_with(|| {
-    let mut r = AnagolayStatement::default();
-    r.data.claim.claim_type = AnagolayClaimType::Ownership;
+    let mut r = StatementData::default();
+    r.claim.claim_type = ClaimType::Ownership;
     let res = TestStatements::create_ownership(mock::Origin::signed(1), r);
     assert_ok!(res);
   });
@@ -36,8 +37,8 @@ fn statements_create_ownership() {
 #[test]
 fn statements_create_ownership_error_on_duplicate() {
   new_test_ext().execute_with(|| {
-    let mut r = AnagolayStatement::default();
-    r.data.claim.claim_type = AnagolayClaimType::Ownership;
+    let mut r = StatementData::default();
+    r.claim.claim_type = ClaimType::Ownership;
     let res_first = TestStatements::create_ownership(mock::Origin::signed(1), r.clone());
     assert_ok!(res_first);
 
@@ -48,7 +49,7 @@ fn statements_create_ownership_error_on_duplicate() {
 #[test]
 fn statements_create_ownership_wrong_claim_type() {
   new_test_ext().execute_with(|| {
-    let r = AnagolayStatement::default();
+    let r = StatementData::default();
     let res = TestStatements::create_ownership(mock::Origin::signed(1), r.clone());
 
     assert_noop!(res, Error::<Test>::WrongClaimType);
@@ -58,7 +59,7 @@ fn statements_create_ownership_wrong_claim_type() {
 #[test]
 fn statements_create_copyright() {
   new_test_ext().execute_with(|| {
-    let r = AnagolayStatement::default();
+    let r = StatementData::default();
     let res = TestStatements::create_copyright(mock::Origin::signed(1), r.clone());
     assert_ok!(res);
   });
@@ -66,8 +67,8 @@ fn statements_create_copyright() {
 #[test]
 fn copyright_create_child() {
   new_test_ext().execute_with(|| {
-    let mut r = AnagolayStatement::default();
-    r.data.claim.prev_id = b"my-fake-vec-id".to_vec();
+    let mut r = StatementData::default();
+    r.claim.prev_id = Some(StatementId::from("my-fake-vec-id"));
     let res = TestStatements::create_copyright(mock::Origin::signed(1), r.clone());
     assert_noop!(res, Error::<Test>::CreatingChildStatementNotSupported);
   });
@@ -75,9 +76,9 @@ fn copyright_create_child() {
 #[test]
 fn ownership_create_child() {
   new_test_ext().execute_with(|| {
-    let mut r = AnagolayStatement::default();
-    r.data.claim.prev_id = b"my-fake-vec-id".to_vec();
-    r.data.claim.claim_type = AnagolayClaimType::Ownership;
+    let mut r = StatementData::default();
+    r.claim.prev_id = Some(StatementId::from("my-fake-vec-id"));
+    r.claim.claim_type = ClaimType::Ownership;
 
     let res = TestStatements::create_ownership(mock::Origin::signed(1), r.clone());
     assert_noop!(res, Error::<Test>::CreatingChildStatementNotSupported);
@@ -86,7 +87,7 @@ fn ownership_create_child() {
 #[test]
 fn statements_create_copyright_error_on_duplicate() {
   new_test_ext().execute_with(|| {
-    let r = AnagolayStatement::default();
+    let r = StatementData::default();
     let res_first = TestStatements::create_copyright(mock::Origin::signed(1), r.clone());
     assert_ok!(res_first);
 
@@ -97,8 +98,8 @@ fn statements_create_copyright_error_on_duplicate() {
 #[test]
 fn statements_create_copyright_wrong_claim_type() {
   new_test_ext().execute_with(|| {
-    let mut r = AnagolayStatement::default();
-    r.data.claim.claim_type = AnagolayClaimType::Ownership;
+    let mut r = StatementData::default();
+    r.claim.claim_type = ClaimType::Ownership;
 
     let res = TestStatements::create_copyright(mock::Origin::signed(1), r.clone());
     assert_noop!(res, Error::<Test>::WrongClaimType);
@@ -108,8 +109,8 @@ fn statements_create_copyright_wrong_claim_type() {
 #[test]
 fn statements_revoke() {
   new_test_ext().execute_with(|| {
-    let s = AnagolayStatement::default();
-    let s_id = s.id.clone();
+    let s = StatementData::default();
+    let s_id = s.to_cid();
     let res1 = TestStatements::create_copyright(mock::Origin::signed(1), s.clone());
     assert_ok!(res1);
     let res2 = TestStatements::revoke(mock::Origin::signed(1), s_id);
@@ -120,7 +121,7 @@ fn statements_revoke() {
 #[test]
 fn statements_revoke_no_such_statements() {
   new_test_ext().execute_with(|| {
-    let s_id = b"my-fake-vec-id".to_vec();
+    let s_id = StatementId::from("my-fake-vec-id");
     let res = TestStatements::revoke(mock::Origin::signed(1), s_id);
     assert_noop!(res, Error::<Test>::NoSuchStatement);
   });
@@ -129,15 +130,16 @@ fn statements_revoke_no_such_statements() {
 #[test]
 fn statements_revoke_statement_has_child_statements() {
   new_test_ext().execute_with(|| {
-    let mut s = AnagolayStatement::default();
-    let _res1 = TestStatements::create_copyright(mock::Origin::signed(1), s.clone());
+    let mut r = StatementData::default();
+    let s_id = r.to_cid();
+    let _res1 = TestStatements::create_copyright(mock::Origin::signed(1), r.clone());
 
     // do this after the create, since it will fail because we don't accept this ATM
-    s.data.claim.prev_id = b"child-statement-id".to_vec();
+    r.claim.prev_id = Some(StatementId::from("child-statement-id"));
 
-    StatementToPrevious::<Test>::insert(&s.id, &s.data.claim.prev_id);
+    ParentStatementIdByStatementId::<Test>::insert(&s_id, &r.claim.prev_id.unwrap());
 
-    let res = TestStatements::revoke(mock::Origin::signed(1), s.id);
+    let res = TestStatements::revoke(mock::Origin::signed(1), s_id);
 
     assert_noop!(res, Error::<Test>::StatementHasChildStatement);
   });
