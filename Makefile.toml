@@ -70,9 +70,10 @@ description = "Starts the chain in dev mode with sane default flags."
 command = "./target/debug/anagolay"
 args = [
   "--dev",
+  "--name",
+  "idiyanale",
   "-l",
   "error,runtime,info",
-  "--no-telemetry",
   "--rpc-external",
   "--unsafe-ws-external",
 ]

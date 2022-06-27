@@ -10,11 +10,11 @@ use anagolay_runtime::Block;
 
 impl SubstrateCli for Cli {
   fn impl_name() -> String {
-    "Anagolay Node".into()
+    anagolay_runtime::VERSION.impl_name.to_string()
   }
 
   fn impl_version() -> String {
-    env!("SUBSTRATE_CLI_IMPL_VERSION").into()
+    anagolay_runtime::VERSION.impl_version.to_string()
   }
 
   fn description() -> String {
@@ -26,7 +26,7 @@ impl SubstrateCli for Cli {
   }
 
   fn support_url() -> String {
-    "support.anonymous.an".into()
+    env!("CARGO_PKG_HOMEPAGE").into()
   }
 
   fn copyright_start_year() -> i32 {

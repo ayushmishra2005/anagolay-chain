@@ -1,14 +1,18 @@
 use anagolay_runtime::{
   AccountId, AuraConfig, BalancesConfig, GenesisConfig, GrandpaConfig, Signature, SudoConfig, SystemConfig, WASM_BINARY,
 };
-use sc_service::ChainType;
+use jsonrpc_core::serde_json::json;
+use sc_service::{ChainType, Properties};
+use sc_telemetry::TelemetryEndpoints;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
-use sp_core::{ed25519, sr25519, Pair, Public};
+use sp_core::{crypto::Ss58Codec, sr25519, Pair, Public};
 use sp_finality_grandpa::AuthorityId as GrandpaId;
 use sp_runtime::traits::{IdentifyAccount, Verify};
 
 // Note this is the URL for the telemetry server
-//const STAGING_TELEMETRY_URL: &str = "wss://telemetry.polkadot.io/submit/";
+const STAGING_TELEMETRY_URL: &str = "wss://telemetry.polkadot.io/submit/";
+// The minimum balance for created accounts
+const EXISTENCIAL_DEPOSIT: u128 = 1 << 60;
 
 /// Specialized `ChainSpec`. This is a specialization of the general Substrate ChainSpec type.
 pub type ChainSpec = sc_service::GenericChainSpec<GenesisConfig>;
@@ -38,6 +42,11 @@ pub fn authority_keys_from_seed(s: &str) -> (AuraId, GrandpaId) {
 pub fn development_config() -> Result<ChainSpec, String> {
   let wasm_binary = WASM_BINARY.ok_or_else(|| "Development wasm not available".to_string())?;
 
+  let mut props: Properties = Properties::new();
+
+  let value = json!("IDI");
+  props.insert("tokenSymbol".to_string(), value);
+
   Ok(ChainSpec::from_genesis(
     "Development",
     "dev",
@@ -48,26 +57,42 @@ pub fn development_config() -> Result<ChainSpec, String> {
         vec![authority_keys_from_seed("Alice")],
         get_account_id_from_seed::<sr25519::Public>("Alice"),
         vec![
-          get_account_id_from_seed::<sr25519::Public>("Alice"),
-          get_account_id_from_seed::<sr25519::Public>("Bob"),
-          get_account_id_from_seed::<ed25519::Public>("Anagolay"),
-          get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
-          get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
-          get_account_id_from_seed::<ed25519::Public>("Anagolay//stash"),
+          (
+            get_account_id_from_seed::<sr25519::Public>("Alice"),
+            EXISTENCIAL_DEPOSIT,
+          ),
+          (get_account_id_from_seed::<sr25519::Public>("Bob"), EXISTENCIAL_DEPOSIT),
+          (
+            AccountId::from_ss58check("5GukQt4gJW2XqzFwmm3RHa7x6sYuVcGhuhz72CN7oiBsgffx").unwrap(),
+            EXISTENCIAL_DEPOSIT,
+          ),
+          (
+            get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
+            EXISTENCIAL_DEPOSIT,
+          ),
+          (
+            get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
+            EXISTENCIAL_DEPOSIT,
+          ),
         ],
         true,
       )
     },
     vec![],
+    Some(TelemetryEndpoints::new(vec![(STAGING_TELEMETRY_URL.to_string(), 3)]).unwrap()),
     None,
-    None,
-    None,
+    Some(props),
     None,
   ))
 }
 
 pub fn local_testnet_config() -> Result<ChainSpec, String> {
   let wasm_binary = WASM_BINARY.ok_or_else(|| "Development wasm not available".to_string())?;
+
+  let mut props: Properties = Properties::new();
+
+  let value = json!("IDI");
+  props.insert("tokenSymbol".to_string(), value);
 
   Ok(ChainSpec::from_genesis(
     "Local Testnet",
@@ -76,27 +101,52 @@ pub fn local_testnet_config() -> Result<ChainSpec, String> {
     move || {
       testnet_genesis(
         wasm_binary,
-        vec![
-          authority_keys_from_seed("Alice"),
-          authority_keys_from_seed("Bob"),
-          authority_keys_from_seed("Anagolay"),
-        ],
+        vec![authority_keys_from_seed("Alice"), authority_keys_from_seed("Bob")],
         get_account_id_from_seed::<sr25519::Public>("Alice"),
         vec![
-          get_account_id_from_seed::<sr25519::Public>("Alice"),
-          get_account_id_from_seed::<sr25519::Public>("Bob"),
-          get_account_id_from_seed::<sr25519::Public>("Charlie"),
-          get_account_id_from_seed::<sr25519::Public>("Dave"),
-          get_account_id_from_seed::<sr25519::Public>("Eve"),
-          get_account_id_from_seed::<sr25519::Public>("Ferdie"),
-          get_account_id_from_seed::<ed25519::Public>("Anagolay"),
-          get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
-          get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
-          get_account_id_from_seed::<sr25519::Public>("Charlie//stash"),
-          get_account_id_from_seed::<sr25519::Public>("Dave//stash"),
-          get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
-          get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
-          get_account_id_from_seed::<ed25519::Public>("Anagolay//stash"),
+          (
+            get_account_id_from_seed::<sr25519::Public>("Alice"),
+            EXISTENCIAL_DEPOSIT,
+          ),
+          (get_account_id_from_seed::<sr25519::Public>("Bob"), EXISTENCIAL_DEPOSIT),
+          (
+            get_account_id_from_seed::<sr25519::Public>("Charlie"),
+            EXISTENCIAL_DEPOSIT,
+          ),
+          (get_account_id_from_seed::<sr25519::Public>("Dave"), EXISTENCIAL_DEPOSIT),
+          (get_account_id_from_seed::<sr25519::Public>("Eve"), EXISTENCIAL_DEPOSIT),
+          (
+            get_account_id_from_seed::<sr25519::Public>("Ferdie"),
+            EXISTENCIAL_DEPOSIT,
+          ),
+          (
+            AccountId::from_ss58check("5GukQt4gJW2XqzFwmm3RHa7x6sYuVcGhuhz72CN7oiBsgffx").unwrap(),
+            EXISTENCIAL_DEPOSIT,
+          ),
+          (
+            get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
+            EXISTENCIAL_DEPOSIT,
+          ),
+          (
+            get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
+            EXISTENCIAL_DEPOSIT,
+          ),
+          (
+            get_account_id_from_seed::<sr25519::Public>("Charlie//stash"),
+            EXISTENCIAL_DEPOSIT,
+          ),
+          (
+            get_account_id_from_seed::<sr25519::Public>("Dave//stash"),
+            EXISTENCIAL_DEPOSIT,
+          ),
+          (
+            get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
+            EXISTENCIAL_DEPOSIT,
+          ),
+          (
+            get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
+            EXISTENCIAL_DEPOSIT,
+          ),
         ],
         true,
       )
@@ -104,7 +154,7 @@ pub fn local_testnet_config() -> Result<ChainSpec, String> {
     vec![],
     None,
     None,
-    None,
+    Some(props),
     None,
   ))
 }
@@ -113,7 +163,7 @@ fn testnet_genesis(
   wasm_binary: &[u8],
   initial_authorities: Vec<(AuraId, GrandpaId)>,
   root_key: AccountId,
-  endowed_accounts: Vec<AccountId>,
+  endowed_accounts: Vec<(AccountId, u128)>,
   _enable_println: bool,
 ) -> GenesisConfig {
   GenesisConfig {
@@ -122,7 +172,7 @@ fn testnet_genesis(
       changes_trie_config: Default::default(),
     }),
     balances: Some(BalancesConfig {
-      balances: endowed_accounts.iter().cloned().map(|k| (k, 1 << 60)).collect(),
+      balances: endowed_accounts,
     }),
     aura: Some(AuraConfig {
       authorities: initial_authorities.iter().map(|x| (x.0.clone())).collect(),
