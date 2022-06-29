@@ -1,16 +1,9 @@
-tasks:
-  - name: instal deps
-    init: |
-      bash ./scripts/setup-dev-env.sh \
-      && gp env SCCACHE_S3_KEY_PREFIX=anagolay_runtime \
-      && gp env RUSTC_WRAPPER=/usr/local/bin/sccache \
-      && sccache --show-stats
-
+image: docker.io/woss/gitpod-workspace:gitpod_workspace-full_2022-05-08-14-31-53
 vscode:
   extensions:
     - rust-lang.rust
     - tamasfe.even-better-toml
-    - belfz.search-crates-io
+    # - belfz.search-crates-io
     - serayuzgur.crates
     - vadimcn.vscode-lldb
     - redhat.vscode-yaml
