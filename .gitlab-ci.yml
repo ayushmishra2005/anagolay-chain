@@ -97,7 +97,6 @@ test-code:
 
 oci-base:
   <<: *build-push-oci-image
-  needs: ["test-code"]
   stage: build
   variables:
     <<: *oci-build-vars
