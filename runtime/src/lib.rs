@@ -54,13 +54,13 @@ pub use anagolay_support;
 pub use operations;
 
 /// Importing a statements pallet
-// pub use an_statements;
+pub use statements;
 
 /// Importing workflows pallet
 pub use workflows;
 
 /// Importing a poe pallet
-// pub use an_poe;
+pub use poe;
 
 /// An index to a block.
 pub type BlockNumber = u32;
@@ -117,8 +117,8 @@ pub mod opaque {
 
 /// This runtime version.
 pub const VERSION: RuntimeVersion = RuntimeVersion {
-  spec_name: create_runtime_str!("node-anagolay"),
-  impl_name: create_runtime_str!("node-anagolay"),
+  spec_name: create_runtime_str!("idiyanale"),
+  impl_name: create_runtime_str!("idiyanale"),
   authoring_version: 1,
   spec_version: 1,
   impl_version: 1,

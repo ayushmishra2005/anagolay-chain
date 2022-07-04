@@ -1,5 +1,5 @@
 ARG GIT_LATEST_REVISION
-ARG CI_LINUX_TAG="050979ef"
+ARG CI_LINUX_TAG="72ee2742"
 ARG OCI_REGISTRY="docker.io"
 ####### BUILDER image
 FROM ${OCI_REGISTRY}/anagolay/ci-linux:$CI_LINUX_TAG as builder

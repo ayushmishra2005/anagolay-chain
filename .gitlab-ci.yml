@@ -18,11 +18,11 @@ variables: &default-vars
   # this CI-LINUX image tag to be used with the other images. the ci doesn't have the latest yet
   CI_LINUX_TAG: "050979ef"
 
-workflow:
-  rules:
-    - if: $CI_MERGE_REQUEST_IID
-    - if: $CI_COMMIT_TAG
-    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+# workflow:
+#   rules:
+#     - if: $CI_MERGE_REQUEST_IID
+#     - if: $CI_COMMIT_TAG
+#     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
 
 # https://docs.gitlab.com/ee/ci/yaml/README.html#cache
 cache:
@@ -97,7 +97,6 @@ test-code:
 
 oci-base:
   <<: *build-push-oci-image
-  needs: ["test-code"]
   stage: build
   variables:
     <<: *oci-build-vars

@@ -5,6 +5,6 @@ services:
     restart: unless-stopped
     volumes:
       - anagolay_data:/data
-    command: --dev --no-telemetry --rpc-external --unsafe-ws-external --rpc-cors all
+    command: --dev --name idiyanale --rpc-external --unsafe-ws-external --rpc-cors all
 volumes:
   anagolay_data:
