@@ -22,4 +22,5 @@
   "docker.languageserver.formatter.ignoreMultilineInstructions": true,
   "evenBetterToml.formatter.alignEntries": true,
   "editor.wordWrap": "bounded",
+  "rust-client.disableRustup": true
 }

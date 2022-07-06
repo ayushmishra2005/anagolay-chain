@@ -427,7 +427,7 @@ impl<T: AnagolayStructureData, U: AnagolayStructureExtra> AnagolayStructure<T, U
 /// ```
 pub trait ArtifactType: Encode + Decode + Clone + PartialEq + Eq {}
 
-/// Operation Version artifact
+/// Artifact Structure, used as a single item in the list of stored Artifacts
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
 #[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
 pub struct AnagolayArtifactStructure<T: ArtifactType> {

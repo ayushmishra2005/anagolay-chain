@@ -16,7 +16,7 @@ with nixpkgs;
 pkgs.mkShell {
   buildInputs = [
     figlet
-    nodejs-16_x
+    nodejs-18_x
     nodePackages.pnpm
     neovim
     git
