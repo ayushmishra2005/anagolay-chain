@@ -73,12 +73,10 @@ cache:
     - buildah push --format=v2s2 "$IMAGE_NAME:latest"
 
 .install-ipfs-and-setup: &install-ipfs-and-setup
-  variables:
-    IPFS_PATH: .ipfs
   before_script:
     - echo "Downloading anagolay ipfs CLI which works with the ipfsAuthProxy."
     - |
-      curl https://ipfs.anagolay.network/ipfs/bafybeifnjzcbu76ivm22w3x37pnqqnha753ity5divosgvdnfu5ybsquji > /usr/local/bin/ipfsCli
+      curl https://ipfs.anagolay.network/ipfs/bafybeig634knkl57gqgkmh3fti6zxisfcd47swetf5lastcx2waboa4a4a > /usr/local/bin/ipfsCli
       chmod +x /usr/local/bin/ipfsCli
 
 .compiler-info: &compiler-info

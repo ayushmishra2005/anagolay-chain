@@ -1,4 +1,10 @@
 image: docker.io/woss/gitpod-workspace:gitpod_workspace-full_2022-05-08-14-31-53
+
+ports:
+  - port: 4226
+    visibility: private
+    onOpen: ignore
+
 vscode:
   extensions:
     - rust-lang.rust
