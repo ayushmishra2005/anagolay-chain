@@ -41,6 +41,7 @@ benchmarks! {
         description: "op_aaaaa description".into(),
         repository: "https://github.com/anagolay/op_aaaaa".into(),
         license: "Apache 2.0".into(),
+        features: vec!["std".into()],
         ..OperationData::default()
       },
       extra: None,
