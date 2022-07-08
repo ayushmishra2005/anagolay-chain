@@ -36,6 +36,7 @@ fn mock_request() -> (Operation, OperationVersion) {
       description: "op_aaaaa description".into(),
       repository: "https://github.com/anagolay/op_aaaaa".into(),
       license: "Apache 2.0".into(),
+      features: vec!["std".into()],
       ..OperationData::default()
     },
     extra: None,
@@ -174,6 +175,7 @@ fn operations_create_operation_error_mixing_operations() {
         description: "op_bbbbb description".into(),
         repository: "https://github.com/anagolay/op_bbbbb".into(),
         license: "Apache 2.0".into(),
+        features: vec!["std".into()],
         ..OperationData::default()
       },
       extra: None,

@@ -58,8 +58,13 @@ pub struct OperationData {
   pub repository: Characters,
   /// Short name of the license, like "Apache-2.0". min 8, max 128(0.12kb) characters,
   pub license: Characters,
-  /// Indicator of the capability of the Operation to work in no-std environment
-  pub nostd: bool,
+  /// Indicator of the features of the binary. Typically the following
+  /// - `config_<key>` with _key_ coming from the config map allows conditional compilation of the
+  ///   feature `config_<key>_<value>` where _value_ is the configuration selected at the moment the
+  ///   operation is instantiated
+  /// - `std` declares support for nostd as default and possibility to work with std. If this
+  ///   feature is missing, the operation is intended to be working **only** in std
+  pub features: Vec<Characters>,
 }
 
 /// Implementation of Default trait for OperationData
@@ -74,7 +79,7 @@ impl Default for OperationData {
       output: vec![],
       repository: "".into(),
       license: "".into(),
-      nostd: false,
+      features: vec![],
     }
   }
 }
