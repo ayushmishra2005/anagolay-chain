@@ -21,11 +21,12 @@ runtime-benchmarks = [
   'frame-system-benchmarking',
   'hex-literal',
   'sp-runtime/runtime-benchmarks',
-  'system/runtime-benchmarks',
+  'frame-system/runtime-benchmarks',
   'operations/runtime-benchmarks',
   'poe/runtime-benchmarks',
   'workflows/runtime-benchmarks',
   'statements/runtime-benchmarks',
+  'pallet-vesting/runtime-benchmarks',
 ]
 std = [
   'aura/std',
@@ -35,6 +36,7 @@ std = [
   'frame-support/std',
   'grandpa/std',
   'pallet-utility/std',
+  'pallet-vesting/std',
   'randomness-collective-flip/std',
   'serde',
   'sp-api/std',
@@ -49,7 +51,7 @@ std = [
   'sp-transaction-pool/std',
   'sp-version/std',
   'sudo/std',
-  'system/std',
+  'frame-system/std',
   'timestamp/std',
   'transaction-payment/std',
   'anagolay-support/std',
@@ -73,6 +75,7 @@ grandpa = { version = '3.0', default-features = false, package = 'pallet-grandpa
 hex-literal = { version = '0.3', optional = true }
 randomness-collective-flip = { version = '3.0', default-features = false, package = 'pallet-randomness-collective-flip' }
 pallet-utility = { version = '3.0', default-features = false }
+pallet-vesting = { version = '3.0', default-features = false }
 serde = { version = '1.0', features = ['derive'], optional = true }
 sp-api = { version = '3.0', default-features = false }
 sp-block-builder = { version = '3.0', default-features = false }
@@ -86,7 +89,7 @@ sp-std = { version = '3.0', default-features = false }
 sp-transaction-pool = { version = '3.0', default-features = false }
 sp-version = { version = '3.0', default-features = false }
 sudo = { version = '3.0', default-features = false, package = 'pallet-sudo' }
-system = { version = '3.0', default-features = false, package = 'frame-system' }
+frame-system = { version = '3.0', default-features = false }
 system-rpc-runtime-api = { version = '3.0', default-features = false, package = 'frame-system-rpc-runtime-api' }
 timestamp = { version = '3.0', default-features = false, package = 'pallet-timestamp' }
 transaction-payment = { version = '3.0', default-features = false, package = 'pallet-transaction-payment' }

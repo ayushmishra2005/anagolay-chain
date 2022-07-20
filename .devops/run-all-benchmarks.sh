@@ -11,17 +11,18 @@ echo "1. Building the Anagolay with release and benchmarks..."
 
 makers --profile=production build-release-benchmarks
 
-echo "2. Running the benchmarks for all pallets indivitually."
+echo "2. Running the benchmarks for all pallets individually."
 for i in $(ls pallets); do
   # exclude the template pallet
   if [ $i != "123-pallet" ]; then
-    echo "Calcualting weights for [$i] ..."
+    echo "Calculating weights for [$i] ..."
     ./scripts/run-benchmarks.sh $chain $i false
   fi
 done
 echo "Done!"
 
-echo "2. Benchmarking all pallets ⚒⚒"
+echo "3. Benchmarking dependencies ⚒⚒"
+./scripts/run-benchmarks.sh $chain pallet_vesting false ./runtime/src/weights/pallet_vesting.rs ./templates/dep-weight-template.hbs
 
 # ./target/release/anagolay benchmark \
 #   --chain="${chain}" \

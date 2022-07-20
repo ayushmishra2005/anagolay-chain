@@ -28,10 +28,8 @@ use sp_runtime::{
 };
 use std::time::Duration;
 
-use frame_system as system;
-
-type UncheckedExtrinsic = system::mocking::MockUncheckedExtrinsic<Test>;
-type Block = system::mocking::MockBlock<Test>;
+type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
+type Block = frame_system::mocking::MockBlock<Test>;
 
 // Configure a mock runtime to test the pallet.
 frame_support::construct_runtime!(
@@ -40,7 +38,7 @@ frame_support::construct_runtime!(
         NodeBlock = Block,
         UncheckedExtrinsic = UncheckedExtrinsic,
     {
-        System: system::{Module, Call, Config, Storage, Event<T>},
+        System: frame_system::{Module, Call, Config, Storage, Event<T>},
         AnagolayTest: anagolay_support::{Module, Call, Storage},
         OperationTest: operations::{Module, Call, Storage, Event<T>, Config<T>},
     }
@@ -94,7 +92,7 @@ impl anagolay_support::Config for Test {}
 
 // Build genesis storage according to the mock runtime.
 pub fn new_test_ext(pallet_genesis: Option<crate::GenesisConfig<Test>>) -> sp_io::TestExternalities {
-  let mut t = system::GenesisConfig::default().build_storage::<Test>().unwrap();
+  let mut t = frame_system::GenesisConfig::default().build_storage::<Test>().unwrap();
   if let Some(pg) = pallet_genesis {
     pg.assimilate_storage(&mut t).unwrap();
   }

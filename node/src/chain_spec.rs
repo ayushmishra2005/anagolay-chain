@@ -167,7 +167,7 @@ fn testnet_genesis(
   _enable_println: bool,
 ) -> GenesisConfig {
   GenesisConfig {
-    system: Some(SystemConfig {
+    frame_system: Some(SystemConfig {
       code: wasm_binary.to_vec(),
       changes_trie_config: Default::default(),
     }),
@@ -183,5 +183,6 @@ fn testnet_genesis(
     sudo: Some(SudoConfig { key: root_key }),
     operations: Default::default(),
     workflows: Default::default(),
+    pallet_vesting: Default::default(),
   }
 }

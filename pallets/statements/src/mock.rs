@@ -29,10 +29,8 @@ use sp_runtime::{
   traits::{BlakeTwo256, IdentityLookup},
 };
 
-use frame_system as system;
-
-type UncheckedExtrinsic = system::mocking::MockUncheckedExtrinsic<Test>;
-type Block = system::mocking::MockBlock<Test>;
+type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
+type Block = frame_system::mocking::MockBlock<Test>;
 
 // Configure a mock runtime to test the pallet.
 frame_support::construct_runtime!(
@@ -41,7 +39,7 @@ frame_support::construct_runtime!(
         NodeBlock = Block,
         UncheckedExtrinsic = UncheckedExtrinsic,
     {
-        System: system::{Module, Call, Config, Storage, Event<T>},
+        System: frame_system::{Module, Call, Config, Storage, Event<T>},
         TestStatements: statements::{Module, Call, Storage, Event<T>},
     }
 );
@@ -51,7 +49,7 @@ parameter_types! {
     pub const SS58Prefix: u8 = 42;
 }
 
-impl system::Config for Test {
+impl frame_system::Config for Test {
   type BaseCallFilter = ();
   type BlockWeights = ();
   type BlockLength = ();
@@ -83,5 +81,8 @@ impl Config for Test {
 
 // Build genesis storage according to the mock runtime.
 pub fn new_test_ext() -> sp_io::TestExternalities {
-  system::GenesisConfig::default().build_storage::<Test>().unwrap().into()
+  frame_system::GenesisConfig::default()
+    .build_storage::<Test>()
+    .unwrap()
+    .into()
 }

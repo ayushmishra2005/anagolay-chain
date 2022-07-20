@@ -23,7 +23,6 @@
 use crate as workflows;
 use crate::Config;
 use frame_support::{pallet_prelude::GenesisBuild, parameter_types, traits::UnixTime};
-use frame_system as system;
 use sp_core::H256;
 use sp_runtime::{
   testing::Header,
@@ -31,8 +30,8 @@ use sp_runtime::{
 };
 use std::time::Duration;
 
-type UncheckedExtrinsic = system::mocking::MockUncheckedExtrinsic<Test>;
-type Block = system::mocking::MockBlock<Test>;
+type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
+type Block = frame_system::mocking::MockBlock<Test>;
 
 // Configure a mock runtime to test the pallet.
 frame_support::construct_runtime!(
@@ -41,7 +40,7 @@ frame_support::construct_runtime!(
         NodeBlock = Block,
         UncheckedExtrinsic = UncheckedExtrinsic,
     {
-        System: system::{Module, Call, Config, Storage, Event<T>},
+        System: frame_system::{Module, Call, Config, Storage, Event<T>},
         AnagolayTest: anagolay_support::{Module, Call, Storage},
         WorkflowTest: workflows::{Module, Call, Storage, Event<T>, Config<T>},
     }
@@ -52,7 +51,7 @@ parameter_types! {
     pub const SS58Prefix: u8 = 42;
 }
 
-impl system::Config for Test {
+impl frame_system::Config for Test {
   type BaseCallFilter = ();
   type BlockWeights = ();
   type BlockLength = ();
@@ -95,7 +94,7 @@ impl anagolay_support::Config for Test {}
 
 // Build genesis storage according to the mock runtime.
 pub fn new_test_ext(pallet_genesis: Option<crate::GenesisConfig<Test>>) -> sp_io::TestExternalities {
-  let mut t = system::GenesisConfig::default().build_storage::<Test>().unwrap();
+  let mut t = frame_system::GenesisConfig::default().build_storage::<Test>().unwrap();
   if let Some(pg) = pallet_genesis {
     pg.assimilate_storage(&mut t).unwrap();
   }

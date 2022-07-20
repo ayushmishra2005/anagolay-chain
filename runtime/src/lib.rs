@@ -42,6 +42,9 @@ use transaction_payment::CurrencyAdapter;
 pub mod constants;
 pub use constants::{currency::*, time::*};
 
+pub mod weights;
+
+use sp_runtime::traits::ConvertInto;
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 pub use sp_runtime::{Perbill, Permill};
@@ -140,15 +143,15 @@ const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
 parameter_types! {
     pub const BlockHashCount: BlockNumber = 2400;
     /// We allow for 2 seconds of compute with a 6 second average block time.
-    pub BlockWeights: system::limits::BlockWeights = system::limits::BlockWeights
+    pub BlockWeights: frame_system::limits::BlockWeights = frame_system::limits::BlockWeights
         ::with_sensible_defaults(2 * WEIGHT_PER_SECOND, NORMAL_DISPATCH_RATIO);
-    pub BlockLength: system::limits::BlockLength = system::limits::BlockLength
+    pub BlockLength: frame_system::limits::BlockLength = frame_system::limits::BlockLength
         ::max_with_normal_ratio(5 * 1024 * 1024, NORMAL_DISPATCH_RATIO);
     pub const SS58Prefix: u8 = 42;
     pub const Version: RuntimeVersion = VERSION;
 }
 
-impl system::Config for Runtime {
+impl frame_system::Config for Runtime {
   /// The basic call filter to use in dispatchable.
   type BaseCallFilter = ();
   /// Block & extrinsics weights: base values and limits.
@@ -192,7 +195,7 @@ impl system::Config for Runtime {
   /// The data to be stored in an account.
   type AccountData = balances::AccountData<Balance>;
   /// Weight information for the extrinsics of this pallet.
-  type SystemWeightInfo = system::weights::SubstrateWeight<Runtime>;
+  type SystemWeightInfo = frame_system::weights::SubstrateWeight<Runtime>;
   /// This is used as an identifier of the chain. 42 is the generic substrate prefix.
   type SS58Prefix = SS58Prefix;
 }
@@ -311,6 +314,18 @@ impl sudo::Config for Runtime {
   type Call = Call;
 }
 
+parameter_types! {
+  pub const MinVestedTransfer: Balance = 1 * DOLLARS;
+}
+
+impl pallet_vesting::Config for Runtime {
+  type Event = Event;
+  type Currency = Balances;
+  type BlockNumberToBalance = ConvertInto;
+  type MinVestedTransfer = MinVestedTransfer;
+  type WeightInfo = weights::pallet_vesting::WeightInfo<Runtime>;
+}
+
 // Anagolay pallets:
 // ------------------------------------------------------------------------------------------------
 impl anagolay_support::Config for Runtime {}
@@ -343,7 +358,7 @@ construct_runtime!(
         NodeBlock = opaque::Block,
         UncheckedExtrinsic = UncheckedExtrinsic
     {
-        System: system::{Module, Call, Config, Storage, Event<T>},
+        System: frame_system::{Module, Call, Config, Storage, Event<T>},
         RandomnessCollectiveFlip: randomness_collective_flip::{Module, Call, Storage},
         Timestamp: timestamp::{Module, Call, Storage, Inherent},
         Aura: aura::{Module, Config<T>},
@@ -354,6 +369,8 @@ construct_runtime!(
 
         // Customizations
         Utility: pallet_utility::{Module, Call, Event},
+        // Vesting. Usable initially, but removed once all vesting is finished.
+        Vesting: pallet_vesting::{Module, Call, Storage, Event<T>, Config<T>},
 
         // Used for the module anagolay
         Anagolay: anagolay_support::{Module},
@@ -376,12 +393,12 @@ pub type SignedBlock = generic::SignedBlock<Block>;
 pub type BlockId = generic::BlockId<Block>;
 /// The SignedExtension to the basic transaction logic.
 pub type SignedExtra = (
-  system::CheckSpecVersion<Runtime>,
-  system::CheckTxVersion<Runtime>,
-  system::CheckGenesis<Runtime>,
-  system::CheckEra<Runtime>,
-  system::CheckNonce<Runtime>,
-  system::CheckWeight<Runtime>,
+  frame_system::CheckSpecVersion<Runtime>,
+  frame_system::CheckTxVersion<Runtime>,
+  frame_system::CheckGenesis<Runtime>,
+  frame_system::CheckEra<Runtime>,
+  frame_system::CheckNonce<Runtime>,
+  frame_system::CheckWeight<Runtime>,
   transaction_payment::ChargeTransactionPayment<Runtime>,
 );
 /// Unchecked extrinsic type as expected by this runtime.
@@ -389,7 +406,8 @@ pub type UncheckedExtrinsic = generic::UncheckedExtrinsic<Address, Call, Signatu
 /// Extrinsic type that has already been checked.
 pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, Call, SignedExtra>;
 /// Executive: handles dispatch to the various modules.
-pub type Executive = frame_executive::Executive<Runtime, Block, system::ChainContext<Runtime>, Runtime, AllModules>;
+pub type Executive =
+  frame_executive::Executive<Runtime, Block, frame_system::ChainContext<Runtime>, Runtime, AllModules>;
 
 impl_runtime_apis! {
     impl sp_api::Core<Block> for Runtime {
@@ -554,6 +572,8 @@ impl_runtime_apis! {
             add_benchmark!(params, batches, workflows, Workflows);
 
             add_benchmark!(params, batches, statements, Statements);
+
+            add_benchmark!(params, batches, pallet_vesting, Vesting);
 
             if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
             Ok(batches)
