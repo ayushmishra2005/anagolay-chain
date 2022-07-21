@@ -13,11 +13,8 @@ makers --profile=production build-release-benchmarks
 
 echo "2. Running the benchmarks for all pallets individually."
 for i in $(ls pallets); do
-  # exclude the template pallet
-  if [ $i != "123-pallet" ]; then
-    echo "Calculating weights for [$i] ..."
-    ./scripts/run-benchmarks.sh $chain $i false
-  fi
+  echo "Calculating weights for [$i] ..."
+  ./scripts/run-benchmarks.sh $chain $i false
 done
 echo "Done!"
 

@@ -21,29 +21,76 @@
 #![cfg(feature = "runtime-benchmarks")]
 
 use super::*;
-use anagolay_support::AnagolayStructureData;
-use frame_benchmarking::{benchmarks, impl_benchmark_test_suite, whitelisted_caller};
-use frame_system::RawOrigin;
-use sp_std::{boxed::Box, prelude::*, vec::Vec};
-
 use crate::types::ProofData;
 #[allow(unused)]
 use crate::Pallet as Poe;
+use anagolay_support::{
+  AnagolayArtifactStructure, AnagolayStructureData, AnagolayVersionExtra, ArtifactId, VersionId, WorkflowId,
+};
+use core::convert::TryInto;
+use frame_benchmarking::{benchmarks, impl_benchmark_test_suite, whitelisted_caller};
+use frame_support::{sp_std::prelude::*, traits::UnixTime};
+use frame_system::RawOrigin;
+use workflows::types::{Workflow, WorkflowArtifactType, WorkflowData, WorkflowVersion, WorkflowVersionData};
 
 const PERCEPTUAL_HASH: &[u8] = b"0x30303030303030303031313030303030303030303030303030303031313130303031313131313030313131313131313031313131313131313131313131313130303031313130303030303030303030303131313131313130303030303030303031313131313131313130303030303030313131313131313131313131313030303131313131313131313131313031313131313131313131313130313030313130313131303030303030303130303030303030303030303031303030303030303031313131313131313131313131313131313131313131313130303030303030303131313130303030303030303030303031313131303030303030303030303030";
+
+pub fn mock_request<T: workflows::Config>() -> (Workflow, WorkflowVersion) {
+  let wf = Workflow {
+    id: WorkflowId::from("bafkr4ih2xmsije6aa6yfwjdfmztnnkbb6ip56g3ojfcyfgjx6jsh6bogoe"),
+    data: WorkflowData {
+      name: "wf_aaaaa".into(),
+      description: "wf_aaaaa operation description".into(),
+      creators: vec!["tester".into()].try_into().unwrap(),
+      ..WorkflowData::default()
+    },
+    extra: None,
+  };
+  let wf_ver = WorkflowVersion {
+    id: VersionId::from("bafybeihc2e5rshwlkcg47uojrhtw7dwhyq2cxwivf3sysfnx5jtuuafvia"),
+    data: WorkflowVersionData {
+      entity_id: Some(wf.id.clone()),
+      parent_id: None,
+      artifacts: vec![AnagolayArtifactStructure {
+        artifact_type: WorkflowArtifactType::Git,
+        file_extension: "git".into(),
+        ipfs_cid: ArtifactId::from("bafkreibft6r6ijt7lxmbu2x3oq2s2ehwm5kz2nflwnlktdhcq2yfhgd4ku"),
+      }]
+      .try_into()
+      .unwrap(),
+    },
+    extra: Some(AnagolayVersionExtra {
+      created_at: T::TimeProvider::now().as_secs(),
+    }),
+  };
+  (wf, wf_ver)
+}
+
+pub fn build_default_proof_data(workflow_id: WorkflowId) -> ProofData {
+  let mut proof_data = ProofData::default();
+  proof_data.workflow_id = workflow_id;
+  proof_data
+}
 
 benchmarks! {
     create_proof {
         let caller: T::AccountId = whitelisted_caller();
-        let proof_data = ProofData::default();
+        let (wf, wf_ver) = mock_request::<T>();
+        let wf_id = wf.data.clone().to_cid();
+        workflows::Pallet::<T>::create(<T as frame_system::Config>::Origin::from(RawOrigin::Signed(caller.clone())), wf.data, wf_ver.data).unwrap();
+        let proof_data = build_default_proof_data(wf_id);
     }: _(RawOrigin::Signed(caller), proof_data)
 
     save_phash {
         let caller: T::AccountId = whitelisted_caller();
-        let proof_data = ProofData::default();
+        let (wf, wf_ver) = mock_request::<T>();
+        let wf_id = wf.data.clone().to_cid();
+        workflows::Pallet::<T>::create(<T as frame_system::Config>::Origin::from(RawOrigin::Signed(caller.clone())), wf.data, wf_ver.data).unwrap();
+        let proof_data = build_default_proof_data(wf_id);
+
         let phash = PERCEPTUAL_HASH.to_vec();
         let p_hash_payload = PhashInfo {
-            p_hash: phash.clone(),
+            p_hash: phash.clone().try_into().unwrap(),
             proof_id: proof_data.to_cid(),
         };
         crate::Pallet::<T>::create_proof(RawOrigin::Signed(caller.clone()).into(), proof_data)?;

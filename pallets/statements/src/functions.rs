@@ -16,10 +16,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use super::*;
-use crate::types::{Statement, StatementData, StatementRecord};
+use super::{constants::*, *};
+use crate::{
+  types::{Statement, StatementData, StatementRecord},
+  Error::NoSuchStatement,
+};
 use anagolay_support::{AnagolayRecord, ProofId, StatementId};
-use sp_std::vec::Vec;
+use frame_support::BoundedVec;
 
 impl<T: Config> Pallet<T> {
   /// Decrease the statements count
@@ -42,14 +45,18 @@ impl<T: Config> Pallet<T> {
   /// # Return
   /// A unit-type `Result` if the Statement was removed, `Error` otherwise
   pub fn remove_statement(statement_id: StatementId, account_id: &T::AccountId) -> Result<(), Error<T>> {
-    let statement_info: StatementRecord<T> = StatementByStatementIdAndAccountId::<T>::get(&statement_id, &account_id);
-    Self::remove_statement_proof_connection(
-      statement_info.record.data.claim.poe_id.clone(),
-      statement_info.record.id.clone(),
-    )?;
-    StatementByStatementIdAndAccountId::<T>::remove(&statement_id, &account_id);
-    Self::decrease_statements_count();
-    Ok(())
+    match StatementByStatementIdAndAccountId::<T>::get(&statement_id, &account_id) {
+      Some(statement_info) => {
+        Self::remove_statement_proof_connection(
+          statement_info.record.data.claim.poe_id.clone(),
+          statement_info.record.id.clone(),
+        )?;
+        StatementByStatementIdAndAccountId::<T>::remove(&statement_id, &account_id);
+        Self::decrease_statements_count();
+        Ok(())
+      }
+      _ => Err(NoSuchStatement),
+    }
   }
 
   /// Insert the statement to the storage
@@ -92,7 +99,8 @@ impl<T: Config> Pallet<T> {
   /// # Return
   /// A unit-type `Result` if the connection was removed, `Error` otherwise
   pub fn remove_statement_proof_connection(poe_id: ProofId, statement_id: StatementId) -> Result<(), Error<T>> {
-    let mut proof_statement_list: Vec<ProofId> = StatementIdsByProofId::<T>::get(&poe_id);
+    let mut proof_statement_list: BoundedVec<ProofId, MaxStatementsPerProofGet<T>> =
+      StatementIdsByProofId::<T>::get(&poe_id);
 
     match proof_statement_list.binary_search(&statement_id) {
       // If the search succeeds, we found the Statement <-> Proof removal index,
@@ -114,7 +122,8 @@ impl<T: Config> Pallet<T> {
   /// # Return
   /// A unit-type `Result` if no Proof is currently associated to the statement, `Error` otherwise
   pub fn is_proof_statement_list_empty(statement_data: &StatementData) -> Result<(), Error<T>> {
-    let proof_statement_list: Vec<StatementId> = StatementIdsByProofId::<T>::get(&statement_data.claim.poe_id);
+    let proof_statement_list: BoundedVec<ProofId, MaxStatementsPerProofGet<T>> =
+      StatementIdsByProofId::<T>::get(&statement_data.claim.poe_id);
 
     if !proof_statement_list.is_empty() {
       // check here for existence of the statement given the condition where proportion is 100% or less
@@ -134,7 +143,8 @@ impl<T: Config> Pallet<T> {
   /// # Return
   /// A unit-type `Result` if the connection was created, `Error` otherwise
   pub fn add_statement_to_proof(poe_id: ProofId, statement_id: StatementId) -> Result<(), Error<T>> {
-    let mut proof_statement_list: Vec<ProofId> = StatementIdsByProofId::<T>::get(&poe_id);
+    let mut proof_statement_list: BoundedVec<ProofId, MaxStatementsPerProofGet<T>> =
+      StatementIdsByProofId::<T>::get(&poe_id);
 
     match proof_statement_list.binary_search(&statement_id) {
       // If the search succeeds, the caller is already a member, so just return
@@ -143,7 +153,9 @@ impl<T: Config> Pallet<T> {
       // they should be inserted
       Err(index) => {
         // update the list
-        proof_statement_list.insert(index, statement_id);
+        proof_statement_list
+          .try_insert(index, statement_id)
+          .map_err(|_err| Error::<T>::MaxStatementsPerProofLimitReached)?;
         StatementIdsByProofId::<T>::insert(poe_id, proof_statement_list);
         Ok(())
       }

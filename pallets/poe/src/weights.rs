@@ -41,10 +41,10 @@
 #![allow(clippy::unnecessary_cast)]
 
 use frame_support::{
+  sp_std::marker::PhantomData,
   traits::Get,
   weights::{constants::RocksDbWeight, Weight},
 };
-use sp_std::marker::PhantomData;
 
 /// Weight functions needed for poe.
 pub trait WeightInfo {

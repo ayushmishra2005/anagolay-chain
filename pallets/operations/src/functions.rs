@@ -21,7 +21,7 @@
 
 use super::*;
 use crate::types::{Operation, OperationRecord, OperationVersion, OperationVersionRecord};
-use sp_std::borrow::ToOwned;
+use frame_support::sp_std::borrow::ToOwned;
 
 impl<T: Config> Pallet<T> {
   /// Inserts the Operation into the `OperationsByOperationIdAndAccountId` storage
@@ -58,7 +58,7 @@ impl<T: Config> Pallet<T> {
     operation_version: &OperationVersion,
     account_id: &T::AccountId,
     block_number: T::BlockNumber,
-  ) {
+  ) -> Result<(), Error<T>> {
     let record = OperationVersionRecord::<T> {
       record: operation_version.clone(),
       account_id: account_id.clone(),
@@ -70,10 +70,13 @@ impl<T: Config> Pallet<T> {
 
     VersionByVersionId::<T>::insert(&operation_version_id, record);
 
-    VersionIdsByOperationId::<T>::mutate(operation_id, |versions| {
-      versions.push(operation_version_id.clone());
-    });
+    VersionIdsByOperationId::<T>::try_mutate(operation_id, |versions| {
+      versions
+        .try_push(operation_version_id.clone())
+        .map_err(|_err| Error::<T>::MaxVersionsPerOperationLimitReached)
+    })?;
 
-    anagolay_support::Pallet::<T>::store_artifacts(&operation_version.data.artifacts);
+    anagolay_support::Pallet::<T>::store_artifacts(&operation_version.data.artifacts)
+      .map_err(|_err| Error::<T>::MaxArtifactsLimitReached)
   }
 }

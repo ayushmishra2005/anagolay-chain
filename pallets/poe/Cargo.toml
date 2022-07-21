@@ -1,54 +1,57 @@
 [package]
-authors = ['did:substrate:GHm6gp6khjcxQvnbnSsHdYejsFK1nNVxcGyGAsbDfsymtLr']
-repository = 'https://gitlab.com/anagolay/anagolay/'
-homepage = 'https://anagolay.network/pallet/poe'
-edition = '2018'
+authors      = ['did:substrate:GHm6gp6khjcxQvnbnSsHdYejsFK1nNVxcGyGAsbDfsymtLr']
+repository   = 'https://gitlab.com/anagolay/anagolay/'
+homepage     = 'https://anagolay.network/pallet/poe'
+edition      = '2018'
 license-file = "./LICENSE"
-name = 'poe'
-version = '0.1.0'
+name         = 'poe'
+version      = '0.1.0'
 
 [package.metadata.docs.rs]
-targets = ['x86_64-unknown-linux-gnu']
+targets = ["x86_64-unknown-linux-gnu"]
+
+[dependencies]
+codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = [
+  "derive",
+] }
+scale-info = { version = "2.1.1", default-features = false, features = [
+  "derive",
+] }
+frame-support = { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
+frame-system = { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
+frame-benchmarking = { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26", optional = true }
+
+anagolay-support = { path = '../anagolay-support', default-features = false }
+operations       = { path = '../operations', default-features = false }
+workflows        = { path = '../workflows', default-features = false }
+
+[dev-dependencies]
+sp-core    = { default-features = false, version = "6.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
+sp-io      = { default-features = false, version = "6.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
+sp-runtime = { default-features = false, version = "6.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
 
 [features]
-default = ['std']
+default = ["std"]
 std = [
-  'codec/std',
-  'frame-benchmarking/std',
-  'frame-support/std',
-  'frame-system/std',
-  'sp-core/std',
-  'sp-runtime/std',
-  'sp-std/std',
-  "sp-io/std",
+  "codec/std",
+  "scale-info/std",
+  "frame-support/std",
+  "frame-system/std",
+  "frame-benchmarking/std",
   "anagolay-support/std",
   "operations/std",
   "workflows/std",
 ]
 
 runtime-benchmarks = [
-  'frame-benchmarking',
-  'frame-support/runtime-benchmarks',
-  'frame-system/runtime-benchmarks',
-  'sp-runtime/runtime-benchmarks',
+  "frame-benchmarking/runtime-benchmarks",
+  "anagolay-support/runtime-benchmarks",
+  "operations/runtime-benchmarks",
+  "workflows/runtime-benchmarks",
 ]
-
-
-[dev-dependencies]
-serde = { version = "1.0" }
-
-[dependencies]
-codec = { version = '2.2', default-features = false, features = [
-  'derive',
-], package = 'parity-scale-codec' }
-frame-support = { version = '3.0', default-features = false }
-frame-system = { version = '3.0', default-features = false }
-frame-benchmarking = { version = '3.0', default-features = false, optional = true }
-sp-core = { version = '3.0', default-features = false }
-sp-io = { version = '3.0', default-features = false }
-sp-runtime = { version = '3.0', default-features = false }
-sp-std = { version = '3.0', default-features = false }
-
-anagolay-support = { path = '../anagolay-support', default-features = false }
-operations = { path = '../operations', default-features = false }
-workflows = { path = '../workflows', default-features = false }
+try-runtime = [
+  "frame-support/try-runtime",
+  "anagolay-support/try-runtime",
+  "operations/try-runtime",
+  "workflows/try-runtime",
+]

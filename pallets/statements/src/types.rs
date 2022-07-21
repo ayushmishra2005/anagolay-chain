@@ -17,50 +17,55 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 use anagolay_support::{
-  AnagolayRecord, AnagolayStructure, AnagolayStructureData, AnagolayStructureExtra, Characters, CreatorId, ProofId,
-  SignatureId, StatementId, WorkflowId,
+  getter_for_hardcoded_constant, AnagolayRecord, AnagolayStructure, AnagolayStructureData, AnagolayStructureExtra,
+  Characters, CreatorId, ProofId, SignatureId, StatementId, WorkflowId,
 };
 use codec::{Decode, Encode};
-use sp_runtime::RuntimeDebug;
-use sp_std::{clone::Clone, default::Default, vec::Vec};
+use frame_support::{
+  pallet_prelude::*,
+  sp_runtime::RuntimeDebug,
+  sp_std::{clone::Clone, default::Default},
+};
+
+getter_for_hardcoded_constant!(MaxSignatureLen, u32, 256);
 
 /// Signature
-#[derive(Default, Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
+#[derive(Default, Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, MaxEncodedLen, TypeInfo)]
 pub struct Signature {
   /// signing key in urn/did format 'urn:pgp:9cdf8dd38531511968c8d8cb524036585b62f15b'
   pub sig_key: Characters,
   /// Signature sign(prepared_statement, pvtKey(sigKey)) and encoded using multibase
   /// https://gitlab.com/sensio_group/sensio-faas/-/blob/master/sp-api/src/plugins/copyright/helpers.ts#L76
-  pub sig: Vec<u8>,
+  pub sig: BoundedVec<u8, MaxSignatureLenGet>,
   /// Content identifier of the sig field -- CID(sig)
   pub cid: SignatureId,
 }
 
 /// Signatures
-#[derive(Default, Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
+#[derive(Default, Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, MaxEncodedLen, TypeInfo)]
 pub struct Signatures {
   pub holder: Signature,
   pub issuer: Signature,
 }
 /// Claim Proportion
-#[derive(Default, Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
+#[derive(Default, Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, MaxEncodedLen, TypeInfo)]
 pub struct Proportion {
   /// Proportion sign, can be %
-  pub sign: Vec<u8>,
-  pub name: Vec<u8>,
-  pub value: Vec<u8>,
+  pub sign: Characters,
+  pub name: Characters,
+  pub value: Characters,
 }
 /// Validity
-#[derive(Default, Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
+#[derive(Default, Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, MaxEncodedLen, TypeInfo)]
 pub struct Validity {
   /// When the validity starts, this should be DATE_TIME
-  pub from: Vec<u8>,
+  pub from: Characters,
   /// When validity ends, this is calculate Validity.from + Expiration.value
-  pub until: Vec<u8>,
+  pub until: Characters,
 }
 
 /// Possible Expiration types
-#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
+#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, MaxEncodedLen, TypeInfo)]
 pub enum ExpirationType {
   Forever,
   Years,
@@ -77,16 +82,16 @@ impl Default for ExpirationType {
 }
 
 /// Claim Expiration
-#[derive(Default, Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
+#[derive(Default, Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, MaxEncodedLen, TypeInfo)]
 pub struct Expiration {
   ///Possible Expiration types
   pub expiration_type: ExpirationType,
   ///How long is the expiration, if  ExpirationType::FOREVER then this is empty
-  pub value: Vec<u8>,
+  pub value: Characters,
 }
 
 /// Claim types
-#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
+#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, MaxEncodedLen, TypeInfo)]
 pub enum ClaimType {
   Copyright,
   Ownership,
@@ -99,7 +104,7 @@ impl Default for ClaimType {
 }
 
 /// Generic Claim
-#[derive(Default, Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
+#[derive(Default, Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, MaxEncodedLen, TypeInfo)]
 pub struct Claim {
   /// Prev Statement id in case this statement is revoked or changed
   pub prev_id: Option<StatementId>,
@@ -127,11 +132,11 @@ pub struct Claim {
   /// What happens after the expiration? this is default rule or smart contract that automatically
   /// does stuff, like move it to the public domain, transfer to relatives etc... need better
   /// definition
-  pub on_expiration: Vec<u8>,
+  pub on_expiration: Characters,
 }
 
 /// Copyright data
-#[derive(Default, Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
+#[derive(Default, Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, MaxEncodedLen, TypeInfo)]
 pub struct StatementData {
   pub signatures: Signatures,
   pub claim: Claim,
@@ -143,7 +148,7 @@ impl AnagolayStructureData for StatementData {
   }
 }
 
-#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
+#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, MaxEncodedLen, TypeInfo)]
 pub struct StatementExtra {}
 impl AnagolayStructureExtra for StatementExtra {}
 impl Default for StatementExtra {

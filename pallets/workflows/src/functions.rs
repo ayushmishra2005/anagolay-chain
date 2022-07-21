@@ -17,7 +17,7 @@
 
 use super::*;
 use crate::types::{Workflow, WorkflowRecord, WorkflowVersion, WorkflowVersionRecord};
-use sp_std::borrow::ToOwned;
+use frame_support::sp_std::borrow::ToOwned;
 
 impl<T: Config> Pallet<T> {
   /// Inserts the Operation into the `WorkflowsByAccountIdAndWorkflowId` storage
@@ -54,7 +54,7 @@ impl<T: Config> Pallet<T> {
     workflow_version: &WorkflowVersion,
     account_id: &T::AccountId,
     block_number: T::BlockNumber,
-  ) {
+  ) -> Result<(), Error<T>> {
     let record = WorkflowVersionRecord::<T> {
       record: workflow_version.clone(),
       account_id: account_id.clone(),
@@ -66,10 +66,13 @@ impl<T: Config> Pallet<T> {
 
     VersionByVersionId::<T>::insert(&workflow_version_id, record);
 
-    VersionIdsByWorkflowId::<T>::mutate(workflow_id, |versions| {
-      versions.push(workflow_version_id.clone());
-    });
+    VersionIdsByWorkflowId::<T>::try_mutate(workflow_id, |versions| {
+      versions
+        .try_push(workflow_version_id.clone())
+        .map_err(|_err| Error::<T>::MaxArtifactsLimitReached)
+    })?;
 
-    anagolay_support::Pallet::<T>::store_artifacts(&workflow_version.data.artifacts);
+    anagolay_support::Pallet::<T>::store_artifacts(&workflow_version.data.artifacts)
+      .map_err(|_err| Error::<T>::MaxArtifactsLimitReached)
   }
 }

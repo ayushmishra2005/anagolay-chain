@@ -20,6 +20,7 @@
 
 use crate as anagolay_support;
 use crate::Config;
+use core::convert::{TryFrom, TryInto};
 use frame_support::parameter_types;
 use sp_core::H256;
 use sp_runtime::{
@@ -37,8 +38,8 @@ frame_support::construct_runtime!(
         NodeBlock = Block,
         UncheckedExtrinsic = UncheckedExtrinsic,
     {
-        System: frame_system::{Module, Call, Config, Storage, Event<T>},
-        AnagolayTest: anagolay_support::{Module, Call, Storage},
+        System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
+        AnagolayTest: anagolay_support::{Pallet, Call, Storage},
     }
 );
 
@@ -48,7 +49,7 @@ parameter_types! {
 }
 
 impl frame_system::Config for Test {
-  type BaseCallFilter = ();
+  type BaseCallFilter = frame_support::traits::Everything;
   type BlockWeights = ();
   type BlockLength = ();
   type Origin = Origin;
@@ -70,9 +71,13 @@ impl frame_system::Config for Test {
   type OnKilledAccount = ();
   type SystemWeightInfo = ();
   type SS58Prefix = SS58Prefix;
+  type OnSetCode = ();
+  type MaxConsumers = frame_support::traits::ConstU32<16>;
 }
 
-impl Config for Test {}
+impl Config for Test {
+  const MAX_ARTIFACTS: u32 = 1_000_000;
+}
 
 // Build genesis storage according to the mock runtime.
 pub fn new_test_ext() -> sp_io::TestExternalities {

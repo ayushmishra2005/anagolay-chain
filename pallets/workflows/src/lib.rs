@@ -51,18 +51,23 @@ mod mock;
 #[cfg(test)]
 mod tests;
 
+mod constants {
+  use anagolay_support::getter_for_constant;
+  getter_for_constant!(MaxVersionsPerWorkflow, u32);
+}
+
 #[frame_support::pallet]
 pub mod pallet {
-  use super::*;
+  use super::{constants::*, *};
   use crate::types::{
     Workflow, WorkflowData, WorkflowRecord, WorkflowVersion, WorkflowVersionData, WorkflowVersionRecord,
   };
   use anagolay_support::{
     AnagolayStructureData, AnagolayVersionData, AnagolayVersionExtra, Characters, VersionId, WorkflowId,
   };
-  use frame_support::{pallet_prelude::*, traits::UnixTime};
+  use core::convert::TryInto;
+  use frame_support::{log::error, pallet_prelude::*, traits::UnixTime};
   use frame_system::pallet_prelude::*;
-  use sp_std::vec::Vec;
 
   #[pallet::pallet]
   #[pallet::generate_store(pub(super) trait Store)]
@@ -81,24 +86,37 @@ pub mod pallet {
 
     /// Timestamps provider
     type TimeProvider: UnixTime;
+
+    /// Maximum number of Versions for a single Operation registered on Anagolay network at a given
+    /// time.
+    const MAX_VERSIONS_PER_WORKFLOW: u32;
+  }
+
+  #[pallet::extra_constants]
+  impl<T: Config> Pallet<T> {
+    #[pallet::constant_name(MaxVersionsPerWorkflow)]
+    fn max_versions_per_workflow() -> u32 {
+      T::MAX_VERSIONS_PER_WORKFLOW
+    }
   }
 
   /// Retrieve the Workflow Manifest with the WorkflowId and AccountId ( which is the owner )
   #[pallet::storage]
   #[pallet::getter(fn workflow_by_workflow_id_and_account_id)]
   pub type WorkflowByWorkflowIdAndAccountId<T: Config> =
-    StorageDoubleMap<_, Blake2_128Concat, WorkflowId, Twox64Concat, T::AccountId, WorkflowRecord<T>, ValueQuery>;
+    StorageDoubleMap<_, Blake2_128Concat, WorkflowId, Twox64Concat, T::AccountId, WorkflowRecord<T>, OptionQuery>;
 
   /// Retrieve all Versions for a single Workflow Manifest.
   #[pallet::storage]
   #[pallet::getter(fn version_ids_by_workflow_id)]
-  pub type VersionIdsByWorkflowId<T: Config> = StorageMap<_, Blake2_128Concat, WorkflowId, Vec<VersionId>, ValueQuery>;
+  pub type VersionIdsByWorkflowId<T: Config> =
+    StorageMap<_, Blake2_128Concat, WorkflowId, BoundedVec<VersionId, MaxVersionsPerWorkflowGet<T>>, ValueQuery>;
 
   /// Retrieve the Version.
   #[pallet::storage]
   #[pallet::getter(fn version_by_version_id)]
   pub type VersionByVersionId<T: Config> =
-    StorageMap<_, Blake2_128Concat, VersionId, WorkflowVersionRecord<T>, ValueQuery>;
+    StorageMap<_, Blake2_128Concat, VersionId, WorkflowVersionRecord<T>, OptionQuery>;
 
   /// Amount of saved workflows
   #[pallet::storage]
@@ -144,13 +162,25 @@ pub mod pallet {
             .unwrap_or(WorkflowId::default()) ==
             workflow_id
           {
-            VersionIdsByWorkflowId::<T>::mutate(&workflow_id, |version_ids| {
-              version_ids.push(version_id.clone());
-            });
+            let error_fn = |err| {
+              error!(
+                "Pallet workflows genesis build (workflow_id={:?}): {:?}",
+                workflow_id, err
+              )
+            };
+
+            VersionIdsByWorkflowId::<T>::try_mutate(&workflow_id, |version_ids| {
+              version_ids
+                .try_push(version_id.clone())
+                .map_err(|_err| Error::<T>::MaxVersionsPerWorkflowLimitReached)
+            })
+            .unwrap_or_else(error_fn);
 
             VersionByVersionId::<T>::insert(version_id, ver_record);
 
-            anagolay_support::Pallet::<T>::store_artifacts(&ver_record.record.data.artifacts);
+            anagolay_support::Pallet::<T>::store_artifacts(&ver_record.record.data.artifacts)
+              .map_err(|_err| Error::<T>::MaxArtifactsLimitReached)
+              .unwrap_or_else(error_fn);
           }
         }
       }
@@ -160,7 +190,6 @@ pub mod pallet {
   /// Events of the Workflows pallet
   #[pallet::event]
   #[pallet::generate_deposit(pub(super)fn deposit_event)]
-  #[pallet::metadata(T::AccountId = "AccountId")]
   pub enum Event<T: Config> {
     /// Workflow Manifest created together with Version and Packages.
     WorkflowCreated(T::AccountId, WorkflowId),
@@ -179,6 +208,10 @@ pub mod pallet {
     WorkflowAlreadyInitialized,
     /// A parameter of the request is invalid or does not respect a given constraint
     BadRequest,
+    /// Insertion of Artifact failed since MaxArtifacts limit is reached
+    MaxArtifactsLimitReached,
+    /// Insertion of Version failed since MaxVersionsPerWorkflow limit is reached
+    MaxVersionsPerWorkflowLimitReached,
   }
 
   #[pallet::hooks]
@@ -261,7 +294,7 @@ pub mod pallet {
         },
       );
 
-      Self::do_create_workflow_version(&workflow_version, &sender, current_block);
+      Self::do_create_workflow_version(&workflow_version, &sender, current_block)?;
 
       Self::deposit_event(Event::WorkflowCreated(sender, workflow.id.clone()));
 

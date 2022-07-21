@@ -29,8 +29,6 @@
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use sp_std::vec::Vec;
-
 // use frame_support::debug;
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
@@ -46,16 +44,22 @@ mod tests;
 pub use pallet::*;
 pub use weights::WeightInfo;
 
+mod constants {
+  use anagolay_support::getter_for_constant;
+  getter_for_constant!(MaxVersionsPerOperation, u32);
+}
+
 #[frame_support::pallet]
 pub mod pallet {
-  use super::*;
+  use super::{constants::*, *};
   use crate::types::{
     Operation, OperationData, OperationRecord, OperationVersion, OperationVersionData, OperationVersionRecord,
   };
   use anagolay_support::{
     AnagolayStructureData, AnagolayVersionData, AnagolayVersionExtra, Characters, OperationId, VersionId,
   };
-  use frame_support::{pallet_prelude::*, traits::UnixTime};
+  use core::convert::TryInto;
+  use frame_support::{log::error, pallet_prelude::*, traits::UnixTime};
   use frame_system::pallet_prelude::*;
 
   #[pallet::pallet]
@@ -73,25 +77,37 @@ pub mod pallet {
 
     /// Timestamps provider
     type TimeProvider: UnixTime;
+
+    /// Maximum number of Versions for a single Operation registered on Anagolay network at a given
+    /// time.
+    const MAX_VERSIONS_PER_OPERATION: u32;
+  }
+
+  #[pallet::extra_constants]
+  impl<T: Config> Pallet<T> {
+    #[pallet::constant_name(MaxVersionsPerOperation)]
+    fn max_versions_per_operation() -> u32 {
+      T::MAX_VERSIONS_PER_OPERATION
+    }
   }
 
   /// Retrieve the Operation Manifest with the AccountId ( which is the owner ) and OperationId.
   #[pallet::storage]
   #[pallet::getter(fn operation_by_operation_id_and_account_id)]
   pub type OperationByOperationIdAndAccountId<T: Config> =
-    StorageDoubleMap<_, Blake2_128Concat, OperationId, Twox64Concat, T::AccountId, OperationRecord<T>, ValueQuery>;
+    StorageDoubleMap<_, Blake2_128Concat, OperationId, Twox64Concat, T::AccountId, OperationRecord<T>, OptionQuery>;
 
   /// Retrieve all Versions for a single Operation Manifest.
   #[pallet::storage]
   #[pallet::getter(fn version_ids_by_operation_id)]
   pub type VersionIdsByOperationId<T: Config> =
-    StorageMap<_, Blake2_128Concat, OperationId, Vec<VersionId>, ValueQuery>;
+    StorageMap<_, Blake2_128Concat, OperationId, BoundedVec<VersionId, MaxVersionsPerOperationGet<T>>, ValueQuery>;
 
   /// Retrieve the Version.
   #[pallet::storage]
   #[pallet::getter(fn version_by_version_id)]
   pub type VersionByVersionId<T: Config> =
-    StorageMap<_, Blake2_128Concat, VersionId, OperationVersionRecord<T>, ValueQuery>;
+    StorageMap<_, Blake2_128Concat, VersionId, OperationVersionRecord<T>, OptionQuery>;
 
   /// Total amount of Operations.
   #[pallet::storage]
@@ -137,13 +153,25 @@ pub mod pallet {
             .unwrap_or(OperationId::default()) ==
             operation_id
           {
-            VersionIdsByOperationId::<T>::mutate(&operation_id, |version_ids| {
-              version_ids.push(version_id.clone());
-            });
+            let error_fn = |err| {
+              error!(
+                "Pallet operations genesis build (operation_id={:?}): {:?}",
+                operation_id, err
+              )
+            };
+
+            VersionIdsByOperationId::<T>::try_mutate(&operation_id, |version_ids| {
+              version_ids
+                .try_push(version_id.clone())
+                .map_err(|_err| Error::<T>::MaxVersionsPerOperationLimitReached)
+            })
+            .unwrap_or_else(error_fn);
 
             VersionByVersionId::<T>::insert(version_id, ver_record);
 
-            anagolay_support::Pallet::<T>::store_artifacts(&ver_record.record.data.artifacts);
+            anagolay_support::Pallet::<T>::store_artifacts(&ver_record.record.data.artifacts)
+              .map_err(|_err| Error::<T>::MaxArtifactsLimitReached)
+              .unwrap_or_else(error_fn);
           }
         }
       }
@@ -152,7 +180,6 @@ pub mod pallet {
   /// Events of the Operations pallet
   #[pallet::event]
   #[pallet::generate_deposit(pub(crate) fn deposit_event)]
-  #[pallet::metadata(T::AccountId = "AccountId")]
   pub enum Event<T: Config> {
     /// Operation Manifest created together with Version and Packages.
     OperationCreated(T::AccountId, OperationId),
@@ -171,6 +198,10 @@ pub mod pallet {
     OperationAlreadyInitialized,
     /// A parameter of the request is invalid or does not respect a given constraint
     BadRequest,
+    /// Insertion of Artifact failed since MaxArtifacts limit is reached
+    MaxArtifactsLimitReached,
+    /// Insertion of Version failed since MaxVersionsPerOperation limit is reached
+    MaxVersionsPerOperationLimitReached,
   }
 
   #[pallet::hooks]
@@ -253,7 +284,7 @@ pub mod pallet {
         },
       );
 
-      Self::do_create_operation_version(&operation_version, &sender, current_block);
+      Self::do_create_operation_version(&operation_version, &sender, current_block)?;
 
       Self::deposit_event(Event::OperationCreated(sender, operation.id.clone()));
 

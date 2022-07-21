@@ -32,8 +32,11 @@
 #![allow(unused_imports)]
 #![allow(clippy::unnecessary_cast)]
 
-use frame_support::{traits::Get, weights::{Weight, constants::RocksDbWeight}};
-use sp_std::marker::PhantomData;
+use frame_support::{
+  sp_std::marker::PhantomData,
+  traits::Get, 
+  weights::{Weight, constants::RocksDbWeight}, 
+};
 
 /// Weight functions needed for {{pallet}}.
 pub trait WeightInfo {

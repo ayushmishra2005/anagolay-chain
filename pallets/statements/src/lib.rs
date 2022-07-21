@@ -36,14 +36,19 @@ pub mod weights;
 pub use pallet::*;
 pub use weights::WeightInfo;
 
+mod constants {
+  use anagolay_support::getter_for_constant;
+  getter_for_constant!(MaxStatementsPerProof, u32);
+}
+
 #[frame_support::pallet]
 pub mod pallet {
-  use super::*;
+  use super::{constants::*, *};
   use crate::types::{ClaimType, Statement, StatementData, StatementRecord};
   use anagolay_support::{AnagolayStructureData, Characters, ProofId, StatementId};
+  use core::convert::TryInto;
   use frame_support::pallet_prelude::*;
   use frame_system::pallet_prelude::*;
-  use sp_std::vec::Vec;
 
   #[pallet::pallet]
   #[pallet::generate_store(pub(super) trait Store)]
@@ -59,13 +64,25 @@ pub mod pallet {
 
     /// Weight information for extrinsics for this pallet.
     type WeightInfo: WeightInfo;
+
+    /// Maximum number of Statements registered for a single Proof on Anagolay network at a given
+    /// time.
+    const MAX_STATEMENTS_PER_PROOF: u32;
+  }
+
+  #[pallet::extra_constants]
+  impl<T: Config> Pallet<T> {
+    #[pallet::constant_name(MaxStatementsPerProof)]
+    fn max_statements_per_proof() -> u32 {
+      T::MAX_STATEMENTS_PER_PROOF
+    }
   }
 
   /// Retrieve a Statement with the Statement Id and the Account Id
   #[pallet::storage]
   #[pallet::getter(fn statement_by_statement_id_and_account_id)]
   pub type StatementByStatementIdAndAccountId<T: Config> =
-    StorageDoubleMap<_, Blake2_128Concat, StatementId, Twox64Concat, T::AccountId, StatementRecord<T>, ValueQuery>;
+    StorageDoubleMap<_, Blake2_128Concat, StatementId, Twox64Concat, T::AccountId, StatementRecord<T>, OptionQuery>;
 
   /// Retrieve the parent Statement Id given a Statement Id
   /// If the StatementB has a parent StatementA in `prev_id` field this will be
@@ -100,12 +117,12 @@ pub mod pallet {
   /// be only one entry, if it's not then as many entries is needed to get to 100%
   #[pallet::storage]
   #[pallet::getter(fn statement_ids_by_proof_id)]
-  pub type StatementIdsByProofId<T: Config> = StorageMap<_, Blake2_128Concat, ProofId, Vec<StatementId>, ValueQuery>;
+  pub type StatementIdsByProofId<T: Config> =
+    StorageMap<_, Blake2_128Concat, ProofId, BoundedVec<StatementId, MaxStatementsPerProofGet<T>>, ValueQuery>;
 
   /// Events of the Statements pallet
   #[pallet::event]
   #[pallet::generate_deposit(pub(super) fn deposit_event)]
-  #[pallet::metadata(T::AccountId = "AccountId")]
   pub enum Event<T: Config> {
     /// Copyright is created
     CopyrightCreated(T::AccountId, StatementId),
@@ -132,6 +149,8 @@ pub mod pallet {
     CreatingChildStatementNotSupported,
     /// A parameter of the request is invalid or does not respect a given constraint
     BadRequest,
+    /// Insertion of Statement failed since MaxStatementsPerProof limit is reached
+    MaxStatementsPerProofLimitReached,
   }
 
   #[pallet::hooks]
@@ -285,7 +304,7 @@ pub mod pallet {
     /// # Return
     /// `DispatchResultWithPostInfo` containing Unit type
     #[pallet::weight(<T as Config>::WeightInfo::revoke())]
-    pub(super) fn revoke(origin: OriginFor<T>, statement_id: StatementId) -> DispatchResultWithPostInfo {
+    pub fn revoke(origin: OriginFor<T>, statement_id: StatementId) -> DispatchResultWithPostInfo {
       let sender = ensure_signed(origin)?;
 
       // Verify that the specified statement has been claimed.
