@@ -39,7 +39,7 @@ where
   ///
   /// Does not allocate.
   pub fn new() -> Self {
-    MaybeSerializableBoundedBTreeMap(BoundedBTreeMap::new())
+    MaybeSerializableBoundedBTreeMap(BoundedBTreeMap::<K, V, S>::new())
   }
 
   /// Exactly the same semantics as [`BTreeMap::insert`], but returns an `Err` (and is a noop) if
@@ -148,7 +148,7 @@ where
   where
     M: de::MapAccess<'de>,
   {
-    let mut map = MaybeSerializableBoundedBTreeMap::new();
+    let mut map = MaybeSerializableBoundedBTreeMap::<K, V, S>::new();
 
     // While there are entries remaining in the input, add them
     // into our map.

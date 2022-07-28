@@ -17,29 +17,29 @@ echo "Benchmark: ${pallet} ⚒⚒"
 
 if $build_and_run; then
 
-  $build_command \
-    --chain="${chain}" \
-    --steps=50 \
-    --repeat=100 \
-    --pallet="${pallet}" \
-    --extrinsic=* \
-    --execution=wasm \
-    --wasm-execution=compiled \
-    --heap-pages=4096 \
-    --output="${output}" \
-    --template=${template}
+  $build_command pallet\
+    --chain "${chain}" \
+    --steps "50" \
+    --repeat "100" \
+    --pallet "${pallet}" \
+    --extrinsic "*" \
+    --execution "wasm" \
+    --wasm-execution "compiled" \
+    --heap-pages "4096" \
+    --output "${output}" \
+    --template "${template}"
 else
-  $run_command \
-    --chain="${chain}" \
-    --steps=50 \
-    --repeat=100 \
-    --pallet="${pallet}" \
-    --extrinsic=* \
-    --execution=wasm \
-    --wasm-execution=compiled \
-    --heap-pages=4096 \
-    --output="${output}" \
-    --template=${template}
+  $run_command pallet\
+    --chain "${chain}" \
+    --steps "50" \
+    --repeat "100" \
+    --pallet "${pallet}" \
+    --extrinsic "*" \
+    --execution "wasm" \
+    --wasm-execution "compiled" \
+    --heap-pages "4096" \
+    --output "${output}" \
+    --template "${template}"
 fi
 # # since benchmark generates a weight.rs file that may or may not cargo fmt'ed.
 # # so do cargo fmt here.

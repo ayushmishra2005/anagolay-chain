@@ -12,7 +12,7 @@ echo "1. Building the Anagolay with release and benchmarks..."
 makers --profile=production build-release-benchmarks
 
 echo "2. Running the benchmarks for all pallets individually."
-for i in $(ls pallets); do
+for i in $(find pallets -type f -name 'benchmarking.rs' | sed -r 's|pallets\/([^/]+)\/src\/benchmarking.rs$|\1|' |sort -u); do
   echo "Calculating weights for [$i] ..."
   ./scripts/run-benchmarks.sh $chain $i false
 done
