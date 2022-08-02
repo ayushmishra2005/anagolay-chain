@@ -19,7 +19,12 @@ done
 echo "Done!"
 
 echo "3. Benchmarking dependencies ⚒⚒"
-./scripts/run-benchmarks.sh $chain pallet_vesting false ./runtime/src/weights/pallet_vesting.rs ./templates/dep-weight-template.hbs
+for i in $(find runtime/src/weights -type f -name 'pallet_*.rs' | sed -r 's|runtime\/src\/weights/pallet_([^/]+).rs$|\1|' |sort -u); do
+  echo "Calculating weights for [$i] ..."
+  ./scripts/run-benchmarks.sh $chain pallet_$i false ./runtime/src/weights/pallet_$i.rs ./templates/dep-weight-template.hbs
+done
+echo "Done!"
+
 
 # ./target/release/anagolay benchmark \
 #   --chain="${chain}" \

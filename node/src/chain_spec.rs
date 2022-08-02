@@ -89,6 +89,7 @@ pub fn development_config() -> Result<ChainSpec, String> {
     Some(TelemetryEndpoints::new(vec![(STAGING_TELEMETRY_URL.to_string(), 3)]).unwrap()),
     // Protocol ID
     None,
+    // Fork ID
     None,
     // Properties
     Some(props),

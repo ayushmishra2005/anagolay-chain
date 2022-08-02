@@ -6,6 +6,8 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
+use frame_support::traits::AsEnsureOriginWithArg;
+use frame_system::EnsureSigned;
 use pallet_grandpa::{fg_primitives, AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList};
 use sp_api::impl_runtime_apis;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
@@ -32,6 +34,7 @@ pub use frame_support::{
   StorageValue,
 };
 pub use frame_system::Call as SystemCall;
+use frame_system::EnsureRoot;
 pub use pallet_balances::Call as BalancesCall;
 pub use pallet_timestamp::Call as TimestampCall;
 use pallet_transaction_payment::CurrencyAdapter;
@@ -308,6 +311,38 @@ impl pallet_vesting::Config for Runtime {
   const MAX_VESTING_SCHEDULES: u32 = 28;
 }
 
+parameter_types! {
+  pub const CollectionDeposit: Balance = 10 * UNITS; // 10 UNIT deposit to create uniques class
+  pub const ItemDeposit: Balance = UNITS / 100; // 1 / 100 UNIT deposit to create uniques instance
+  pub const KeyLimit: u32 = 32;	// Max 32 bytes per key
+  pub const ValueLimit: u32 = 64;	// Max 64 bytes per value
+  pub const UniquesMetadataDepositBase: Balance = deposit(1, 129);
+  pub const AttributeDepositBase: Balance = deposit(1, 0);
+  pub const DepositPerByte: Balance = deposit(0, 1);
+  pub const UniquesStringLimit: u32 = 128;
+}
+
+impl pallet_uniques::Config for Runtime {
+  type Event = Event;
+  type CollectionId = u32;
+  type ItemId = u32;
+  type Currency = Balances;
+  type ForceOrigin = EnsureRoot<AccountId>;
+  type CollectionDeposit = CollectionDeposit;
+  type ItemDeposit = ItemDeposit;
+  type MetadataDepositBase = UniquesMetadataDepositBase;
+  type AttributeDepositBase = AttributeDepositBase;
+  type DepositPerByte = DepositPerByte;
+  type StringLimit = UniquesStringLimit;
+  type KeyLimit = KeyLimit;
+  type ValueLimit = ValueLimit;
+  type WeightInfo = weights::pallet_uniques::WeightInfo<Runtime>;
+  #[cfg(feature = "runtime-benchmarks")]
+  type Helper = ();
+  type CreateOrigin = AsEnsureOriginWithArg<EnsureSigned<AccountId>>;
+  type Locker = ();
+}
+
 // Anagolay pallets:
 // ------------------------------------------------------------------------------------------------
 impl anagolay_support::Config for Runtime {
@@ -349,26 +384,27 @@ construct_runtime!(
     NodeBlock = opaque::Block,
     UncheckedExtrinsic = UncheckedExtrinsic
   {
-    System: frame_system,
-    RandomnessCollectiveFlip: pallet_randomness_collective_flip,
-    Timestamp: pallet_timestamp,
-    Aura: pallet_aura,
-    Grandpa: pallet_grandpa,
-    Balances: pallet_balances,
-    TransactionPayment: pallet_transaction_payment,
-    Sudo: pallet_sudo,
+    System: frame_system = 0,
+    RandomnessCollectiveFlip: pallet_randomness_collective_flip = 1,
+    Timestamp: pallet_timestamp = 2,
+    Aura: pallet_aura = 3,
+    Grandpa: pallet_grandpa = 4,
+    Balances: pallet_balances = 5,
+    TransactionPayment: pallet_transaction_payment = 6,
+    Sudo: pallet_sudo = 7,
 
     // Customizations
-    Utility: pallet_utility::{Pallet, Call, Event},
+    Utility: pallet_utility::{Pallet, Call, Event} = 8,
     // Vesting. Usable initially, but removed once all vesting is finished.
-    Vesting: pallet_vesting::{Pallet, Call, Storage, Event<T>, Config<T>},
+    Vesting: pallet_vesting::{Pallet, Call, Storage, Event<T>, Config<T>} = 9,
+    Uniques: pallet_uniques::{Pallet, Call, Storage, Event<T>} = 11,
 
     // Used for anagolay blockchain
-    Anagolay: anagolay_support::{Pallet},
-    Operations: operations::{Pallet, Call, Storage, Event<T>, Config<T>},
-    Poe: poe::{Pallet, Call, Storage, Event<T>},
-    Statements: statements::{Pallet, Call, Storage, Event<T>},
-    Workflows: workflows::{Pallet, Call, Storage, Event<T>, Config<T>},
+    Anagolay: anagolay_support::{Pallet} = 12,
+    Operations: operations::{Pallet, Call, Storage, Event<T>, Config<T>} = 13,
+    Poe: poe::{Pallet, Call, Storage, Event<T>} = 14,
+    Statements: statements::{Pallet, Call, Storage, Event<T>} = 15,
+    Workflows: workflows::{Pallet, Call, Storage, Event<T>, Config<T>} = 16,
 
   }
 );
@@ -411,6 +447,7 @@ mod benches {
     [pallet_timestamp, Timestamp]
     [pallet_utility, Utility]
     [pallet_vesting, Vesting]
+    [pallet_uniques, Uniques]
     [operations, Operations]
     [poe, Poe]
     [statements, Statements]

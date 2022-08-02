@@ -1,11 +1,11 @@
 [package]
-authors      = ['did:substrate:GHm6gp6khjcxQvnbnSsHdYejsFK1nNVxcGyGAsbDfsymtLr']
-description  = 'Anagolay support pallet, default types and shared implementations are here'
-repository   = 'https://gitlab.com/anagolay/anagolay/'
-edition      = '2018'
+authors = ['did:substrate:GHm6gp6khjcxQvnbnSsHdYejsFK1nNVxcGyGAsbDfsymtLr']
+description = 'Anagolay support pallet, default types and shared implementations are here'
+repository = 'https://gitlab.com/anagolay/anagolay/'
+edition = '2018'
 license-file = './LICENSE'
-name         = 'anagolay-support'
-version      = '0.3.0'
+name = 'anagolay-support'
+version = '0.3.0'
 
 [package.metadata.docs.rs]
 targets = ["x86_64-unknown-linux-gnu"]
@@ -31,8 +31,8 @@ serde = { version = '1.0', features = ['derive'], optional = true }
 paste = { version = '1.0' }
 
 [dev-dependencies]
-sp-core    = { default-features = false, version = "6.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
-sp-io      = { default-features = false, version = "6.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
+sp-core = { default-features = false, version = "6.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
+sp-io = { default-features = false, version = "6.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
 sp-runtime = { default-features = false, version = "6.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
 
 [features]
@@ -47,4 +47,4 @@ std = [
 ]
 
 runtime-benchmarks = ["frame-benchmarking/runtime-benchmarks"]
-try-runtime        = ["frame-support/try-runtime"]
+try-runtime = ["frame-support/try-runtime"]
