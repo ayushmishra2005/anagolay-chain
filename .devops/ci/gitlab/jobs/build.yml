@@ -1,0 +1,47 @@
+build:
+  extends:
+    - .with-artifacts-short-2-hours
+  stage: build
+  needs: ["test-flow"]
+  tags:
+    - rust
+  # rules:
+  #   - !reference [.rules-build, rules]
+  #   - !reference [.rule-friendly-word, rules]
+  when: manual
+  before_script:
+    - !reference [.with-local-cachier, before_script]
+    - !reference [.info-compiler, before_script]
+    - !reference [.with-artifacts-short-2-hours, before_script]
+  # cache:
+  #   policy: pull
+  script:
+    - echo -e "\e[0Ksection_start:`date +%s`:build-prod\r\e[0KBuild Anagolay in production mode with lto"
+
+    - time makers --profile production build-production
+    - sccache -s
+
+    - ldd ./target/production/anagolay
+
+    - cp ./target/production/anagolay ./artifacts/.
+    - cp LICENSE ./artifacts/.
+
+    - chmod +x ./artifacts/anagolay
+
+    - ./artifacts/anagolay --version
+
+    - echo -n "anagolay version = "
+    - if [ "${CI_COMMIT_TAG}" ]; then
+      echo "${CI_COMMIT_TAG}" | tee ./artifacts/VERSION;
+      else
+      ./artifacts/anagolay --version |
+      cut -d ' ' -f 2 | tee ./artifacts/VERSION;
+      fi
+
+    - sha256sum ./artifacts/anagolay | tee ./artifacts/anagolay.sha256
+    - cp ${CI_PROJECT_DIR}/.devops/docker/prod/anagolay-with-artifact.dockerfile ./artifacts/Dockerfile
+    - du -sh ./artifacts/
+
+    - echo -e "\e[0Ksection_end:`date +%s`:build-prod\r\e[0K"
+  after_script:
+    - !reference [.with-local-cachier, after_script]

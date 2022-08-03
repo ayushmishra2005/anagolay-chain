@@ -10,7 +10,7 @@ use sp_finality_grandpa::AuthorityId as GrandpaId;
 use sp_runtime::traits::{IdentifyAccount, Verify};
 
 // Note this is the URL for the telemetry server
-const STAGING_TELEMETRY_URL: &str = "wss://telemetry.polkadot.io/submit/";
+const STAGING_TELEMETRY_URL: &str = "wss://telemetry.anagolay.io/submit/";
 // The minimum balance for created accounts
 const EXISTENCIAL_DEPOSIT: u128 = 1 << 60;
 

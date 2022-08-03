@@ -1,0 +1,69 @@
+.base-image-build-with-latest:
+  extends:
+    - .use-kaniko-with-latest
+
+# this will use the kaniko without the latest tag. use this for dev purposes and quick staging
+.base-image-build:
+  extends:
+    - .use-kaniko
+
+build-main-image-with-artifact:
+  when: manual
+  extends:
+    - .base-image-build
+  stage: build-images
+  needs:
+    - job: build
+      artifacts: true
+  cache: {}
+  # rules:
+  #   - !reference [.rules-build, rules]
+  #   - !reference [.rule-friendly-word, rules]
+  variables:
+    IMAGE_DOCKERFILE_PATH: ./artifacts/Dockerfile
+    IMAGE_NAME: "${CI_REGISTRY}/${CI_PROJECT_PATH}:${CI_COMMIT_SHORT_SHA}"
+    AN_CI_LINUX_TAG: "19816159"
+    GIT_STRATEGY: none
+    CI_PROJECT_DIR: ./artifacts
+    GIT_LAST_REVISION: $CI_COMMIT_SHA
+
+  script:
+    - echo $IMAGE_NAME
+    # docs  https://docs.gitlab.com/ee/ci/yaml/yaml_optimization.html#reference-tags
+    - !reference [.base-image-build, script]
+
+build-main-image-latest:
+  when: manual
+  extends:
+    - .base-image-build-with-latest
+  stage: build-images
+  # rules:
+  #   - !reference [.rules-build, rules]
+  #   - !reference [.rule-friendly-word, rules]
+  needs:
+    - job: build
+      artifacts: true
+  variables:
+    IMAGE_DOCKERFILE_PATH: "${CI_PROJECT_DIR}/.devops/docker/prod/anagolay.dockerfile"
+    IMAGE_NAME: "${CI_REGISTRY}/${CI_PROJECT_PATH}:latest"
+    AN_CI_LINUX_TAG: "19816159"
+    GIT_LAST_REVISION: $CI_COMMIT_SHORT_SHA
+
+  script:
+    - echo $IMAGE_NAME
+    # docs  https://docs.gitlab.com/ee/ci/yaml/yaml_optimization.html#reference-tags
+    - !reference [.base-image-build-with-latest, script]
+
+build-ci-image:
+  when: manual
+  extends:
+    - .base-image-build
+  stage: build-images
+  needs: []
+  variables:
+    IMAGE_DOCKERFILE_PATH: "${CI_PROJECT_DIR}/.devops/docker/prod/ci-linux.dockerfile"
+    IMAGE_NAME: "${CI_REGISTRY}/${CI_PROJECT_PATH}/ci-linux:${CI_COMMIT_SHORT_SHA}"
+  script:
+    - echo $IMAGE_NAME
+    # docs  https://docs.gitlab.com/ee/ci/yaml/yaml_optimization.html#reference-tags
+    - !reference [.base-image-build, script]

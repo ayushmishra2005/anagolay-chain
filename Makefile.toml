@@ -6,9 +6,64 @@ default_to_workspace = false
 description = "Generate rust documentation (override to include all deps, all features). This will overwrite the default docs which is the part of `makers docs-flow` so you can safely use it. It accepst all arguments as docs would"
 args = ["doc", "--all-features", "${@}"]
 
+
+##########################
+#####  TEST SECTION  #####
+##########################
 [tasks.test]
-description = "Test the projec in less verbose mode for all features. It accepst all arguments as test would"
-args = ["test", "--all-features", "${@}"]
+description = "Test the project in less verbose mode for all features. It accepst all arguments as nexttest crate would with partitions for the testing in parallel"
+command = "cargo"
+install_crate = true
+args = ["nextest", "run", "--all-features", "${@}"]
+
+
+[tasks.test-parallel]
+command = "makers"
+args = [
+  "test",
+  "--partition",
+  "count:${CI_NODE_INDEX}/${CI_NODE_TOTAL}",
+  "${@}",
+]
+[tasks.test-with-release]
+command = "makers"
+args = ["test", "--release", "${@}"]
+
+[tasks.test-operations]
+description = "Test `operations` pallet. This is using `makers test` to run"
+command = "makers"
+args = ["test", "-p", "operations", "${@}"]
+
+[tasks.test-poe]
+description = "Test `poe` pallet. This is using `makers test` to run"
+command = "makers"
+args = ["test", "-p", "poe", "${@}"]
+
+[tasks.test-statements]
+description = "Test `statements` pallet. This is using `makers test` to run"
+command = "makers"
+args = ["test", "-p", "statements", "${@}"]
+
+[tasks.test-workflows]
+description = "Test `workflows` pallet. This is using `makers test` to run"
+command = "makers"
+args = ["test", "-p", "workflows", "${@}"]
+
+[tasks.test-anagolay-support]
+description = "Test `anagolay-support` pallet. This is using `makers test` to run"
+command = "makers"
+args = ["test", "-p", "anagolay-support", "${@}"]
+
+## Run the tests with benchmarking turned on
+[tasks.test-benchmarking]
+description = "Execute unit and integration tests of a anagolay node with flags enabled for testing benchmarks."
+category = "anagolay"
+command = "makers"
+args = ["test", "--features", "runtime-benchmarks", "benchmarking", "${@}"]
+
+
+##########################
+
 
 [tasks.clean-anagolay]
 category = "anagolay"
@@ -28,12 +83,12 @@ description = "Compile the Anagolay runtime in debug mode. Accepts any valid bui
 command = "cargo"
 args = ["build", "${@}"]
 
-[tasks.build-release]
+[tasks.build-production]
 condition = { profiles = ["production"] }
 category = "anagolay"
-description = "Compile the Anagolay runtime in release mode with --locked option. Accepts any valid build arguments."
+description = "Compile the Anagolay runtime in release mode with  option and custom profile `production`. Accepts any valid build arguments."
 command = "cargo"
-args = ["build", "--locked", "--release", "${@}"]
+args = ["build", "--locked", "--profile", "production", "${@}"]
 
 ## Build release with feature runtime-benchmarks
 [tasks.build-release-benchmarks]
@@ -43,20 +98,6 @@ description = "Compile the Anagolay runtime in release mode with feature flag fo
 command = "cargo"
 args = ["build", "--locked", "--release", "--features", "runtime-benchmarks"]
 
-
-## Run the tests with benchmarking turned on
-[tasks.test-benchmarking]
-category = "anagolay"
-description = "Execute unit and integration tests of a anagolay node with flags enabled for testing benchmarks."
-command = "cargo"
-args = [
-  "test",
-  "--features",
-  "runtime-benchmarks",
-  "--features",
-  "--all",
-  "benchmarking",
-]
 
 [tasks.chain-dev-purge]
 category = "anagolay"
@@ -79,8 +120,10 @@ args = [
 ]
 dependencies = ["build"]
 
+
 # Gitlab CI flow
-[tasks.ci-flow]
+[tasks.ci-flow-light]
 category = "anagolay"
 description = "Experimental ci-flow which runs the checks in single run instead many."
-dependencies = ["check-format-flow", "test"]
+args = ["--release"]
+dependencies = ["check-format-flow", "test-with-release"]

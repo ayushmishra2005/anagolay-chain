@@ -1,0 +1,14 @@
+fmt:
+  stage: .pre
+  tags:
+    - rust
+  rules:
+    - !reference [.rule-friendly-word, rules]
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+  cache: []
+  before_script:
+    - !reference [.info-compiler, before_script]
+  script:
+    - echo -e "\e[0Ksection_start:`date +%s`:test\r\e[0KFormat check"
+    - makers check-format-flow
+    - echo -e "\e[0Ksection_end:`date +%s`:test\r\e[0K"

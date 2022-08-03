@@ -1,9 +1,10 @@
-target
+target/
 **target**
-.vscode
-docs
-Dockerfile
-certs
-coverage
-.devcontainer
+.vscode/
+docs/
+certs/
+coverage/
+.gitlab/
 .env
+.dockerignore
+.git/

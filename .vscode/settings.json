@@ -1,8 +1,8 @@
 {
   "editor.formatOnSave": true,
-  // "files.associations": {
-  //   "*.yml": "yaml",
-  // },
+  "files.associations": {
+    ".devops/docker/compose/*.yml": "dockercompose",
+  },
   "cSpell.words": [
     "SPDX",
     "clippy",

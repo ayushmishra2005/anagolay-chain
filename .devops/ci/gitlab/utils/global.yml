@@ -1,0 +1,79 @@
+.install-pnpm-and-node:
+  before_script:
+    - echo -e "\e[0Ksection_start:`date +%s`:my_custom_section\r\e[0KSetting up the pnpm and nodejs"
+    - wget -q https://ipfs.anagolay.network/ipfs/bafybeigpvp624p2ly2c44twyvalrwdzb5sehntwk3zzrvb4ht6qh56atha  -O $CI_PROJECT_DIR/pnpm
+    - chmod +x $CI_PROJECT_DIR/pnpm
+    - pnpm config set store-dir .pnpm-store
+    - pnpm set registry https://npm-registry.anagolay.network/
+    - pnpm env use --global 18.4.0
+    - node --version
+    - pnpm --version
+    - git --version
+    - echo -e "\e[0Ksection_end:`date +%s`:my_custom_section\r\e[0K"
+
+.info-compiler:
+  before_script:
+    - echo -e "\e[0Ksection_start:`date +%s`:compiler_info_section\r\e[0KCompiler information"
+    - rustup show
+    - cargo --version
+    - rustup +nightly show
+    - cargo +nightly --version
+    - echo $RUSTC_WRAPPER
+    - sccache --version
+    - echo -e "\e[0Ksection_end:`date +%s`:compiler_info_section\r\e[0K"
+
+.with-sccache-new-s3:
+  before_script:
+    - wget -q https://ipfs.anagolay.network/ipfs/bafybeidovvudc7jcc3ulkz2t4pew4fa5ylnzoaf67b67kc3yderuavx3hy -O /usr/local/bin/sccache
+    - chmod +x /usr/local/bin/sccache
+    - sccache --start-server
+    - sccache --version
+    - sccache --show-stats
+
+.with-local-cachier:
+  before_script:
+    - unset SCCACHE_BUCKET
+    - unset SCCACHE_ENDPOINT
+    - unset AWS_ACCESS_KEY_ID
+    - unset AWS_SECRET_ACCESS_KEY
+    - mkdir -p .sccache
+    - mkdir -p .cargo
+    - DEBIAN_FRONTEND=noninteractive apt install -y tree zip unzip
+    - bash .devops/ci/cachier/setup-cache.sh
+    - bash .devops/ci/cachier/download-cache.sh
+  after_script:
+    # - ""
+    - bash .devops/ci/cachier/upload-cache.sh
+    - bash .devops/ci/cachier/setup-cache.sh show-info
+
+.with-sccache-stats:
+  script:
+    - sccache --show-stats
+  after_script:
+    - sccache --show-stats
+
+.with-ipfs-cli:
+  before_script:
+    - echo "Downloading anagolay ipfs CLI which works with the ipfsAuthProxy."
+    - wget -q  https://ipfs.anagolay.network/ipfs/bafybeig634knkl57gqgkmh3fti6zxisfcd47swetf5lastcx2waboa4a4a -O $CI_PROJECT_DIR/ipfsCli
+    - chmod +x $CI_PROJECT_DIR/ipfsCli
+
+.with-artifacts-7-days:
+  artifacts:
+    name: "${CI_JOB_NAME}_${CI_COMMIT_REF_NAME}"
+    when: on_success
+    expire_in: 7 days
+    paths:
+      - artifacts/
+  before_script:
+    - mkdir -p ./artifacts
+
+.with-artifacts-short-2-hours:
+  artifacts:
+    name: "${CI_JOB_NAME}_${CI_COMMIT_REF_NAME}"
+    when: on_success
+    expire_in: 2 hours
+    paths:
+      - artifacts/
+  before_script:
+    - mkdir -p ./artifacts

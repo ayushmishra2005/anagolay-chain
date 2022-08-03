@@ -1,0 +1,80 @@
+.patterns-source-code:
+  - node/src/**/*.rs
+  - pallets/**/*.rs
+  - runtime/**/*.rs
+
+.rules-build:
+  rules:
+    # Don't run when triggered from another pipeline
+    - if: $CI_PIPELINE_SOURCE == "pipeline"
+      when: never
+    - if: $CI_PIPELINE_SOURCE == "web"
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+    - if: $CI_COMMIT_REF_NAME == "main"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - if: $CI_COMMIT_TAG
+
+# run on merge-request-event and any of the source code is changed
+.rules-run-if-source-code-is-changed:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      changes:
+        - << patterns-source-code
+
+.rules-on-merge-request-event:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+
+.rule-friendly-word:
+  rules:
+    - if: $CI_COMMIT_MESSAGE =~ /^.*\[mellon\].*$]/ # a friendly tag so we can test it
+
+.skip-merge-train:
+  rules:
+    - if: '$CI_COMMIT_MESSAGE =~ /\[merge-train skip\]/'
+      when: never
+# .rules-run-test-for-operations:
+#   rules:
+#     - if: $CI_COMMIT_MESSAGE =~ /^.*\[mellon\].*$]/ # a friendly tag so we can test it
+#       when: manual
+#     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+#       changes:
+#         - runtime/operations/Cargo.toml
+#         - runtime/operations/*.rs
+
+# .rules-run-test-for-poe:
+#   rules:
+#     - if: $CI_COMMIT_MESSAGE =~ /^.*\[mellon\].*$]/ # a friendly tag so we can test it
+#       when: manual
+#     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+#       changes:
+#         - runtime/poe/Cargo.toml
+#         - runtime/poe/*.rs
+
+# .rules-run-test-for-workflows:
+#   rules:
+#     - if: $CI_COMMIT_MESSAGE =~ /^.*\[mellon\].*$]/ # a friendly tag so we can test it
+#       when: manual
+#     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+#       changes:
+#         - runtime/workflows/Cargo.toml
+#         - runtime/workflows/*.rs
+
+# .rules-run-test-for-statements:
+#   rules:
+#     - if: $CI_COMMIT_MESSAGE =~ /^.*\[mellon\].*$]/ # a friendly tag so we can test it
+#       when: manual
+#     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+#       changes:
+#         - runtime/statements/Cargo.toml
+#         - runtime/statements/*.rs
+
+# .rules-run-test-for-anagolay-support:
+#   rules:
+#     - if: $CI_COMMIT_MESSAGE =~ /^.*\[mellon\].*$]/ # a friendly tag so we can test it
+#       when: manual
+#     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+#       changes:
+#         - runtime/anagolay-support/Cargo.toml
+#         - runtime/anagolay-support/*.rs
+
