@@ -1,0 +1,25 @@
+version: "3"
+services:
+  ci-linux:
+    # registry.groupName.repoName
+    image: ${CI_REGISTRY}/anagolay/anagolay/ci-linux:${CI_COMMIT_SHORT_SHA}
+    # image: registry.gitlab.com/anagolay/anagolay/ci-linux:bf8ce56
+    init: true
+    environment:
+      - AWS_ACCESS_KEY_ID
+      - AWS_SECRET_ACCESS_KEY
+      - SCCACHE_BUCKET
+      - SCCACHE_REGION
+      - SCCACHE_S3_KEY_PREFIX
+      - CI_REGISTRY
+    build:
+      context: ../../../
+      dockerfile: .devops/docker/prod/ci-linux.dockerfile
+      args:
+        - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+        - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+        - SCCACHE_BUCKET=${SCCACHE_BUCKET}
+        - SCCACHE_REGION=${SCCACHE_REGION}
+        - SCCACHE_S3_KEY_PREFIX=${SCCACHE_S3_KEY_PREFIX}
+        - CI_REGISTRY=${CI_REGISTRY}
+    command: sleep 1h

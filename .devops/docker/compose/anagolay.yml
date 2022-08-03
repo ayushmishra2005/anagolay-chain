@@ -1,0 +1,35 @@
+version: "3"
+services:
+  anagolay:
+    # registry.groupName.repoName
+    image: registry.gitlab.com/anagolay/anagolay:c51ee46e
+    environment:
+      - AWS_ACCESS_KEY_ID
+      - AWS_SECRET_ACCESS_KEY
+      - SCCACHE_BUCKET
+      - SCCACHE_REGION
+      - SCCACHE_S3_KEY_PREFIX
+      - CI_REGISTRY
+    build:
+      context: ../../../artifacts
+      dockerfile: Dockerfile
+    volumes:
+      - idiyanale_data:/data
+    ports:
+      - "127.0.0.1:30333:30333/tcp"
+      - "127.0.0.1:9933:9933/tcp"
+      - "9944:9944"
+      - "9615:9615"
+    command: |
+      --base-path /data
+      --name idiyanale 
+      --rpc-external 
+      --unsafe-ws-external 
+      --unsafe-rpc-external
+      --rpc-cors all
+      --prometheus-external
+      --no-telemetry 
+      --ws-external
+
+volumes:
+  idiyanale_data: {}

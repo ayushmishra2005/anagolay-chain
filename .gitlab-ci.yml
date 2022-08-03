@@ -1,145 +1,51 @@
-image: anagolay/ci-linux:050979ef
+image: registry.gitlab.com/anagolay/anagolay/ci-linux:19816159
 
 stages:
-  - check
+  - .pre
   - test
-  - audit
   - build
-  - release
+  - publish
+  - build-images
 
-variables: &default-vars
-  GIT_STRATEGY: fetch
-  GIT_DEPTH: 100
-  CARGO_INCREMENTAL: 0
-  STAGE: "prod"
-  ARCH: "x86_64"
-  DOCKER_TLS_CERTDIR: "/certs"
-  OCI_REGISTRY: "docker.io"
+### workflows control when to create the PIPELINE, not jobs
+workflow:
+  rules:
+    - if: $FORCE_START
+    - if: $CI_COMMIT_TAG
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - if: $CI_COMMIT_MESSAGE =~ /^.*\[mellon\].*$]/ # a friendly tag so we can test it
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event" ## this is the same as $CI_MERGE_REQUEST_IID
+
+variables:
+  CARGO_INCREMENTAL: 1
   # this CI-LINUX image tag to be used with the other images. the ci doesn't have the latest yet
-  CI_LINUX_TAG: "050979ef"
+  AN_CI_LINUX_TAG: "19816159"
+  SCCACHE_DIR: $CI_PROJECT_DIR/.sccache
+  CARGO_HOME: $CI_PROJECT_DIR/.cargo
+  REPO_CACHE_DIR: "/cachier-cache/$CI_PROJECT_NAMESPACE/$CI_PROJECT_NAME"
+  CACHE_DIR: "$REPO_CACHE_DIR/$CI_COMMIT_REF_SLUG"
+  TARGET_CACHE_NAME: "target.zip"
+  BUILD_CACHE_FILE: $CACHE_DIR/$TARGET_CACHE_NAME
+  SCCACHE_CACHE_NAME: "sccache.zip"
+  SCCACHE_CACHE_FILE: $REPO_CACHE_DIR/$SCCACHE_CACHE_NAME
+  CARGO_CACHE_NAME: "cargo.zip"
+  CARGO_CACHE_FILE: $REPO_CACHE_DIR/$CARGO_CACHE_NAME
 
-# workflow:
-#   rules:
-#     - if: $CI_MERGE_REQUEST_IID
-#     - if: $CI_COMMIT_TAG
-#     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+# # https://docs.gitlab.com/ee/ci/yaml/README.html#cache
+# cache:
+#   key: $CI_COMMIT_REF_SLUG
+#   paths:
+#     - .sccache
+#     - .cargo
+#     - target
 
-# https://docs.gitlab.com/ee/ci/yaml/README.html#cache
-cache:
-  key: $CI_COMMIT_REF_SLUG
-  # paths: # the target is too bog for normal speed upload
-  # - target/
-  # policy: pull-push # default
+default:
+  cache: {}
 
-.build-push-oci-image: &build-push-oci-image
-  image: quay.io/buildah/stable
-  variables: &oci-build-vars
-    <<: *default-vars
-    GIT_STRATEGY: none
-    DOCKERFILE: ./devops/$STAGE/$PRODUCT.Dockerfile
-    IMAGE_NAME: $OCI_REGISTRY/anagolay/$PRODUCT
-  script:
-    - test "$DOCKER_HUB_USER" -a "$DOCKER_HUB_PASS" ||
-      ( echo "no docker credentials provided"; exit 1 )
-    - buildah bud
-      --format=docker
-      --build-arg GIT_LATEST_REVISION="${CI_COMMIT_SHA}"
-      --build-arg BUILD_DATE="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
-      --tag "$IMAGE_NAME:$VERSION"
-      --file "$DOCKERFILE" .
-    - echo "$DOCKER_HUB_PASS" |
-      buildah login --username "$DOCKER_HUB_USER" --password-stdin $OCI_REGISTRY
-    - buildah info
-    - buildah push --format=v2s2 "$IMAGE_NAME:$VERSION"
-  after_script:
-    - buildah logout --all
-
-.build-push-oci-image-with-latest: &build-push-oci-image-with-latest
-  <<: *build-push-oci-image
-  script:
-    - test "$DOCKER_HUB_USER" -a "$DOCKER_HUB_PASS" ||
-      ( echo "no docker credentials provided"; exit 1 )
-    - buildah bud
-      --format=docker
-      --build-arg GIT_LATEST_REVISION="${CI_COMMIT_SHA}"
-      --build-arg BUILD_DATE="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
-      --tag "$IMAGE_NAME:$VERSION"
-      --file "$DOCKERFILE" .
-    - echo "$DOCKER_HUB_PASS" |
-      buildah login --username "$DOCKER_HUB_USER" --password-stdin $OCI_REGISTRY
-    - buildah info
-    - buildah tag "$IMAGE_NAME:$VERSION" "$IMAGE_NAME:latest"
-    - buildah push --format=v2s2 "$IMAGE_NAME:$VERSION"
-    - buildah push --format=v2s2 "$IMAGE_NAME:latest"
-
-.install-ipfs-and-setup: &install-ipfs-and-setup
-  before_script:
-    - echo "Downloading anagolay ipfs CLI which works with the ipfsAuthProxy."
-    - |
-      curl https://ipfs.anagolay.network/ipfs/bafybeig634knkl57gqgkmh3fti6zxisfcd47swetf5lastcx2waboa4a4a > /usr/local/bin/ipfsCli
-      chmod +x /usr/local/bin/ipfsCli
-
-.compiler-info: &compiler-info
-  - rustup show
-  - cargo --version
-  - rustup +nightly show
-  - cargo +nightly --version
-  - sccache --version
-
-test-code:
-  stage: test
-  before_script:
-    - *compiler-info
-  script:
-    - makers ci-flow
-
-oci-base:
-  <<: *build-push-oci-image
-  stage: build
-  variables:
-    <<: *oci-build-vars
-    PRODUCT: ci-linux
-    STAGE: prod
-    VERSION: $CI_COMMIT_SHORT_SHA
-    GIT_STRATEGY: clone
-  services:
-    - docker:dind
-  when: manual
-  # only:
-  #   - main
-
-# make a production grade image
-oci-release:
-  <<: *build-push-oci-image-with-latest
-  needs: ["test-code"]
-  stage: release
-  variables:
-    <<: *oci-build-vars
-    PRODUCT: anagolay
-    STAGE: prod
-    VERSION: $CI_COMMIT_SHORT_SHA
-    CI_LINUX_TAG: 050979ef
-    GIT_STRATEGY: clone
-  services:
-    - docker:dind
-  when: manual
-  # only:
-  #   - main
-
-# build the docs and publish them
-docs-build-upload-to-ipfs:
-  needs: ["test-code"]
-  stage: release
-  <<: *install-ipfs-and-setup
-  script:
-    # - set -e
-    - echo 'Building docs ...'
-    - makers docs-flow
-
-    - echo "Uploading to IPFS ..."
-    - ipfsCli add --pin --onlyCid docs/api  > ANAGOLAY_DOCS_CID
-    - echo "Published with the CID - $(cat ANAGOLAY_DOCS_CID)"
-    - echo "https://$(cat ANAGOLAY_DOCS_CID).ipfs.anagolay.network/anagolay/index.html"
-  when: manual
-  # only:
-  # - main
+include:
+  - local: .devops/ci/gitlab/**/*.yml
+  - template: Security/Dependency-Scanning.gitlab-ci.yml
+  - template: Security/License-Scanning.gitlab-ci.yml
+  - template: Security/SAST.gitlab-ci.yml
+  - template: Security/Secret-Detection.gitlab-ci.yml
+  - template: Security/Container-Scanning.gitlab-ci.yml

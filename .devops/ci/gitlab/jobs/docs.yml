@@ -1,0 +1,28 @@
+# build the docs and publish them
+build-docs-upload-to-ipfs:
+  needs: ["build"]
+  stage: publish
+  tags:
+    - rust
+  # rules:
+  #   - if: $AN_FORCE_BUILD_DOCS
+  #   - !reference [.rules-build, rules]
+  #   - !reference [.rule-friendly-word, rules]
+  when: manual
+  before_script:
+    - !reference [.with-local-cachier, before_script]
+    - !reference [.with-ipfs-cli, before_script]
+  cache:
+    policy: pull
+  script:
+    - echo -e "\e[0Ksection_start:`date +%s`:docs-section\r\e[0KMakers native test with our overrides"
+
+    - echo 'Building docs ...'
+    - time makers docs-flow
+
+    - echo "Uploading to IPFS ..."
+    - ipfsCli add --pin --onlyCid docs/api  > ANAGOLAY_DOCS_CID
+    - echo "Published with the CID - $(cat ANAGOLAY_DOCS_CID)"
+    - echo "https://$(cat ANAGOLAY_DOCS_CID).ipfs.anagolay.network/anagolay/index.html"
+    - sccache --show-stats
+    - echo -e "\e[0Ksection_end:`date +%s`:docs-section\r\e[0K"

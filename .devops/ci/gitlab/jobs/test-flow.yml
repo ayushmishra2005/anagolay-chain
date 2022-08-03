@@ -1,0 +1,22 @@
+test-flow:
+  stage: test
+  tags:
+    - rust
+  needs: ["fmt"]
+  rules:
+    - !reference [.rule-friendly-word, rules]
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+  before_script:
+    - !reference [.info-compiler, before_script]
+    - !reference [.with-local-cachier, before_script]
+  # parallel: 2
+  script:
+    - echo -e "\e[0Ksection_start:`date +%s`:test\r\e[0KFull ci-flow phase"
+    # we need to format this due to the moving the /build dir and cargo chef
+    - makers format
+    - time makers ci-flow-light
+    # - time makers test --partition count:${CI_NODE_INDEX}/${CI_NODE_TOTAL}
+    - sccache --show-stats
+    - echo -e "\e[0Ksection_end:`date +%s`:test\r\e[0K"
+  after_script:
+    - !reference [.with-local-cachier, after_script]
