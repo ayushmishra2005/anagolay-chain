@@ -1,8 +1,5 @@
 image: registry.gitlab.com/anagolay/docker-images/gitpod-workspace:gitpod_workspace-full_2022-05-08-14-31-53_experimental
 tasks:
-  - name: Install cargo crates
-    init: mkdir -p /workspace/.cargo/bin && curl -LsSf https://get.nexte.st/latest/linux | tar zxf - -C ${CARGO_HOME:-~/.cargo}/bin
-  # add this to the main workspace image
   - name: Setup env
     command: bash $GITPOD_REPO_ROOT/.devops/gitpod/start-cmd.sh && exit
 
