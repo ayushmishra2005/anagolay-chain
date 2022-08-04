@@ -15,216 +15,59 @@
 
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
-use cid::{multihash::MultihashGeneric, Cid};
-use codec::{Decode, Encode};
-use core::{any::type_name_of_val, str::pattern::Pattern};
-use multibase::Base;
-use multihash::{Blake3_256, Code, Hasher};
-use sp_runtime::RuntimeDebug;
-use sp_std::{vec, vec::Vec};
 
 /// Private package used to hide the types that are not supposed to be referenced by dependent
 /// crates
-mod private {
-  use super::Characters;
-  use cid::Cid;
-  use codec::{Decode, Encode};
-  use core::convert::TryFrom;
-  use sp_std::{convert::From, str, vec, vec::Vec};
+mod private;
 
-  /// Generic ID, this is the content identifier of the payload, like worflow or proof. It's a
-  /// multibase encoded CID string. It must be in a private module, aliased by the types of each
-  /// respective entity id, since it's used in [`AnagolayVersionData`] to refer to any entity id.
-  ///
-  /// Id aliases are also an important indicator of what type of id is expected in which place:
-  /// instead of writing documentation we can immediately show the user what the storage or the
-  /// data model expects.
-  ///
-  /// It follows NewType pattern to provide conversion to and from Vec<u8> for (de)serialization but
-  /// also to provide additional behaviour, like validation.
-  #[derive(Encode, Decode, Clone, PartialEq, Eq, Ord, PartialOrd, Debug)]
-  #[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
-  pub struct GenericId(pub Vec<u8>);
+/// Package that contains the types dealing with strings of characters
+pub mod characters;
+pub use characters::*;
 
-  impl From<GenericId> for Vec<u8> {
-    fn from(from: GenericId) -> Vec<u8> {
-      from.0
-    }
-  }
+/// Package that contains a serializable bounded map
+pub mod maps;
+pub use maps::*;
 
-  impl From<Vec<u8>> for GenericId {
-    fn from(from: Vec<u8>) -> GenericId {
-      GenericId(from)
-    }
-  }
+use self::private::GenericId;
+use crate::getter_for_hardcoded_constant;
+use cid::{multihash::MultihashGeneric, Cid};
+use codec::{Decode, Encode};
+use core::any::type_name_of_val;
+use frame_support::pallet_prelude::*;
+use multibase::Base;
+use multihash::{Blake3_256, Code, Hasher};
 
-  impl Default for GenericId {
-    fn default() -> Self {
-      vec![].into()
-    }
-  }
-
-  impl GenericId {
-    pub fn from(str: &str) -> Self {
-      GenericId(str.as_bytes().to_vec())
-    }
-
-    /// Validate the CID. It will require a string to be multibase-decoded and then parsed as CID
-    ///
-    /// # Return
-    /// An unit result if the validation is successful, a `Character` error with a description in
-    /// case it fails
-    pub fn validate(&self) -> Result<(), Characters> {
-      multibase::decode(str::from_utf8(&self.0).unwrap())
-        .map(|decoded| Cid::try_from(decoded.1).map_err(|_| Characters::from("Invalid CID")))
-        .map(|_| ())
-        .map_err(|_| Characters::from("Cannot decode CID"))
-    }
-  }
-}
-/// NewType pattern to handle strings.
-/// It conveniently allows concatenation and deals with (de)serialization as well.
-///
-/// # Example
-///
-/// ```
-/// use anagolay_support::Characters;
-///
-/// let chars: Characters = "hello".into();
-///
-/// assert_eq!(5, chars.len());
-/// assert_eq!("hello2world", chars.concat_u8(2u8).concat("world").as_str());
-/// ```
-#[derive(Encode, Decode, Clone, PartialEq, Eq, Ord, PartialOrd, Debug)]
-#[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
-pub struct Characters(Vec<u8>);
-
-impl From<&str> for Characters {
-  fn from(from: &str) -> Characters {
-    Characters(from.as_bytes().to_vec())
-  }
-}
-
-impl From<Vec<u8>> for Characters {
-  fn from(from: Vec<u8>) -> Characters {
-    Characters(from)
-  }
-}
-
-impl Default for Characters {
-  fn default() -> Self {
-    vec![].into()
-  }
-}
-
-impl Characters {
-  /// Convenience method to create `Characters` from a string slice when the result type is implicit
-  ///
-  /// # Example
-  ///
-  /// ```
-  /// use anagolay_support::Characters;
-  /// let chars = Characters::from("hello");
-  /// ```
-  ///
-  /// Most of the time, it's convenient to use `str.into()`
-  ///
-  /// ```
-  /// use anagolay_support::Characters;
-  /// let chars: Characters = "hello".into();
-  /// ```
-  pub fn from(str: &str) -> Self {
-    Characters(str.as_bytes().to_vec())
-  }
-
-  /// # Return
-  /// The `Characters` representation as a string slice
-  pub fn as_str(&self) -> &str {
-    sp_std::str::from_utf8(self.0.as_slice()).unwrap()
-  }
-
-  /// Append an unsigned integer to this `Characters`
-  ///
-  /// # Arguments
-  /// * uint - The unsigned integer to append
-  ///
-  /// # Return
-  /// This `Characters` with the argument appended
-  pub fn concat_u8(mut self, uint: u8) -> Self {
-    let mut n = uint;
-    if n == 0 {
-      self.0.append(&mut b"0".to_vec());
-    } else {
-      let mut buffer = [0u8; 100];
-      let mut i = 0;
-      while n > 0 {
-        buffer[i] = (n % 10) as u8 + b'0';
-        n /= 10;
-        i += 1;
-      }
-      let slice = &mut buffer[..i];
-      slice.reverse();
-      self.0.append(&mut slice.to_vec());
-    }
-    self
-  }
-
-  /// Concatenate a string slice to this `Characters`
-  ///
-  /// # Arguments
-  /// * other - The string slice to concatenate
-  ///
-  /// # Return
-  /// This `Characters` with the argument concatenated
-  pub fn concat(mut self, other: &str) -> Self {
-    self.0.append(&mut other.as_bytes().to_vec());
-    self
-  }
-
-  /// # Return
-  /// This `Characters` length
-  pub fn len(&self) -> usize {
-    self.0.len()
-  }
-
-  /// Splits this `Characters` using pat as delimeter
-  ///
-  /// # Arguments
-  /// * pat - Pattern to use as delimiter for the split
-  ///
-  /// # Return
-  /// Collection of splits of this `Characters` using pat as delimeter
-  pub fn split<'a, P: Pattern<'a>>(&'a self, pat: P) -> Vec<Characters> {
-    self.as_str().split(pat).map(|split| split.into()).collect()
-  }
-}
+getter_for_hardcoded_constant!(MaxArtifactsPerVersion, u32, 8);
 
 /// Placeholder for SSI and DID
 pub type CreatorId = Characters;
 
 /// The type of the values in the `ArtifactsByArtifactId` storage
-pub type ArtifactId = private::GenericId;
+pub type ArtifactId = GenericId;
 
 /// The type used for an Operation ID
-pub type OperationId = private::GenericId;
+pub type OperationId = GenericId;
 
 /// The type used for a Workflow ID
-pub type WorkflowId = private::GenericId;
+pub type WorkflowId = GenericId;
 
 /// The type used for a Statement ID
-pub type StatementId = private::GenericId;
+pub type StatementId = GenericId;
 
 /// The type used for a Proof ID
-pub type ProofId = private::GenericId;
+pub type ProofId = GenericId;
 
 /// The type used for a Signature ID
-pub type SignatureId = private::GenericId;
+pub type SignatureId = GenericId;
 
 /// The type used for any entity Version ID
-pub type VersionId = private::GenericId;
+pub type VersionId = GenericId;
+
+/// Textual representation of a type
+pub type TypeName = Characters;
 
 /// List of equipment that needs workflows generated
-#[derive(Encode, Decode, Clone, PartialEq, Eq, Ord, PartialOrd, Debug)]
+#[derive(Encode, Decode, Clone, PartialEq, Eq, Ord, PartialOrd, Debug, MaxEncodedLen, TypeInfo)]
 #[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
 pub enum ForWhat {
   /// We are creating it For what? This can be a part of the group
@@ -246,7 +89,7 @@ impl Default for ForWhat {
 
 /// Info, this is what gets stored. The Generic `A` is usally the `AccountId` and `B` is
 /// `BlockNumber`
-#[derive(Default, Encode, Decode, Clone, PartialEq, Eq)]
+#[derive(Default, Encode, Decode, Clone, PartialEq, Eq, MaxEncodedLen, TypeInfo)]
 #[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
 pub struct AnagolayRecord<T, A, B> {
   pub record: T,
@@ -291,7 +134,7 @@ pub trait AnagolayStructureData: Default + Encode + Clone + PartialEq + Eq {
   /// let cid = entity.to_cid();
   /// # assert_eq!(ArtifactId::from("bafkr4iac2luovbttsv5iftbg2zl4okalixafa2vjwtbmf6exgwiuvukhmi"), cid);
   /// ```
-  fn to_cid(&self) -> private::GenericId {
+  fn to_cid(&self) -> GenericId {
     let hash = MultihashGeneric::wrap(
       Code::Blake3_256.into(),
       Blake3_256::digest(self.encode().as_slice()).as_ref(),
@@ -305,8 +148,7 @@ pub trait AnagolayStructureData: Default + Encode + Clone + PartialEq + Eq {
     // create the string slice like `bafk...`
     let cid_str = multibase::encode(Base::Base32Lower, cid.to_bytes());
 
-    // make the string slice into vec bytes, usually we use that
-    private::GenericId(cid_str.into_bytes())
+    GenericId::from(&cid_str)
   }
 
   fn validate(&self) -> Result<(), Characters>;
@@ -316,10 +158,10 @@ pub trait AnagolayStructureData: Default + Encode + Clone + PartialEq + Eq {
 pub trait AnagolayStructureExtra: Clone + PartialEq + Eq {}
 
 /// Generic structure representing an Anagolay entity
-#[derive(Encode, Decode, Clone, PartialEq, Eq, Debug)]
+#[derive(Encode, Decode, Clone, PartialEq, Eq, Debug, MaxEncodedLen, TypeInfo)]
 #[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
 pub struct AnagolayStructure<T: AnagolayStructureData, U: AnagolayStructureExtra> {
-  pub id: private::GenericId,
+  pub id: GenericId,
   pub data: T,
   pub extra: Option<U>,
 }
@@ -327,7 +169,7 @@ pub struct AnagolayStructure<T: AnagolayStructureData, U: AnagolayStructureExtra
 impl<T: AnagolayStructureData, U: AnagolayStructureExtra> Default for AnagolayStructure<T, U> {
   fn default() -> Self {
     AnagolayStructure {
-      id: private::GenericId::default(),
+      id: GenericId::default(),
       data: T::default(),
       extra: None,
     }
@@ -428,7 +270,7 @@ impl<T: AnagolayStructureData, U: AnagolayStructureExtra> AnagolayStructure<T, U
 pub trait ArtifactType: Encode + Decode + Clone + PartialEq + Eq {}
 
 /// Artifact Structure, used as a single item in the list of stored Artifacts
-#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
+#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, MaxEncodedLen, TypeInfo)]
 #[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
 pub struct AnagolayArtifactStructure<T: ArtifactType> {
   /// Type of the artifact
@@ -439,7 +281,7 @@ pub struct AnagolayArtifactStructure<T: ArtifactType> {
   pub ipfs_cid: ArtifactId,
 }
 
-#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
+#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, MaxEncodedLen, TypeInfo)]
 #[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
 /// Extra information (non hashed) for an entity Version
 pub struct AnagolayVersionExtra {
@@ -467,16 +309,16 @@ impl AnagolayStructureExtra for AnagolayVersionExtra {}
 /// type OperationVersionData = AnagolayVersionData<OperationArtifactType>;
 /// type OperationVersion = AnagolayStructure<OperationVersionData, AnagolayVersionExtra>;
 /// ```
-#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
+#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, MaxEncodedLen, TypeInfo)]
 #[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
 pub struct AnagolayVersionData<T: ArtifactType> {
   /// The id of the Operation, Workflow or other entity to which this Version is
   /// associated. __This field is read-only__
-  pub entity_id: Option<private::GenericId>,
+  pub entity_id: Option<GenericId>,
   /// The id of the previous Operation Version for the same operation, if any.
   pub parent_id: Option<VersionId>,
   /// Collection of packages that the publisher produced
-  pub artifacts: Vec<AnagolayArtifactStructure<T>>,
+  pub artifacts: BoundedVec<AnagolayArtifactStructure<T>, MaxArtifactsPerVersionGet>,
 }
 
 /// Implementation of Default trait for AnagolayVersionData
@@ -485,7 +327,7 @@ impl<T: ArtifactType> Default for AnagolayVersionData<T> {
     AnagolayVersionData {
       entity_id: None,
       parent_id: None,
-      artifacts: vec![],
+      artifacts: BoundedVec::with_bounded_capacity(0),
     }
   }
 }
@@ -562,7 +404,7 @@ impl<T: ArtifactType> AnagolayStructureData for AnagolayVersionData<T> {
 /// let op_esm_artifact_type = OperationArtifactType::Wasm(WasmArtifactSubType::Esm);
 /// let wf_esm_artifact_type = WorkflowArtifactType::Wasm(WasmArtifactSubType::Esm);
 /// ```
-#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
+#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, MaxEncodedLen, TypeInfo)]
 #[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
 pub enum WasmArtifactSubType {
   /// CommonJS module for the direct use in the nodejs env which doesn't have the ESM support. When

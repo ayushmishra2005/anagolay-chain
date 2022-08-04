@@ -22,10 +22,10 @@
 use super::*;
 use crate::types::{Workflow, WorkflowArtifactType, WorkflowData, WorkflowVersion, WorkflowVersionData};
 use anagolay_support::{AnagolayArtifactStructure, AnagolayVersionExtra, ArtifactId, VersionId, WorkflowId};
+use core::convert::TryInto;
 use frame_benchmarking::{benchmarks, impl_benchmark_test_suite, whitelisted_caller};
-use frame_support::traits::UnixTime;
+use frame_support::{sp_std::vec, traits::UnixTime};
 use frame_system::RawOrigin;
-use sp_std::{boxed::Box, vec, vec::Vec};
 
 #[allow(unused)]
 use crate::Pallet as Workflows;
@@ -38,6 +38,7 @@ benchmarks! {
       data: WorkflowData {
         name: "wf_aaaaa".into(),
         description: "wf_aaaaa operation description".into(),
+        creators: vec!["tester".into()].try_into().unwrap(),
         ..WorkflowData::default()
       },
       extra: None,
@@ -51,7 +52,7 @@ benchmarks! {
           artifact_type: WorkflowArtifactType::Git,
           file_extension: "git".into(),
           ipfs_cid: ArtifactId::from("bafkreibft6r6ijt7lxmbu2x3oq2s2ehwm5kz2nflwnlktdhcq2yfhgd4ku"),
-        }],
+        }].try_into().unwrap(),
       },
       extra: Some(AnagolayVersionExtra {
         created_at: <T as Config>::TimeProvider::now().as_secs(),

@@ -21,10 +21,45 @@
 #![cfg(test)]
 use super::{mock::*, *};
 use crate::types::ProofData;
-use anagolay_support::{AnagolayStructureData, ProofId, WorkflowId};
-use frame_support::{assert_noop, assert_ok};
+use anagolay_support::{
+  AnagolayArtifactStructure, AnagolayStructureData, AnagolayVersionExtra, ArtifactId, ProofId, VersionId, WorkflowId,
+};
+use core::convert::TryInto;
+use frame_support::{assert_noop, assert_ok, traits::UnixTime};
+use workflows::types::{Workflow, WorkflowArtifactType, WorkflowData, WorkflowVersion, WorkflowVersionData};
 
 const PERCEPTUAL_HASH: &[u8] = b"0x30303030303030303031313030303030303030303030303030303031313130303031313131313030313131313131313031313131313131313131313131313130303031313130303030303030303030303131313131313130303030303030303031313131313131313130303030303030313131313131313131313131313030303131313131313131313131313031313131313131313131313130313030313130313131303030303030303130303030303030303030303031303030303030303031313131313131313131313131313131313131313131313130303030303030303131313130303030303030303030303031313131303030303030303030303030";
+
+pub fn mock_request() -> (Workflow, WorkflowVersion) {
+  let wf = Workflow {
+    id: WorkflowId::from("bafkr4ih2xmsije6aa6yfwjdfmztnnkbb6ip56g3ojfcyfgjx6jsh6bogoe"),
+    data: WorkflowData {
+      name: "wf_aaaaa".into(),
+      description: "wf_aaaaa operation description".into(),
+      creators: vec!["tester".into()].try_into().unwrap(),
+      ..WorkflowData::default()
+    },
+    extra: None,
+  };
+  let wf_ver = WorkflowVersion {
+    id: VersionId::from("bafybeihc2e5rshwlkcg47uojrhtw7dwhyq2cxwivf3sysfnx5jtuuafvia"),
+    data: WorkflowVersionData {
+      entity_id: Some(wf.id.clone()),
+      parent_id: None,
+      artifacts: vec![AnagolayArtifactStructure {
+        artifact_type: WorkflowArtifactType::Git,
+        file_extension: "git".into(),
+        ipfs_cid: ArtifactId::from("bafkreibft6r6ijt7lxmbu2x3oq2s2ehwm5kz2nflwnlktdhcq2yfhgd4ku"),
+      }]
+      .try_into()
+      .unwrap(),
+    },
+    extra: Some(AnagolayVersionExtra {
+      created_at: <Test as workflows::Config>::TimeProvider::now().as_secs(),
+    }),
+  };
+  (wf, wf_ver)
+}
 
 pub fn build_default_proof_data(workflow_id: WorkflowId) -> ProofData {
   let mut proof_data = ProofData::default();
@@ -35,12 +70,12 @@ pub fn build_default_proof_data(workflow_id: WorkflowId) -> ProofData {
 #[test]
 fn proof_create_default() {
   new_test_ext().execute_with(|| {
-    // todo create default rule, figure out better way
-    // T::ExternalRulesStorage::put_rule_in_storage(4);
-    // todo create default rule, figure out better way
+    let origin = mock::Origin::signed(1);
+    let (wf, wf_ver) = mock_request();
+    let wf_id = wf.data.clone().to_cid();
+    Workflows::create(origin, wf.data, wf_ver.data).unwrap();
 
-    let w_id = WorkflowId::from("bafk");
-    let pd = build_default_proof_data(w_id);
+    let pd = build_default_proof_data(wf_id);
     let res = TestPoe::create_proof(mock::Origin::signed(1), pd.clone());
     assert_ok!(res);
   });
@@ -48,15 +83,13 @@ fn proof_create_default() {
 #[test]
 fn proof_error_on_duplicate() {
   new_test_ext().execute_with(|| {
-    // // todo create default rule, figure out better way
-    // let r = create_default_rule();
-    // let res = TestPoe::create_rule(mock::Origin::signed(1), r.clone());
-    // assert_ok!(res);
-    // // todo create default rule, figure out better way
+    let origin = mock::Origin::signed(1);
+    let (wf, wf_ver) = mock_request();
+    let wf_id = wf.data.clone().to_cid();
+    Workflows::create(origin, wf.data, wf_ver.data).unwrap();
 
     // create the proof
-    let w_id = WorkflowId::from("bafk");
-    let pd = build_default_proof_data(w_id);
+    let pd = build_default_proof_data(wf_id);
     let res1 = TestPoe::create_proof(mock::Origin::signed(1), pd.clone());
 
     assert_ok!(res1);
@@ -71,19 +104,18 @@ fn proof_error_on_duplicate() {
 #[test]
 fn phash_save_phash() {
   new_test_ext().execute_with(|| {
-    // // todo create default rule, figure out better way
-    // let r = create_default_rule();
-    // let res = TestPoe::create_rule(mock::Origin::signed(1), r.clone());
-    // assert_ok!(res);
-    // // todo create default rule, figure out better way
-    let w_id = WorkflowId::from("bafk");
-    let pd = build_default_proof_data(w_id);
+    let origin = mock::Origin::signed(1);
+    let (wf, wf_ver) = mock_request();
+    let wf_id = wf.data.clone().to_cid();
+    Workflows::create(origin, wf.data, wf_ver.data).unwrap();
+
+    let pd = build_default_proof_data(wf_id);
     let res = TestPoe::create_proof(mock::Origin::signed(1), pd.clone());
     assert_ok!(res);
 
     let phash = PERCEPTUAL_HASH.to_vec();
     let p_hash_payload = PhashInfo {
-      p_hash: phash.clone(),
+      p_hash: phash.clone().try_into().unwrap(),
       proof_id: pd.to_cid(),
     };
 
@@ -94,20 +126,19 @@ fn phash_save_phash() {
 #[test]
 fn phash_save_phash_error_on_duplicate() {
   new_test_ext().execute_with(|| {
-    // // todo create default rule, figure out better way
-    // let r = create_default_rule();
-    // let res = TestPoe::create_rule(mock::Origin::signed(1), r.clone());
-    // assert_ok!(res);
-    // // todo create default rule, figure out better way
-    let w_id = WorkflowId::from("bafk");
-    let pd = build_default_proof_data(w_id);
+    let origin = mock::Origin::signed(1);
+    let (wf, wf_ver) = mock_request();
+    let wf_id = wf.data.clone().to_cid();
+    Workflows::create(origin, wf.data, wf_ver.data).unwrap();
+
+    let pd = build_default_proof_data(wf_id);
     let res = TestPoe::create_proof(mock::Origin::signed(1), pd.clone());
     assert_ok!(res);
 
     let phash = PERCEPTUAL_HASH.to_vec();
 
     let p_hash_payload = PhashInfo {
-      p_hash: phash.clone(),
+      p_hash: phash.clone().try_into().unwrap(),
       proof_id: pd.to_cid(),
     };
 
@@ -126,7 +157,7 @@ fn phash_save_phash_error_no_proof() {
         let proof_id = ProofId::from("0x6261666b32627a616365616d6c6e766678726c717175743274686f6b6c6a76726b68726f7a787562696a78746f3476743566646f776c6162747733686177");
 
         let p_hash_payload = PhashInfo {
-        p_hash: phash.clone(),
+        p_hash: phash.clone().try_into().unwrap(),
         proof_id: proof_id.clone(),
         };
 

@@ -66,7 +66,10 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 mod functions;
+pub use functions::public::*;
+
 mod types;
+pub use types::*;
 
 #[cfg(test)]
 mod mock;
@@ -74,23 +77,52 @@ mod mock;
 mod tests;
 
 pub use pallet::*;
+pub use paste;
+
+pub mod constants {
+  pub use crate::pallet::*;
+  use crate::{getter_for_constant, getter_for_hardcoded_constant};
+
+  getter_for_constant!(MaxArtifacts, u32);
+  getter_for_hardcoded_constant!(MaxCharactersLen, u32, 2048);
+  getter_for_hardcoded_constant!(MaxBytesLen, u32, 4096);
+  getter_for_hardcoded_constant!(MaxOperationConfigEntries, u32, 16);
+  getter_for_hardcoded_constant!(MaxOperationInputsLen, u32, 99);
+  getter_for_hardcoded_constant!(MaxGroups, u32, 16);
+}
 
 #[frame_support::pallet]
 mod pallet {
+  use crate::constants::MaxArtifactsGet;
   pub use crate::types::*;
+  use core::convert::TryInto;
   use frame_support::pallet_prelude::*;
   use frame_system::pallet_prelude::*;
-  use sp_std::vec::Vec;
 
   #[pallet::pallet]
   #[pallet::generate_store(pub(super) trait Store)]
   pub struct Pallet<T>(_);
 
   #[pallet::config]
-  pub trait Config: frame_system::Config {}
+  pub trait Config: frame_system::Config {
+    /// Maximum number of artifacts registered on Anagolay network at a given time.
+    const MAX_ARTIFACTS: u32;
+  }
+
+  #[pallet::extra_constants]
+  impl<T: Config> Pallet<T> {
+    #[pallet::constant_name(MaxArtifacts)]
+    fn max_artifacts() -> u32 {
+      T::MAX_ARTIFACTS
+    }
+  }
 
   #[pallet::hooks]
-  impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {}
+  impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
+    fn integrity_test() {
+      assert!(T::MAX_ARTIFACTS > 0, "`MaxArtifacts` must ge greater than 0");
+    }
+  }
 
   #[pallet::call]
   impl<T: Config> Pallet<T> {}
@@ -99,8 +131,11 @@ mod pallet {
   /// querying this without proper limits!
   #[pallet::storage]
   #[pallet::getter(fn artifacts_by_artifact_id)]
-  pub type ArtifactsByArtifactId<T: Config> = StorageValue<_, Vec<ArtifactId>, ValueQuery>;
+  pub type ArtifactsByArtifactId<T: Config> = StorageValue<_, BoundedVec<ArtifactId, MaxArtifactsGet<T>>, ValueQuery>;
 
   #[pallet::error]
-  pub enum Error<T> {}
+  pub enum Error<T> {
+    /// Insertion of Artifact failed since MaxArtifacts limit is reached
+    MaxArtifactsLimitReached,
+  }
 }

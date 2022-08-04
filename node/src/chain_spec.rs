@@ -1,7 +1,7 @@
 use anagolay_runtime::{
   AccountId, AuraConfig, BalancesConfig, GenesisConfig, GrandpaConfig, Signature, SudoConfig, SystemConfig, WASM_BINARY,
 };
-use jsonrpc_core::serde_json::json;
+use jsonrpsee::core::to_json_value;
 use sc_service::{ChainType, Properties};
 use sc_telemetry::TelemetryEndpoints;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
@@ -9,7 +9,7 @@ use sp_core::{crypto::Ss58Codec, sr25519, Pair, Public};
 use sp_finality_grandpa::AuthorityId as GrandpaId;
 use sp_runtime::traits::{IdentifyAccount, Verify};
 
-// Note this is the URL for the telemetry server
+// The URL for the telemetry server.
 const STAGING_TELEMETRY_URL: &str = "wss://telemetry.anagolay.io/submit/";
 // The minimum balance for created accounts
 const EXISTENCIAL_DEPOSIT: u128 = 1 << 60;
@@ -17,7 +17,7 @@ const EXISTENCIAL_DEPOSIT: u128 = 1 << 60;
 /// Specialized `ChainSpec`. This is a specialization of the general Substrate ChainSpec type.
 pub type ChainSpec = sc_service::GenericChainSpec<GenesisConfig>;
 
-/// Helper function to generate a crypto pair from seed
+/// Generate a crypto pair from seed.
 pub fn get_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Public {
   TPublic::Pair::from_string(&format!("//{}", seed), None)
     .expect("static values are valid; qed")
@@ -26,7 +26,7 @@ pub fn get_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Pu
 
 type AccountPublic = <Signature as Verify>::Signer;
 
-/// Helper function to generate an account ID from seed
+/// Generate an account ID from seed.
 pub fn get_account_id_from_seed<TPublic: Public>(seed: &str) -> AccountId
 where
   AccountPublic: From<<TPublic::Pair as Pair>::Public>,
@@ -34,7 +34,7 @@ where
   AccountPublic::from(get_from_seed::<TPublic>(seed)).into_account()
 }
 
-/// Helper function to generate an authority key for Aura
+/// Generate an Aura authority key.
 pub fn authority_keys_from_seed(s: &str) -> (AuraId, GrandpaId) {
   (get_from_seed::<AuraId>(s), get_from_seed::<GrandpaId>(s))
 }
@@ -44,18 +44,23 @@ pub fn development_config() -> Result<ChainSpec, String> {
 
   let mut props: Properties = Properties::new();
 
-  let value = json!("IDI");
+  let value = to_json_value("IDI").unwrap_or_default();
   props.insert("tokenSymbol".to_string(), value);
 
   Ok(ChainSpec::from_genesis(
+    // Name
     "Development",
+    // ID
     "dev",
     ChainType::Development,
     move || {
       testnet_genesis(
         wasm_binary,
+        // Initial PoA authorities
         vec![authority_keys_from_seed("Alice")],
+        // Sudo account
         get_account_id_from_seed::<sr25519::Public>("Alice"),
+        // Pre-funded accounts
         vec![
           (
             get_account_id_from_seed::<sr25519::Public>("Alice"),
@@ -78,10 +83,16 @@ pub fn development_config() -> Result<ChainSpec, String> {
         true,
       )
     },
+    // Bootnodes
     vec![],
+    // Telemetry
     Some(TelemetryEndpoints::new(vec![(STAGING_TELEMETRY_URL.to_string(), 3)]).unwrap()),
+    // Protocol ID
     None,
+    None,
+    // Properties
     Some(props),
+    // Extensions
     None,
   ))
 }
@@ -91,18 +102,23 @@ pub fn local_testnet_config() -> Result<ChainSpec, String> {
 
   let mut props: Properties = Properties::new();
 
-  let value = json!("IDI");
+  let value = to_json_value("IDI").unwrap_or_default();
   props.insert("tokenSymbol".to_string(), value);
 
   Ok(ChainSpec::from_genesis(
+    // Name
     "Local Testnet",
+    // ID
     "local_testnet",
     ChainType::Local,
     move || {
       testnet_genesis(
         wasm_binary,
+        // Initial PoA authorities
         vec![authority_keys_from_seed("Alice"), authority_keys_from_seed("Bob")],
+        // Sudo account
         get_account_id_from_seed::<sr25519::Public>("Alice"),
+        // Pre-funded accounts
         vec![
           (
             get_account_id_from_seed::<sr25519::Public>("Alice"),
@@ -151,14 +167,22 @@ pub fn local_testnet_config() -> Result<ChainSpec, String> {
         true,
       )
     },
+    // Bootnodes
     vec![],
+    // Telemetry
     None,
+    // Protocol ID
     None,
+    // Fork ID
+    None,
+    // Properties
     Some(props),
+    // Extensions
     None,
   ))
 }
 
+/// Configure initial storage state for FRAME modules.
 fn testnet_genesis(
   wasm_binary: &[u8],
   initial_authorities: Vec<(AuraId, GrandpaId)>,
@@ -167,21 +191,27 @@ fn testnet_genesis(
   _enable_println: bool,
 ) -> GenesisConfig {
   GenesisConfig {
-    system: Some(SystemConfig {
+    system: SystemConfig {
+      // Add Wasm runtime to storage.
       code: wasm_binary.to_vec(),
-      changes_trie_config: Default::default(),
-    }),
-    balances: Some(BalancesConfig {
+    },
+    balances: BalancesConfig {
+      // Configure endowed accounts with initial balance
       balances: endowed_accounts,
-    }),
-    aura: Some(AuraConfig {
+    },
+    aura: AuraConfig {
       authorities: initial_authorities.iter().map(|x| (x.0.clone())).collect(),
-    }),
-    grandpa: Some(GrandpaConfig {
+    },
+    grandpa: GrandpaConfig {
       authorities: initial_authorities.iter().map(|x| (x.1.clone(), 1)).collect(),
-    }),
-    sudo: Some(SudoConfig { key: root_key }),
+    },
+    sudo: SudoConfig {
+      // Assign network admin rights.
+      key: Some(root_key),
+    },
+    transaction_payment: Default::default(),
     operations: Default::default(),
     workflows: Default::default(),
+    vesting: Default::default(),
   }
 }

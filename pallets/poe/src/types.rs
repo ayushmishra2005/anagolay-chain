@@ -16,34 +16,38 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use anagolay_support::{
-  AnagolayRecord, AnagolayStructure, AnagolayStructureData, AnagolayStructureExtra, Characters, CreatorId, ForWhat,
-  ProofId, WorkflowId,
-};
+use anagolay_support::{constants::*, *};
 use codec::{Decode, Encode};
-use sp_runtime::RuntimeDebug;
-use sp_std::{clone::Clone, default::Default, vec, vec::Vec};
+use frame_support::{
+  pallet_prelude::*,
+  sp_runtime::RuntimeDebug,
+  sp_std::{clone::Clone, default::Default},
+};
+
+getter_for_hardcoded_constant!(MaxOperationOutputLen, u32, 1024);
+getter_for_hardcoded_constant!(MaxPHashLen, u32, 1024);
+getter_for_hardcoded_constant!(MaxProofParams, u32, 16);
 
 /// key-value where key is Operation.op and value is fn(Operation)
-#[derive(Default, Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
+#[derive(Default, Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, MaxEncodedLen, TypeInfo)]
 pub struct ProofParams {
   /// Operation.name, hex encoded using Parity scale codec
   k: Characters,
   /// operation Output value serialized using cbor and represented as CID
-  v: Vec<u8>,
+  v: BoundedVec<u8, MaxOperationOutputLenGet>,
 }
 
 /// Perceptive hash information, what gets stored
-#[derive(Encode, Decode, Clone, PartialEq, Default, RuntimeDebug)]
+#[derive(Encode, Decode, Clone, PartialEq, Default, RuntimeDebug, MaxEncodedLen, TypeInfo)]
 pub struct PhashInfo {
   /// The perceptive hash bytes
-  pub p_hash: Vec<u8>,
+  pub p_hash: BoundedVec<u8, MaxPHashLenGet>,
   /// The id of the proof associated to this perceptive hash
   pub proof_id: ProofId,
 }
 
 /// Proof Incoming data
-#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
+#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, MaxEncodedLen, TypeInfo)]
 pub struct ProofData {
   /// The id of the Workflow that generated this Proof
   pub workflow_id: WorkflowId,
@@ -53,9 +57,9 @@ pub struct ProofData {
   /// pgp key or email
   creator: CreatorId,
   /// Tells which groups the Proof belongs to
-  pub groups: Vec<ForWhat>,
+  pub groups: BoundedVec<ForWhat, MaxGroupsGet>,
   /// must be the same as for the Workflow
-  params: Vec<ProofParams>,
+  params: BoundedVec<ProofParams, MaxProofParamsGet>,
 }
 
 impl AnagolayStructureData for ProofData {
@@ -69,14 +73,14 @@ impl Default for ProofData {
     ProofData {
       workflow_id: WorkflowId::default(),
       prev_id: WorkflowId::default(),
-      groups: vec![ForWhat::default()],
+      groups: BoundedVec::with_bounded_capacity(0),
       creator: CreatorId::default(),
-      params: vec![],
+      params: BoundedVec::with_bounded_capacity(0),
     }
   }
 }
 
-#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
+#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, MaxEncodedLen, TypeInfo)]
 pub struct ProofExtra {}
 impl AnagolayStructureExtra for ProofExtra {}
 

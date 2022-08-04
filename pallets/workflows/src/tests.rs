@@ -28,7 +28,8 @@ use crate::types::{
 use anagolay_support::{
   AnagolayArtifactStructure, AnagolayStructureData, AnagolayVersionExtra, ArtifactId, VersionId, WorkflowId,
 };
-use frame_support::{assert_noop, assert_ok, traits::UnixTime};
+use core::convert::TryInto;
+use frame_support::{assert_noop, assert_ok, sp_std::vec, traits::UnixTime};
 
 fn mock_request() -> (Workflow, WorkflowVersion) {
   let wf = Workflow {
@@ -36,6 +37,7 @@ fn mock_request() -> (Workflow, WorkflowVersion) {
     data: WorkflowData {
       name: "wf_aaaaa".into(),
       description: "wf_aaaaa operation description".into(),
+      creators: vec!["tester".into()].try_into().unwrap(),
       ..WorkflowData::default()
     },
     extra: None,
@@ -49,7 +51,9 @@ fn mock_request() -> (Workflow, WorkflowVersion) {
         artifact_type: WorkflowArtifactType::Git,
         file_extension: "git".into(),
         ipfs_cid: ArtifactId::from("bafkreibft6r6ijt7lxmbu2x3oq2s2ehwm5kz2nflwnlktdhcq2yfhgd4ku"),
-      }],
+      }]
+      .try_into()
+      .unwrap(),
     },
     extra: Some(AnagolayVersionExtra {
       created_at: <Test as crate::Config>::TimeProvider::now().as_secs(),
@@ -70,16 +74,20 @@ fn workflows_test_genesis() {
       record: wf.clone(),
       account_id: account_id.clone(),
       block_number: 1,
-    }],
+    }]
+    .try_into()
+    .unwrap(),
     versions: vec![WorkflowVersionRecord::<Test> {
       record: wf_ver.clone(),
       account_id: account_id.clone(),
       block_number: 1,
-    }],
+    }]
+    .try_into()
+    .unwrap(),
     total: 1,
   }))
   .execute_with(|| {
-    let workflow = WorkflowByWorkflowIdAndAccountId::<Test>::get(&wf.id, account_id);
+    let workflow = WorkflowByWorkflowIdAndAccountId::<Test>::get(&wf.id, account_id).unwrap();
     assert_eq!(workflow.record.data, wf.data);
     assert_eq!(workflow.record.extra, wf.extra);
 
@@ -91,7 +99,7 @@ fn workflows_test_genesis() {
     assert_eq!(1, artifacts.len());
     assert_eq!(wf_ver.data.artifacts[0].ipfs_cid, *artifacts.get(0).unwrap());
 
-    let version = VersionByVersionId::<Test>::get(&wf_ver.id);
+    let version = VersionByVersionId::<Test>::get(&wf_ver.id).unwrap();
     assert_eq!(version.record.data, wf_ver.data);
     assert!(version.record.extra.is_some());
 
@@ -113,7 +121,7 @@ fn workflows_create_workflow() {
     wf_ver.data.entity_id = Some(wf_id.clone());
     let wf_ver_id = &wf_ver.data.to_cid();
 
-    let workflow = WorkflowByWorkflowIdAndAccountId::<Test>::get(wf_id, 1);
+    let workflow = WorkflowByWorkflowIdAndAccountId::<Test>::get(wf_id, 1).unwrap();
     assert_eq!(workflow.record.data, wf.data);
     assert_eq!(workflow.record.extra, wf.extra);
 
@@ -125,7 +133,7 @@ fn workflows_create_workflow() {
     assert_eq!(1, artifacts.len());
     assert_eq!(wf_ver.data.artifacts[0].ipfs_cid, *artifacts.get(0).unwrap());
 
-    let version = VersionByVersionId::<Test>::get(wf_ver_id);
+    let version = VersionByVersionId::<Test>::get(wf_ver_id).unwrap();
     assert_eq!(version.record.data, wf_ver.data);
     assert!(version.record.extra.is_some());
 
@@ -151,7 +159,7 @@ fn workflows_create_workflow_error_reusing_artifact() {
   new_test_ext(None).execute_with(|| {
     let (wf, wf_ver) = mock_request();
 
-    anagolay_support::Pallet::<Test>::store_artifacts(&wf_ver.data.artifacts);
+    anagolay_support::Pallet::<Test>::store_artifacts(&wf_ver.data.artifacts).unwrap();
 
     let res = WorkflowTest::create(mock::Origin::signed(1), wf.data.clone(), wf_ver.data.clone());
 
@@ -172,6 +180,7 @@ fn workflows_create_workflow_error_mixing_workflows() {
       data: WorkflowData {
         name: "wf_bbbbb".into(),
         description: "wf_bbbbb operation description".into(),
+        creators: vec!["tester".into()].try_into().unwrap(),
         ..WorkflowData::default()
       },
       extra: None,

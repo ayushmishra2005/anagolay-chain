@@ -26,7 +26,8 @@ use crate::types::{
 use anagolay_support::{
   AnagolayArtifactStructure, AnagolayStructureData, AnagolayVersionExtra, ArtifactId, OperationId, VersionId,
 };
-use frame_support::{assert_noop, assert_ok, traits::UnixTime};
+use core::convert::TryInto;
+use frame_support::{assert_noop, assert_ok, sp_std::vec, traits::UnixTime};
 
 fn mock_request() -> (Operation, OperationVersion) {
   let op = Operation {
@@ -36,7 +37,7 @@ fn mock_request() -> (Operation, OperationVersion) {
       description: "op_aaaaa description".into(),
       repository: "https://github.com/anagolay/op_aaaaa".into(),
       license: "Apache 2.0".into(),
-      features: vec!["std".into()],
+      features: vec!["std".into()].try_into().unwrap(),
       ..OperationData::default()
     },
     extra: None,
@@ -50,7 +51,9 @@ fn mock_request() -> (Operation, OperationVersion) {
         artifact_type: OperationArtifactType::Git,
         file_extension: "git".into(),
         ipfs_cid: ArtifactId::from("bafkreibft6r6ijt7lxmbu2x3oq2s2ehwm5kz2nflwnlktdhcq2yfhgd4ku"),
-      }],
+      }]
+      .try_into()
+      .unwrap(),
     },
     extra: Some(AnagolayVersionExtra {
       created_at: <Test as crate::Config>::TimeProvider::now().as_secs(),
@@ -71,16 +74,20 @@ fn operations_test_genesis() {
       record: op.clone(),
       account_id: account_id.clone(),
       block_number: 1,
-    }],
+    }]
+    .try_into()
+    .unwrap(),
     versions: vec![OperationVersionRecord::<Test> {
       record: op_ver.clone(),
       account_id: account_id.clone(),
       block_number: 1,
-    }],
+    }]
+    .try_into()
+    .unwrap(),
     total: 1,
   }))
   .execute_with(|| {
-    let operation = OperationByOperationIdAndAccountId::<Test>::get(&op.id, account_id);
+    let operation = OperationByOperationIdAndAccountId::<Test>::get(&op.id, account_id).unwrap();
     assert_eq!(operation.record.data, op.data);
     assert_eq!(operation.record.extra, op.extra);
 
@@ -92,7 +99,7 @@ fn operations_test_genesis() {
     assert_eq!(1, artifacts.len());
     assert_eq!(op_ver.data.artifacts[0].ipfs_cid, *artifacts.get(0).unwrap());
 
-    let version = VersionByVersionId::<Test>::get(&op_ver.id);
+    let version = VersionByVersionId::<Test>::get(&op_ver.id).unwrap();
     assert_eq!(version.record.data, op_ver.data);
     assert!(version.record.extra.is_some());
 
@@ -114,7 +121,7 @@ fn operations_create_operation() {
     op_ver.data.entity_id = Some(op_id.clone());
     let op_ver_id = &op_ver.data.to_cid();
 
-    let operation = OperationByOperationIdAndAccountId::<Test>::get(op_id, 1);
+    let operation = OperationByOperationIdAndAccountId::<Test>::get(op_id, 1).unwrap();
     assert_eq!(operation.record.data, op.data);
     assert_eq!(operation.record.extra, op.extra);
 
@@ -126,7 +133,7 @@ fn operations_create_operation() {
     assert_eq!(1, artifacts.len());
     assert_eq!(op_ver.data.artifacts[0].ipfs_cid, *artifacts.get(0).unwrap());
 
-    let version = VersionByVersionId::<Test>::get(op_ver_id);
+    let version = VersionByVersionId::<Test>::get(op_ver_id).unwrap();
     assert_eq!(version.record.data, op_ver.data);
     assert!(version.record.extra.is_some());
 
@@ -152,7 +159,7 @@ fn operations_create_operation_error_reusing_artifact() {
   new_test_ext(None).execute_with(|| {
     let (op, op_ver) = mock_request();
 
-    anagolay_support::Pallet::<Test>::store_artifacts(&op_ver.data.artifacts);
+    anagolay_support::Pallet::<Test>::store_artifacts(&op_ver.data.artifacts).unwrap();
 
     let res = OperationTest::create(mock::Origin::signed(1), op.data.clone(), op_ver.data.clone());
 
@@ -175,7 +182,7 @@ fn operations_create_operation_error_mixing_operations() {
         description: "op_bbbbb description".into(),
         repository: "https://github.com/anagolay/op_bbbbb".into(),
         license: "Apache 2.0".into(),
-        features: vec!["std".into()],
+        features: vec!["std".into()].try_into().unwrap(),
         ..OperationData::default()
       },
       extra: None,
@@ -210,12 +217,16 @@ fn operations_create_operation_with_config() {
     let (mut op, op_ver) = mock_request();
     op.data
       .config
-      .insert("test_key".into(), vec!["test_val0".into(), "test_val1".into()]);
+      .try_insert(
+        "test_key".into(),
+        vec!["test_val0".into(), "test_val1".into()].try_into().unwrap(),
+      )
+      .unwrap();
     let res = OperationTest::create(mock::Origin::signed(1), op.data.clone(), op_ver.data.clone());
     assert_ok!(res);
 
     let op_id = &op.data.to_cid();
-    let stored_op = OperationByOperationIdAndAccountId::<Test>::get(op_id, 1);
+    let stored_op = OperationByOperationIdAndAccountId::<Test>::get(op_id, 1).unwrap();
     let mut stored_op_keys = stored_op.record.data.config.into_keys();
     let mut op_keys = op.data.config.into_keys();
     assert_eq!(stored_op_keys.next().unwrap(), op_keys.next().unwrap());

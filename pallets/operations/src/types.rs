@@ -20,23 +20,20 @@
 //!
 //! Each pallet must have this file.
 
-// use super::*;
-use anagolay_support::{
-  AnagolayRecord, AnagolayStructure, AnagolayStructureData, AnagolayStructureExtra, AnagolayVersionData,
-  AnagolayVersionExtra, ArtifactType, Characters, ForWhat, WasmArtifactSubType,
-};
+use anagolay_support::{constants::*, *};
 use codec::{Decode, Encode};
-use sp_runtime::RuntimeDebug;
-use sp_std::{clone::Clone, collections::btree_map::BTreeMap, default::Default, vec, vec::Vec};
+use frame_support::{
+  pallet_prelude::*,
+  sp_runtime::{BoundedVec, RuntimeDebug},
+  sp_std::{clone::Clone, default::Default},
+};
 
-/// Textual representation of a type
-/// @TODO we might have an issue with this because this can be anything and it transforms into the
-/// `string[]` in typescript which is not the same as String
-pub type TypeName = Vec<u8>;
+getter_for_hardcoded_constant!(MaxOperationConfigValuesPerEntry, u32, 16);
+getter_for_hardcoded_constant!(MaxOperationFeatures, u32, 16);
 
 /// Operation data. This contains all the needed parameters which define the Operation and is hashed
 /// to produce its id
-#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
+#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, MaxEncodedLen, TypeInfo)]
 #[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
 pub struct OperationData {
   /// Operation name. min 8, max 128(0.12kb) characters, slugify to use _
@@ -45,12 +42,16 @@ pub struct OperationData {
   pub description: Characters,
   /// What operation accepts in the implementation. these are the params of the function with the
   /// types
-  pub inputs: Vec<TypeName>,
+  pub inputs: BoundedVec<TypeName, MaxOperationInputsLenGet>,
   /// A map where keys are names of configuration parameters and values are collections of strings
   /// representing allowed values
-  pub config: BTreeMap<Characters, Vec<Characters>>,
+  pub config: MaybeSerializableBoundedBTreeMap<
+    Characters,
+    BoundedVec<Characters, MaxOperationConfigValuesPerEntryGet>,
+    MaxOperationConfigEntriesGet,
+  >,
   /// A switch used to generate the Workflow segments  
-  pub groups: Vec<ForWhat>,
+  pub groups: BoundedVec<ForWhat, MaxGroupsGet>,
   /// Data type name defining the operation output
   pub output: TypeName,
   /// The fully qualified URL for the repository, this can be any public repo URL. min 8, max
@@ -64,7 +65,7 @@ pub struct OperationData {
   ///   operation is instantiated
   /// - `std` declares support for nostd as default and possibility to work with std. If this
   ///   feature is missing, the operation is intended to be working **only** in std
-  pub features: Vec<Characters>,
+  pub features: BoundedVec<Characters, MaxOperationFeaturesGet>,
 }
 
 /// Implementation of Default trait for OperationData
@@ -73,13 +74,13 @@ impl Default for OperationData {
     OperationData {
       name: "".into(),
       description: "".into(),
-      inputs: vec![],
-      config: BTreeMap::new(),
-      groups: vec![],
-      output: vec![],
+      inputs: BoundedVec::with_bounded_capacity(0),
+      config: MaybeSerializableBoundedBTreeMap::new(),
+      groups: BoundedVec::with_bounded_capacity(0),
+      output: "".into(),
       repository: "".into(),
       license: "".into(),
-      features: vec![],
+      features: BoundedVec::with_bounded_capacity(0),
     }
   }
 }
@@ -90,8 +91,8 @@ impl AnagolayStructureData for OperationData {
     if self.name.len() < 4 || self.name.len() > 128 {
       Err("OperationData.name: length must be between 4 and 128 characters".into())
     } else if self.description.len() < 4 || self.description.len() > 1024 {
-      Err("OperationData.description: length must be between 4 and 1024 characters".into())
-    } else if self.repository.len() < 4 || self.repository.len() > 128 {
+      Err("OperationData.description: length must be between 4 and MaxCharactersLen characters".into())
+    } else if self.repository.len() < 4 || self.repository.len() > MaxCharactersLenGet::get() as usize {
       Err("OperationData.repository: length must be between 4 and 128 characters".into())
     } else if self.license.len() < 4 || self.license.len() > 128 {
       Err("OperationData.license: length must be between 4 and 128 characters".into())
@@ -102,7 +103,7 @@ impl AnagolayStructureData for OperationData {
 }
 
 /// Extra information (non hashed) for Operation entity
-#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
+#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, MaxEncodedLen, TypeInfo)]
 #[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
 pub struct OperationExtra {}
 /// Implementation of AnagolayStructureExtra trait for OperationExtra
@@ -123,7 +124,7 @@ pub type OperationRecord<T> =
 
 /// Operation Version artifact types. This enum corresponds to the different types of
 /// packages created by the publisher service when an Operation Version is published
-#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
+#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, MaxEncodedLen, TypeInfo)]
 #[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
 pub enum OperationArtifactType {
   /// This refers to the documentation generated by the `cargo docs`. The entry point is predictable

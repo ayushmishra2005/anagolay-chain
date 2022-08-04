@@ -21,6 +21,8 @@
 use super::{mock::*, *};
 use crate::ArtifactId;
 use codec::{Decode, Encode};
+use core::convert::TryInto;
+use frame_support::sp_std::vec;
 use sp_runtime::RuntimeDebug;
 
 #[test]
@@ -42,7 +44,7 @@ fn check_is_existing_artifact() {
 
     assert!(!AnagolayTest::is_existing_artifact(&artifact));
 
-    AnagolayTest::store_artifacts(&vec![artifact]);
+    AnagolayTest::store_artifacts(&vec![artifact].try_into().unwrap()).unwrap();
 
     let artifacts = AnagolayTest::get_artifacts();
     assert_eq!(1, artifacts.len());
