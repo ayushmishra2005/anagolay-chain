@@ -20,6 +20,7 @@
 
 use crate as operations;
 use crate::Config;
+use core::convert::{TryFrom, TryInto};
 use frame_support::{pallet_prelude::GenesisBuild, parameter_types, traits::UnixTime};
 use sp_core::H256;
 use sp_runtime::{
@@ -28,10 +29,8 @@ use sp_runtime::{
 };
 use std::time::Duration;
 
-use frame_system as system;
-
-type UncheckedExtrinsic = system::mocking::MockUncheckedExtrinsic<Test>;
-type Block = system::mocking::MockBlock<Test>;
+type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
+type Block = frame_system::mocking::MockBlock<Test>;
 
 // Configure a mock runtime to test the pallet.
 frame_support::construct_runtime!(
@@ -40,9 +39,9 @@ frame_support::construct_runtime!(
         NodeBlock = Block,
         UncheckedExtrinsic = UncheckedExtrinsic,
     {
-        System: system::{Module, Call, Config, Storage, Event<T>},
-        AnagolayTest: anagolay_support::{Module, Call, Storage},
-        OperationTest: operations::{Module, Call, Storage, Event<T>, Config<T>},
+        System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
+        AnagolayTest: anagolay_support::{Pallet, Call, Storage},
+        OperationTest: operations::{Pallet, Call, Storage, Event<T>, Config<T>},
     }
 );
 
@@ -52,7 +51,7 @@ parameter_types! {
 }
 
 impl frame_system::Config for Test {
-  type BaseCallFilter = ();
+  type BaseCallFilter = frame_support::traits::Everything;
   type BlockWeights = ();
   type BlockLength = ();
   type Origin = Origin;
@@ -74,6 +73,8 @@ impl frame_system::Config for Test {
   type OnKilledAccount = ();
   type SystemWeightInfo = ();
   type SS58Prefix = SS58Prefix;
+  type OnSetCode = ();
+  type MaxConsumers = frame_support::traits::ConstU32<16>;
 }
 
 pub struct MockTime {}
@@ -88,13 +89,16 @@ impl Config for Test {
   type Event = ();
   type WeightInfo = crate::weights::AnagolayWeight<Test>;
   type TimeProvider = MockTime;
+  const MAX_VERSIONS_PER_OPERATION: u32 = 100;
 }
 
-impl anagolay_support::Config for Test {}
+impl anagolay_support::Config for Test {
+  const MAX_ARTIFACTS: u32 = 1_000_000;
+}
 
 // Build genesis storage according to the mock runtime.
 pub fn new_test_ext(pallet_genesis: Option<crate::GenesisConfig<Test>>) -> sp_io::TestExternalities {
-  let mut t = system::GenesisConfig::default().build_storage::<Test>().unwrap();
+  let mut t = frame_system::GenesisConfig::default().build_storage::<Test>().unwrap();
   if let Some(pg) = pallet_genesis {
     pg.assimilate_storage(&mut t).unwrap();
   }

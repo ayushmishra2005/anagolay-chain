@@ -1,61 +1,82 @@
 [package]
-authors = ['did:substrate:GHm6gp6khjcxQvnbnSsHdYejsFK1nNVxcGyGAsbDfsymtLr']
-repository = 'https://gitlab.com/anagolay/anagolay/'
-homepage = 'https://anagolay.network'
-build = 'build.rs'
-edition = '2018'
+name         = 'anagolay'
+version      = '0.3.0'
+description  = "A Substrate-based node for Anagolay network"
+authors      = ['did:substrate:GHm6gp6khjcxQvnbnSsHdYejsFK1nNVxcGyGAsbDfsymtLr']
+homepage     = 'https://anagolay.network'
+edition      = '2021'
 license-file = "./LICENSE"
-name = 'anagolay'
-version = '0.3.0'
+repository   = 'https://gitlab.com/anagolay/anagolay/'
+build        = 'build.rs'
+
 
 [package.metadata.docs.rs]
 targets = ['x86_64-unknown-linux-gnu']
 
-[build-dependencies]
-substrate-build-script-utils = '3.0'
-vergen = '3.0.4'
-
-
 [[bin]]
 name = 'anagolay'
 
-[features]
-default = []
-runtime-benchmarks = ['anagolay-runtime/runtime-benchmarks']
-
 [dependencies]
-frame-benchmarking = '3.0'
-frame-benchmarking-cli = '3.0'
-futures = '0.3.5'
-jsonrpc-core = '15.1.0'
-log = '0.4.8'
-pallet-transaction-payment-rpc = '3.0'
-parking_lot = '0.11.0'
-sc-basic-authorship = '0.9'
-sc-cli = { version = '0.9', features = ['wasmtime'] }
-sc-client-api = '3.0'
-sc-consensus = '0.9'
-sc-consensus-aura = '0.9'
-sc-executor = '0.9'
-sc-finality-grandpa = '0.9'
-sc-keystore = '3.0'
-sc-network = '0.9'
-sc-rpc = '3.0'
-sc-rpc-api = '0.9'
-sc-service = '0.9'
-sc-telemetry = '3.0'
-sc-transaction-pool = '3.0'
-sp-api = '3.0'
-sp-block-builder = '3.0'
-sp-blockchain = '3.0'
-sp-consensus = '0.9'
-sp-consensus-aura = '0.9'
-sp-core = '3.0'
-sp-finality-grandpa = '3.0'
-sp-inherents = '3.0'
-sp-runtime = '3.0'
-sp-transaction-pool = '3.0'
-structopt = '0.3.15'
-substrate-frame-rpc-system = '3.0'
+clap = { version = "3.1.18", features = ["derive"] }
 
+sc-cli = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26", features = [
+  "wasmtime",
+] }
+sp-core = { version = "6.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
+sc-executor = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26", features = [
+  "wasmtime",
+] }
+sc-service = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26", features = [
+  "wasmtime",
+] }
+sc-telemetry = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
+sc-keystore = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
+sc-transaction-pool = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
+sc-transaction-pool-api = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
+sc-consensus-aura = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
+sp-consensus-aura = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
+sp-consensus = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
+sc-consensus = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
+sc-finality-grandpa = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
+sp-finality-grandpa = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
+sc-client-api = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
+sp-runtime = { version = "6.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
+sp-timestamp = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
+sp-inherents = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
+sp-keyring = { version = "6.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
+frame-system = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
+pallet-transaction-payment = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
+
+# These dependencies are used for the node template's RPCs
+jsonrpsee                      = { version = "0.14.0", features = ["server"] }
+sc-rpc                         = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
+sp-api                         = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
+sc-rpc-api                     = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
+sp-blockchain                  = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
+sp-block-builder               = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
+sc-basic-authorship            = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
+substrate-frame-rpc-system     = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
+pallet-transaction-payment-rpc = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
+
+# These dependencies are used for runtime benchmarking
+frame-benchmarking     = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
+frame-benchmarking-cli = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
+
+# Local Dependencies
 anagolay-runtime = { path = '../runtime' }
+
+# CLI-specific dependencies
+try-runtime-cli = { version = "0.10.0-dev", optional = true, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
+
+# Patches
+tracing-core = "=0.1.26"
+
+[build-dependencies]
+substrate-build-script-utils = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
+
+[features]
+default            = []
+runtime-benchmarks = ["anagolay-runtime/runtime-benchmarks"]
+# Enable features that allow the runtime to be tried and debugged. Name might be subject to change
+# in the near future.
+try-runtime = ["anagolay-runtime/try-runtime", "try-runtime-cli"]

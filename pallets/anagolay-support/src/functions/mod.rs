@@ -1,4 +1,5 @@
 // This file is part of Anagolay Foundation.
+
 // Copyright (C) 2019-2022 Anagolay Foundation.
 // SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 
@@ -19,8 +20,12 @@
 //!
 //! Each pallet must have this file.
 
-use super::*;
-use sp_std::vec::Vec;
+/// Package that contains support functions to export
+pub mod public;
+pub use public::*;
+
+use super::constants::*;
+use frame_support::BoundedVec;
 
 impl<T: Config> Pallet<T> {
   /// Verifies if the package passed as argument is already stored
@@ -31,31 +36,37 @@ impl<T: Config> Pallet<T> {
   /// # Return
   /// True if the artifact is already stored, false otherwise
   pub fn is_existing_artifact(artifact: &AnagolayArtifactStructure<impl ArtifactType>) -> bool {
-    match ArtifactsByArtifactId::<T>::try_get().ok() {
-      Some(artifacts) => artifacts.contains(&artifact.ipfs_cid),
-      None => false,
+    match ArtifactsByArtifactId::<T>::try_get() {
+      Ok(artifacts) => artifacts.contains(&artifact.ipfs_cid),
+      _ => false,
     }
   }
 
   /// Store all artifacts passed as parameter.
   ///
-  /// Does not do any check.
-  ///
   /// # Arguments
   ///  * artifacts - The artifacts to store
-  pub fn store_artifacts(artifacts: &Vec<AnagolayArtifactStructure<impl ArtifactType>>) {
-    ArtifactsByArtifactId::<T>::mutate(|stored_artifacts| {
-      artifacts
-        .iter()
-        .for_each(|artifact| stored_artifacts.push(artifact.ipfs_cid.clone()));
-    });
+  ///
+  /// # Return
+  /// An [`Result`] having an unit-type `Ok` if all insertion succeeded or unit-type `Err` if any
+  /// insertion failed
+  pub fn store_artifacts(
+    artifacts: &BoundedVec<AnagolayArtifactStructure<impl ArtifactType>, MaxArtifactsPerVersionGet>,
+  ) -> Result<(), Error<T>> {
+    ArtifactsByArtifactId::<T>::try_mutate(|stored_artifacts| {
+      artifacts.iter().try_for_each(|artifact| {
+        stored_artifacts
+          .try_push(artifact.ipfs_cid.clone())
+          .map_err(|_err| Error::<T>::MaxArtifactsLimitReached)
+      })
+    })
   }
 
   /// Retrieve all stored artifacts
   ///
   /// # Return
   /// Collection of artifact Ids
-  pub fn get_artifacts() -> Vec<ArtifactId> {
+  pub fn get_artifacts() -> BoundedVec<ArtifactId, MaxArtifactsGet<T>> {
     ArtifactsByArtifactId::<T>::get()
   }
 }

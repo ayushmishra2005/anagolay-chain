@@ -23,10 +23,10 @@ use super::*;
 
 use crate::types::{Operation, OperationArtifactType, OperationData, OperationVersion, OperationVersionData};
 use anagolay_support::{AnagolayArtifactStructure, AnagolayVersionExtra, ArtifactId, OperationId, VersionId};
+use core::convert::TryInto;
 use frame_benchmarking::{benchmarks, impl_benchmark_test_suite, whitelisted_caller};
-use frame_support::traits::UnixTime;
+use frame_support::{sp_std::vec, traits::UnixTime};
 use frame_system::RawOrigin;
-use sp_std::{boxed::Box, vec, vec::Vec};
 
 #[allow(unused)]
 use crate::Pallet as Operations;
@@ -41,7 +41,7 @@ benchmarks! {
         description: "op_aaaaa description".into(),
         repository: "https://github.com/anagolay/op_aaaaa".into(),
         license: "Apache 2.0".into(),
-        features: vec!["std".into()],
+        features: vec!["std".into()].try_into().unwrap(),
         ..OperationData::default()
       },
       extra: None,
@@ -55,7 +55,7 @@ benchmarks! {
           artifact_type: OperationArtifactType::Git,
           file_extension: "git".into(),
           ipfs_cid: ArtifactId::from("bafkreibft6r6ijt7lxmbu2x3oq2s2ehwm5kz2nflwnlktdhcq2yfhgd4ku"),
-        }],
+        }].try_into().unwrap(),
       },
       extra: Some(AnagolayVersionExtra {
         created_at: <T as Config>::TimeProvider::now().as_secs(),

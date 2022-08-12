@@ -22,7 +22,7 @@ ports:
 
 vscode:
   extensions:
-    - rust-lang.rust
+    - matklad.rust-analyzer
     - tamasfe.even-better-toml
     # - belfz.search-crates-io
     - serayuzgur.crates

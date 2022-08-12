@@ -39,13 +39,11 @@ pub mod pallet {
   use super::*;
   use crate::types::{ProofData, ProofRecord};
   use anagolay_support::{AnagolayStructureData, Characters, ProofId};
-  use frame_support::pallet_prelude::*;
+  use core::convert::TryInto;
+  use frame_support::{pallet_prelude::*, sp_runtime::traits::Hash, sp_std::prelude::*};
   use frame_system::pallet_prelude::*;
-  use sp_runtime::traits::Hash;
-  use sp_std::prelude::*;
 
   #[pallet::pallet]
-  #[pallet::generate_store(pub(super) trait Store)]
   pub struct Pallet<T>(_);
 
   /// The pallet's configuration trait.
@@ -64,7 +62,7 @@ pub mod pallet {
   #[pallet::storage]
   #[pallet::getter(fn proof_by_proof_id_and_account_id)]
   pub type ProofByProofIdAndAccountId<T: Config> =
-    StorageDoubleMap<_, Blake2_128Concat, ProofId, Twox64Concat, T::AccountId, ProofRecord<T>, ValueQuery>;
+    StorageDoubleMap<_, Blake2_128Concat, ProofId, Twox64Concat, T::AccountId, ProofRecord<T>, OptionQuery>;
 
   /// Amount of saved Proofs
   #[pallet::storage]
@@ -85,7 +83,6 @@ pub mod pallet {
   /// Events of the Poe pallet
   #[pallet::event]
   #[pallet::generate_deposit(pub(crate) fn deposit_event)]
-  #[pallet::metadata(T::AccountId = "AccountId", T::Hash = "Hash")]
   pub enum Event<T: Config> {
     /// Proof is created and claimed
     ProofCreated(T::AccountId, ProofId),
@@ -98,10 +95,12 @@ pub mod pallet {
   /// Errors of the Poe pallet
   #[pallet::error]
   pub enum Error<T> {
-    /// This proof has already been claimed
+    /// This Proof has already been claimed
     ProofAlreadyClaimed,
-    /// The proof does not exist, so it cannot be revoked
+    /// The Proof does not exist, so it cannot be revoked
     NoSuchProof,
+    /// The Workflow associated to the proof does not exist
+    NoSuchWorkflow,
     /// The Workflow groups don't match the Proof groups
     ProofWorkflowTypeMismatch,
     /// PHash and ProofId combination already exist
@@ -143,7 +142,8 @@ pub mod pallet {
 
       let proof_id = proof.id.clone();
 
-      let workflow = workflows::Pallet::<T>::workflow_by_workflow_id_and_account_id(workflow_id, &sender);
+      let workflow = workflows::Pallet::<T>::workflow_by_workflow_id_and_account_id(workflow_id, &sender)
+        .ok_or(Error::<T>::NoSuchWorkflow)?;
 
       let current_block = <frame_system::Pallet<T>>::block_number();
 

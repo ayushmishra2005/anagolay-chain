@@ -1,5 +1,11 @@
 {
   "editor.formatOnSave": true,
+  "editor.wrappingStrategy": "advanced",
+  "editor.rulers": [
+    140
+  ],
+  "editor.wordWrapColumn": 140,
+  "editor.wordWrap": "bounded",
   "files.associations": {
     ".devops/docker/compose/*.yml": "dockercompose",
   },
@@ -21,6 +27,8 @@
   },
   "docker.languageserver.formatter.ignoreMultilineInstructions": true,
   "evenBetterToml.formatter.alignEntries": true,
-  "editor.wordWrap": "bounded",
-  "rust-client.disableRustup": true
+  "[toml]": {
+    // "editor.wordWrapColumn": 300,
+    "editor.wordWrap": "off",
+  },
 }

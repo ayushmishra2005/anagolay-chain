@@ -28,11 +28,10 @@ use sp_runtime::{
   testing::Header,
   traits::{BlakeTwo256, IdentityLookup},
 };
+use std::convert::{TryFrom, TryInto};
 
-use frame_system as system;
-
-type UncheckedExtrinsic = system::mocking::MockUncheckedExtrinsic<Test>;
-type Block = system::mocking::MockBlock<Test>;
+type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
+type Block = frame_system::mocking::MockBlock<Test>;
 
 // Configure a mock runtime to test the pallet.
 frame_support::construct_runtime!(
@@ -41,8 +40,8 @@ frame_support::construct_runtime!(
         NodeBlock = Block,
         UncheckedExtrinsic = UncheckedExtrinsic,
     {
-        System: system::{Module, Call, Config, Storage, Event<T>},
-        TestStatements: statements::{Module, Call, Storage, Event<T>},
+        System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
+        TestStatements: statements::{Pallet, Call, Storage, Event<T>},
     }
 );
 
@@ -51,8 +50,8 @@ parameter_types! {
     pub const SS58Prefix: u8 = 42;
 }
 
-impl system::Config for Test {
-  type BaseCallFilter = ();
+impl frame_system::Config for Test {
+  type BaseCallFilter = frame_support::traits::Everything;
   type BlockWeights = ();
   type BlockLength = ();
   type Origin = Origin;
@@ -74,14 +73,20 @@ impl system::Config for Test {
   type OnKilledAccount = ();
   type SystemWeightInfo = ();
   type SS58Prefix = SS58Prefix;
+  type OnSetCode = ();
+  type MaxConsumers = frame_support::traits::ConstU32<16>;
 }
 
 impl Config for Test {
   type Event = ();
   type WeightInfo = crate::weights::AnagolayWeight<Test>;
+  const MAX_STATEMENTS_PER_PROOF: u32 = 16;
 }
 
 // Build genesis storage according to the mock runtime.
 pub fn new_test_ext() -> sp_io::TestExternalities {
-  system::GenesisConfig::default().build_storage::<Test>().unwrap().into()
+  frame_system::GenesisConfig::default()
+    .build_storage::<Test>()
+    .unwrap()
+    .into()
 }
