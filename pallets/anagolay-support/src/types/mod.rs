@@ -30,12 +30,9 @@ pub use maps::*;
 
 use self::private::GenericId;
 use crate::getter_for_hardcoded_constant;
-use cid::{multihash::MultihashGeneric, Cid};
 use codec::{Decode, Encode};
 use core::any::type_name_of_val;
 use frame_support::pallet_prelude::*;
-use multibase::Base;
-use multihash::{Blake3_256, Code, Hasher};
 
 getter_for_hardcoded_constant!(MaxArtifactsPerVersion, u32, 8);
 
@@ -135,20 +132,24 @@ pub trait AnagolayStructureData: Default + Encode + Clone + PartialEq + Eq {
   /// # assert_eq!(ArtifactId::from("bafkr4iac2luovbttsv5iftbg2zl4okalixafa2vjwtbmf6exgwiuvukhmi"), cid);
   /// ```
   fn to_cid(&self) -> GenericId {
-    let hash = MultihashGeneric::wrap(
-      Code::Blake3_256.into(),
-      Blake3_256::digest(self.encode().as_slice()).as_ref(),
-    )
-    .unwrap();
+    extern crate alloc;
+    use alloc::{rc::Rc, vec, vec::*};
+    use core::any::Any;
 
-    // RAW codec from the multiformats
-    const RAW: u64 = 0x55;
-    let cid = Cid::new_v1(RAW, hash);
-
-    // create the string slice like `bafk...`
-    let cid_str = multibase::encode(Base::Base32Lower, cid.to_bytes());
-
-    GenericId::from(&cid_str)
+    let inputs: Vec<Rc<dyn Any>> = vec![Rc::new(self.encode())];
+    let workflow = wf_cidv1_from_array::Workflow::new();
+    if let Ok(result) = workflow.next(inputs) {
+      let result = result.as_ref();
+      let cid_str = result
+        .get_output()
+        .unwrap()
+        .downcast_ref::<alloc::string::String>()
+        .unwrap()
+        .clone();
+      GenericId::from(&cid_str)
+    } else {
+      GenericId::default()
+    }
   }
 
   fn validate(&self) -> Result<(), Characters>;
