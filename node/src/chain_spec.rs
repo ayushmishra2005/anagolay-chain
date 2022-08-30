@@ -200,6 +200,7 @@ fn testnet_genesis(
       // Configure endowed accounts with initial balance
       balances: endowed_accounts,
     },
+    treasury: Default::default(),
     aura: AuraConfig {
       authorities: initial_authorities.iter().map(|x| (x.0.clone())).collect(),
     },

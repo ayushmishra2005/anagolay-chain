@@ -6,9 +6,14 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
-use frame_support::traits::AsEnsureOriginWithArg;
+use frame_support::{
+  traits::{AsEnsureOriginWithArg, Imbalance, OnUnbalanced},
+  PalletId,
+};
 use frame_system::EnsureSigned;
 use pallet_grandpa::{fg_primitives, AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList};
+use pallet_transaction_payment::Multiplier;
+use smallvec::smallvec;
 use sp_api::impl_runtime_apis;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
@@ -16,7 +21,7 @@ use sp_runtime::{
   create_runtime_str, generic, impl_opaque_keys,
   traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto, IdentifyAccount, NumberFor, Verify},
   transaction_validity::{TransactionSource, TransactionValidity},
-  ApplyExtrinsicResult, MultiSignature,
+  ApplyExtrinsicResult, FixedPointNumber, MultiSignature, Perquintill,
 };
 use sp_std::prelude::*;
 #[cfg(feature = "std")]
@@ -24,6 +29,9 @@ use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
 // A few exports that help ease life for downstream crates.
+use frame_support::weights::{
+  ConstantMultiplier, WeightToFeeCoefficient, WeightToFeeCoefficients, WeightToFeePolynomial,
+};
 pub use frame_support::{
   construct_runtime, parameter_types,
   traits::{ConstU128, ConstU32, ConstU64, ConstU8, EqualPrivilegeOnly, KeyOwnerProofSystem, Randomness, StorageInfo},
@@ -36,8 +44,9 @@ pub use frame_support::{
 pub use frame_system::Call as SystemCall;
 use frame_system::EnsureRoot;
 pub use pallet_balances::Call as BalancesCall;
+use pallet_balances::NegativeImbalance;
 pub use pallet_timestamp::Call as TimestampCall;
-use pallet_transaction_payment::CurrencyAdapter;
+use pallet_transaction_payment::{CurrencyAdapter, TargetedFeeAdjustment};
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 pub use sp_runtime::{Perbill, Permill};
@@ -61,6 +70,7 @@ pub use statements;
 /// Importing workflows pallet
 pub use workflows;
 
+use crate::constants::currency;
 /// Importing a poe pallet
 pub use poe;
 
@@ -74,10 +84,6 @@ pub type Signature = MultiSignature;
 /// to the public key of our transaction signing scheme.
 pub type AccountId = <<Signature as Verify>::Signer as IdentifyAccount>::AccountId;
 
-// /// The type for looking up accounts. We don't expect more than 4 billion of them, but you
-// /// never know...
-// pub type AccountIndex = u32;
-
 /// Balance of an account.
 pub type Balance = u128;
 
@@ -87,10 +93,7 @@ pub type Index = u32;
 /// A hash of some data used by the chain.
 pub type Hash = sp_core::H256;
 
-// /// Digest item type.
-// pub type DigestItem = generic::DigestItem<Hash>;
-
-// /// Type used for expressing timestamp.
+/// Type used for expressing timestamp.
 pub type Moment = u64;
 
 /// Opaque types. These are used by the CLI to instantiate machinery that don't need to know
@@ -278,13 +281,109 @@ impl pallet_balances::Config for Runtime {
   type WeightInfo = pallet_balances::weights::SubstrateWeight<Runtime>;
 }
 
+parameter_types! {
+  pub const ProposalBond: Permill = Permill::from_percent(5);
+  pub const TreasuryId: PalletId = PalletId(*b"py/trsry");
+}
+
+impl pallet_treasury::Config for Runtime {
+  type PalletId = TreasuryId;
+  type Currency = Balances;
+  // root is required to approve a proposal
+  type ApproveOrigin = EnsureRoot<AccountId>;
+  // root is required to reject a proposal
+  type RejectOrigin = EnsureRoot<AccountId>;
+  type Event = Event;
+  // If spending proposal rejected, transfer proposer bond to treasury
+  type OnSlash = Treasury;
+  type ProposalBond = ProposalBond;
+  type ProposalBondMinimum = ConstU128<{ 1 * UNITS }>;
+  type SpendPeriod = ConstU32<{ 6 * DAYS }>;
+  type Burn = ();
+  type BurnDestination = ();
+  type MaxApprovals = ConstU32<100>;
+  type WeightInfo = pallet_treasury::weights::SubstrateWeight<Runtime>;
+  type SpendFunds = ();
+  type ProposalBondMaximum = ();
+  type SpendOrigin = frame_support::traits::NeverEnsureOrigin<Balance>; // Same as Polkadot
+}
+
+pub struct DealWithFees<R>(sp_std::marker::PhantomData<R>);
+impl<R> OnUnbalanced<NegativeImbalance<R>> for DealWithFees<R>
+where
+  R: pallet_balances::Config + pallet_treasury::Config,
+  pallet_treasury::Pallet<R>: OnUnbalanced<NegativeImbalance<R>>,
+{
+  // this is called for substrate-based transactions
+  fn on_unbalanceds<B>(mut fees_then_tips: impl Iterator<Item = NegativeImbalance<R>>) {
+    if let Some(fees) = fees_then_tips.next() {
+      // for fees, 80% are burned, 20% to the treasury
+      let (_, to_treasury) = fees.ration(80, 20);
+      // Balances pallet automatically burns dropped Negative Imbalances by decreasing
+      // total_supply accordingly
+      <pallet_treasury::Pallet<R> as OnUnbalanced<_>>::on_unbalanced(to_treasury);
+    }
+  }
+}
+
+pub struct LengthToFee;
+impl WeightToFeePolynomial for LengthToFee {
+  type Balance = Balance;
+
+  fn polynomial() -> WeightToFeeCoefficients<Self::Balance> {
+    smallvec![
+      WeightToFeeCoefficient {
+        degree: 1,
+        coeff_frac: Perbill::zero(),
+        coeff_integer: currency::TRANSACTION_BYTE_FEE,
+        negative: false,
+      },
+      WeightToFeeCoefficient {
+        degree: 3,
+        coeff_frac: Perbill::zero(),
+        coeff_integer: 1,
+        negative: false,
+      },
+    ]
+  }
+}
+
+parameter_types! {
+  /// The portion of the `NORMAL_DISPATCH_RATIO` that we adjust the fees with. Blocks filled less
+  /// than this will decrease the weight and more will increase.
+  pub const TargetBlockFullness: Perquintill = Perquintill::from_percent(25);
+  /// The adjustment variable of the runtime. Higher values will cause `TargetBlockFullness` to
+  /// change the fees more rapidly. This low value causes changes to occur slowly over time.
+  pub AdjustmentVariable: Multiplier = Multiplier::saturating_from_rational(3, 100_000);
+  /// Minimum amount of the multiplier. This value cannot be too low. A test case should ensure
+  /// that combined with `AdjustmentVariable`, we can recover from the minimum.
+  /// See `multiplier_can_grow_from_zero` in integration_tests.rs.
+  /// This value is currently only used by pallet-transaction-payment as an assertion that the
+  /// next multiplier is always > min value.
+  pub MinimumMultiplier: Multiplier = Multiplier::saturating_from_rational(1, 1_000_000u128);
+}
+
+/// Parameterized slow adjusting fee updated based on
+/// https://w3f-research.readthedocs.io/en/latest/polkadot/overview/2-token-economics.html#-2.-slow-adjusting-mechanism // editorconfig-checker-disable-line
+///
+/// The adjustment algorithm boils down to:
+///
+/// diff = (previous_block_weight - target) / maximum_block_weight
+/// next_multiplier = prev_multiplier * (1 + (v * diff) + ((v * diff)^2 / 2))
+/// assert(next_multiplier > min)
+///     where: v is AdjustmentVariable
+///            target is TargetBlockFullness
+///            min is MinimumMultiplier
+pub type SlowAdjustingFeeUpdate<R> =
+  TargetedFeeAdjustment<R, TargetBlockFullness, AdjustmentVariable, MinimumMultiplier>;
+
 impl pallet_transaction_payment::Config for Runtime {
   type Event = Event;
-  type OnChargeTransaction = CurrencyAdapter<Balances, ()>;
+  type OnChargeTransaction = CurrencyAdapter<Balances, DealWithFees<Runtime>>;
   type OperationalFeeMultiplier = ConstU8<5>;
-  type WeightToFee = IdentityFee<Balance>;
+  type WeightToFee = ConstantMultiplier<Balance, ConstU128<{ currency::WEIGHT_FEE }>>;
   type LengthToFee = IdentityFee<Balance>;
-  type FeeMultiplierUpdate = ();
+  type FeeMultiplierUpdate = SlowAdjustingFeeUpdate<Runtime>;
 }
 
 impl pallet_sudo::Config for Runtime {
@@ -408,20 +507,21 @@ construct_runtime!(
     Balances: pallet_balances = 5,
     TransactionPayment: pallet_transaction_payment = 6,
     Sudo: pallet_sudo = 7,
+    Treasury: pallet_treasury = 8,
 
     // Customizations
-    Utility: pallet_utility::{Pallet, Call, Event} = 8,
+    Utility: pallet_utility::{Pallet, Call, Event} = 9,
     // Vesting. Usable initially, but removed once all vesting is finished.
-    Vesting: pallet_vesting::{Pallet, Call, Storage, Event<T>, Config<T>} = 9,
-    Scheduler: pallet_scheduler = 10,
-    Uniques: pallet_uniques::{Pallet, Call, Storage, Event<T>} = 11,
+    Vesting: pallet_vesting::{Pallet, Call, Storage, Event<T>, Config<T>} = 10,
+    Scheduler: pallet_scheduler = 11,
+    Uniques: pallet_uniques::{Pallet, Call, Storage, Event<T>} = 12,
 
     // Used for anagolay blockchain
-    Anagolay: anagolay_support::{Pallet} = 12,
-    Operations: operations::{Pallet, Call, Storage, Event<T>, Config<T>} = 13,
-    Poe: poe::{Pallet, Call, Storage, Event<T>} = 14,
-    Statements: statements::{Pallet, Call, Storage, Event<T>} = 15,
-    Workflows: workflows::{Pallet, Call, Storage, Event<T>, Config<T>} = 16,
+    Anagolay: anagolay_support::{Pallet} = 13,
+    Operations: operations::{Pallet, Call, Storage, Event<T>, Config<T>} = 14,
+    Poe: poe::{Pallet, Call, Storage, Event<T>} = 15,
+    Statements: statements::{Pallet, Call, Storage, Event<T>} = 16,
+    Workflows: workflows::{Pallet, Call, Storage, Event<T>, Config<T>} = 17,
 
   }
 );
