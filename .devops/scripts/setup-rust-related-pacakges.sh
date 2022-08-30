@@ -5,9 +5,9 @@ echo "***** INSTALLING RUST RELATED PACKAGES *****"
 set -x
 set -o errexit
 
-rustup default nightly-2022-05-28
-rustup target add wasm32-unknown-unknown --toolchain nightly-2022-05-28
-rustup target add x86_64-unknown-linux-gnu --toolchain nightly-2022-05-28
+rustup default nightly-2022-08-29
+rustup target add wasm32-unknown-unknown --toolchain nightly-2022-08-29
+rustup target add x86_64-unknown-linux-gnu --toolchain nightly-2022-08-29
 
 if [ -z $CI_PROJECT_NAME ]; then
   rustup update nightly
