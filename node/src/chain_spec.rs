@@ -1,5 +1,6 @@
 use anagolay_runtime::{
-  AccountId, AuraConfig, BalancesConfig, GenesisConfig, GrandpaConfig, Signature, SudoConfig, SystemConfig, WASM_BINARY,
+  constants::currency::UNITS, AccountId, AuraConfig, BalancesConfig, GenesisConfig, GrandpaConfig, Signature,
+  SudoConfig, SystemConfig, WASM_BINARY,
 };
 use jsonrpsee::core::to_json_value;
 use sc_service::{ChainType, Properties};
@@ -12,7 +13,7 @@ use sp_runtime::traits::{IdentifyAccount, Verify};
 // The URL for the telemetry server.
 const STAGING_TELEMETRY_URL: &str = "wss://telemetry.anagolay.io/submit/";
 // The minimum balance for created accounts
-const EXISTENCIAL_DEPOSIT: u128 = 1 << 60;
+const MIN_BALANCE: u128 = 100 * UNITS;
 
 /// Specialized `ChainSpec`. This is a specialization of the general Substrate ChainSpec type.
 pub type ChainSpec = sc_service::GenericChainSpec<GenesisConfig>;
@@ -62,23 +63,20 @@ pub fn development_config() -> Result<ChainSpec, String> {
         get_account_id_from_seed::<sr25519::Public>("Alice"),
         // Pre-funded accounts
         vec![
+          (get_account_id_from_seed::<sr25519::Public>("Alice"), MIN_BALANCE),
+          (get_account_id_from_seed::<sr25519::Public>("Bob"), MIN_BALANCE),
           (
-            get_account_id_from_seed::<sr25519::Public>("Alice"),
-            EXISTENCIAL_DEPOSIT,
-          ),
-          (get_account_id_from_seed::<sr25519::Public>("Bob"), EXISTENCIAL_DEPOSIT),
-          (
-            AccountId::from_ss58check("5GukQt4gJW2XqzFwmm3RHa7x6sYuVcGhuhz72CN7oiBsgffx").unwrap(),
-            EXISTENCIAL_DEPOSIT,
+            // daniel
+            AccountId::from_ss58check("5Fn9SNUE8LihCm7Lq5dpPgBebGy5D7ZKWESDsWbdjsfV37d4").unwrap(),
+            MIN_BALANCE,
           ),
           (
-            get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
-            EXISTENCIAL_DEPOSIT,
+            // adriano
+            AccountId::from_ss58check("5EHkcDMhHgwW7V4GR4Us4dhkPkP9f2k71kdSVbzzzpNsHsYo").unwrap(),
+            MIN_BALANCE,
           ),
-          (
-            get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
-            EXISTENCIAL_DEPOSIT,
-          ),
+          (get_account_id_from_seed::<sr25519::Public>("Alice//stash"), MIN_BALANCE),
+          (get_account_id_from_seed::<sr25519::Public>("Bob//stash"), MIN_BALANCE),
         ],
         true,
       )
@@ -121,48 +119,33 @@ pub fn local_testnet_config() -> Result<ChainSpec, String> {
         get_account_id_from_seed::<sr25519::Public>("Alice"),
         // Pre-funded accounts
         vec![
+          (get_account_id_from_seed::<sr25519::Public>("Alice"), MIN_BALANCE),
+          (get_account_id_from_seed::<sr25519::Public>("Bob"), MIN_BALANCE),
+          (get_account_id_from_seed::<sr25519::Public>("Charlie"), MIN_BALANCE),
+          (get_account_id_from_seed::<sr25519::Public>("Dave"), MIN_BALANCE),
+          (get_account_id_from_seed::<sr25519::Public>("Eve"), MIN_BALANCE),
+          (get_account_id_from_seed::<sr25519::Public>("Ferdie"), MIN_BALANCE),
           (
-            get_account_id_from_seed::<sr25519::Public>("Alice"),
-            EXISTENCIAL_DEPOSIT,
-          ),
-          (get_account_id_from_seed::<sr25519::Public>("Bob"), EXISTENCIAL_DEPOSIT),
-          (
-            get_account_id_from_seed::<sr25519::Public>("Charlie"),
-            EXISTENCIAL_DEPOSIT,
-          ),
-          (get_account_id_from_seed::<sr25519::Public>("Dave"), EXISTENCIAL_DEPOSIT),
-          (get_account_id_from_seed::<sr25519::Public>("Eve"), EXISTENCIAL_DEPOSIT),
-          (
-            get_account_id_from_seed::<sr25519::Public>("Ferdie"),
-            EXISTENCIAL_DEPOSIT,
+            // daniel
+            AccountId::from_ss58check("5Fn9SNUE8LihCm7Lq5dpPgBebGy5D7ZKWESDsWbdjsfV37d4").unwrap(),
+            MIN_BALANCE,
           ),
           (
-            AccountId::from_ss58check("5GukQt4gJW2XqzFwmm3RHa7x6sYuVcGhuhz72CN7oiBsgffx").unwrap(),
-            EXISTENCIAL_DEPOSIT,
+            // adriano
+            AccountId::from_ss58check("5EHkcDMhHgwW7V4GR4Us4dhkPkP9f2k71kdSVbzzzpNsHsYo").unwrap(),
+            MIN_BALANCE,
           ),
-          (
-            get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
-            EXISTENCIAL_DEPOSIT,
-          ),
-          (
-            get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
-            EXISTENCIAL_DEPOSIT,
-          ),
+          (get_account_id_from_seed::<sr25519::Public>("Alice//stash"), MIN_BALANCE),
+          (get_account_id_from_seed::<sr25519::Public>("Bob//stash"), MIN_BALANCE),
           (
             get_account_id_from_seed::<sr25519::Public>("Charlie//stash"),
-            EXISTENCIAL_DEPOSIT,
+            MIN_BALANCE,
           ),
-          (
-            get_account_id_from_seed::<sr25519::Public>("Dave//stash"),
-            EXISTENCIAL_DEPOSIT,
-          ),
-          (
-            get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
-            EXISTENCIAL_DEPOSIT,
-          ),
+          (get_account_id_from_seed::<sr25519::Public>("Dave//stash"), MIN_BALANCE),
+          (get_account_id_from_seed::<sr25519::Public>("Eve//stash"), MIN_BALANCE),
           (
             get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
-            EXISTENCIAL_DEPOSIT,
+            MIN_BALANCE,
           ),
         ],
         true,

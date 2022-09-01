@@ -54,9 +54,13 @@ pub use sp_runtime::{Perbill, Permill};
 /// Constant values used within the runtime.
 pub mod constants;
 use constants::currency::*;
+pub use constants::*;
 
 /// Weights used in the runtime.
 pub mod weights;
+
+#[cfg(test)]
+mod tests;
 
 /// Importing a anagolay pallet
 pub use anagolay_support;
@@ -392,7 +396,7 @@ impl pallet_sudo::Config for Runtime {
 }
 
 parameter_types! {
-  pub const MinVestedTransfer: Balance = 1 * DOLLARS;
+  pub const MinVestedTransfer: Balance = 1 * UNITS;
 }
 
 impl pallet_utility::Config for Runtime {
