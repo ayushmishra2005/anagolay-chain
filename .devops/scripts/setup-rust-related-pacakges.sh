@@ -16,12 +16,12 @@ fi
 
 if [[ "${1}" =~ "dev" ]]; then
   echo "$2"
-  rustup component add rls
+  # rustup component add rls
   rustup component add llvm-tools-preview
   rustup component add rustfmt
   rustup component add rustc-dev
   rustup component add rust-std
-  rustup component add rust-analysis
+  # rustup component add rust-analysis
   rustup component add rust-src
   rustup component add rust-docs
 fi

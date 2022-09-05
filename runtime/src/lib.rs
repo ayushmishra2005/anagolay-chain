@@ -26,7 +26,7 @@ use sp_version::RuntimeVersion;
 // A few exports that help ease life for downstream crates.
 pub use frame_support::{
   construct_runtime, parameter_types,
-  traits::{ConstU128, ConstU32, ConstU64, ConstU8, KeyOwnerProofSystem, Randomness, StorageInfo},
+  traits::{ConstU128, ConstU32, ConstU64, ConstU8, EqualPrivilegeOnly, KeyOwnerProofSystem, Randomness, StorageInfo},
   weights::{
     constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
     IdentityFee, Weight,
@@ -129,7 +129,6 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
   //   `spec_version`, and `authoring_version` are the same between Wasm and native.
   // This value is set to 100 to notify Polkadot-JS App (https://polkadot.js.org/apps) to use
   //   the compatible custom types.
-  // It must be incremented every time a new chain spec is generated
   spec_version: 101,
   impl_version: 1,
   apis: RUNTIME_API_VERSIONS,
@@ -174,6 +173,8 @@ parameter_types! {
   pub BlockLength: frame_system::limits::BlockLength = frame_system::limits::BlockLength
     ::max_with_normal_ratio(5 * 1024 * 1024, NORMAL_DISPATCH_RATIO);
   pub const SS58Prefix: u8 = 42;
+  pub MaximumSchedulerWeight: Weight = 10_000_000;
+  pub const MaxScheduledPerBlock: u32 = 50;
 }
 
 // Configure FRAME pallets to include in runtime.
@@ -312,6 +313,20 @@ impl pallet_vesting::Config for Runtime {
   const MAX_VESTING_SCHEDULES: u32 = 28;
 }
 
+impl pallet_scheduler::Config for Runtime {
+  type Event = Event;
+  type Origin = Origin;
+  type PalletsOrigin = OriginCaller;
+  type Call = Call;
+  type MaximumWeight = MaximumSchedulerWeight;
+  type ScheduleOrigin = frame_system::EnsureRoot<AccountId>;
+  type MaxScheduledPerBlock = MaxScheduledPerBlock;
+  type WeightInfo = ();
+  type OriginPrivilegeCmp = EqualPrivilegeOnly;
+  type PreimageProvider = ();
+  type NoPreimagePostponement = ();
+}
+
 parameter_types! {
   pub const CollectionDeposit: Balance = 10 * UNITS; // 10 UNIT deposit to create uniques class
   pub const ItemDeposit: Balance = UNITS / 100; // 1 / 100 UNIT deposit to create uniques instance
@@ -398,6 +413,7 @@ construct_runtime!(
     Utility: pallet_utility::{Pallet, Call, Event} = 8,
     // Vesting. Usable initially, but removed once all vesting is finished.
     Vesting: pallet_vesting::{Pallet, Call, Storage, Event<T>, Config<T>} = 9,
+    Scheduler: pallet_scheduler = 10,
     Uniques: pallet_uniques::{Pallet, Call, Storage, Event<T>} = 11,
 
     // Used for anagolay blockchain

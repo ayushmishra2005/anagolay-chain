@@ -1,0 +1,2 @@
+#!/bin/sh
+makers check-format-flow

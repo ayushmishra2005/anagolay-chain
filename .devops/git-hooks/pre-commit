@@ -1,0 +1,3 @@
+#!/bin/sh
+# makers format && makers format-toml-flow
+makers format

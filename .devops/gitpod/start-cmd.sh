@@ -9,3 +9,5 @@ ln -fs $GITPOD_REPO_ROOT/.devops/gitpod/.bash_aliases $HOME/.bash_aliases
 bash $GITPOD_REPO_ROOT/.devops/gitpod/prep-doppler.sh
 
 bash $GITPOD_REPO_ROOT/.devops/scripts/setup-rust-related-pacakges.sh dev
+
+exit

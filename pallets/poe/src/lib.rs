@@ -138,12 +138,12 @@ pub mod pallet {
 
       let proof = Proof::new(proof_data);
 
-      let workflow_id = &proof.data.workflow_id;
+      // let workflow_id = &proof.data.workflow_id;
 
       let proof_id = proof.id.clone();
 
-      let workflow = workflows::Pallet::<T>::workflow_by_workflow_id_and_account_id(workflow_id, &sender)
-        .ok_or(Error::<T>::NoSuchWorkflow)?;
+      // let workflow = workflows::Pallet::<T>::workflow_by_workflow_id_and_account_id(workflow_id,
+      // &sender) .ok_or(Error::<T>::NoSuchWorkflow)?;
 
       let current_block = <frame_system::Pallet<T>>::block_number();
 
@@ -151,9 +151,9 @@ pub mod pallet {
       // submitted ensure!(&rule_record, Error::<T>::NoSuchRule);
 
       // The types must match
-      if proof.data.groups != workflow.record.data.groups {
-        ensure!(false, Error::<T>::ProofWorkflowTypeMismatch);
-      }
+      // if proof.data.groups != workflow.record.data.groups {
+      //   ensure!(false, Error::<T>::ProofWorkflowTypeMismatch);
+      // }
 
       // Proof exists?
       ensure!(

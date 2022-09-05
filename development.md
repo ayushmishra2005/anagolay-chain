@@ -1,5 +1,16 @@
 # For Developers among us
 
+Start the release chain
+```
+mkdir -p resources
+./target/production/anagolay --base-path ./target/data --chain local --no-telemetry --rpc-methods Unsafe --rpc-cors all --unsafe-rpc-external
+./target/production/anagolay build-spec --base-path ./target/data --disable-default-bootnode --chain local > ./resources/idiyanale/spec.json
+./target/production/anagolay build-spec --chain=./resources/idiyanale/spec.json  --raw --disable-default-bootnode > ./resources/idiyanale/genesis.json
+
+
+```
+
+
 ## commits
 
 The gitlab job [`test`](./.devops/ci/gitlab/jobs/test.yml) is configured to run with the [`.rules-run-if-source-code-is-changed`](./.devops/ci/gitlab/utils/rules.yml#20) rule which triggers it in one of two cases:

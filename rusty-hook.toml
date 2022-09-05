@@ -1,7 +1,0 @@
-[hooks]
-pre-commit = "makers format && makers format-toml-flow"
-pre-push = ["makers check-format-flow"]
-# post-commit = "echo yay"
-
-[logging]
-verbose = true
