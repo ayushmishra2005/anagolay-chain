@@ -368,7 +368,7 @@ parameter_types! {
 }
 
 /// Parameterized slow adjusting fee updated based on
-/// https://w3f-research.readthedocs.io/en/latest/polkadot/overview/2-token-economics.html#-2.-slow-adjusting-mechanism // editorconfig-checker-disable-line
+/// <https://w3f-research.readthedocs.io/en/latest/polkadot/overview/2-token-economics.html#-2.-slow-adjusting-mechanism>
 ///
 /// The adjustment algorithm boils down to:
 ///
