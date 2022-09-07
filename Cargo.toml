@@ -16,8 +16,12 @@ incremental = true
 [profile.release]
 panic = 'unwind'
 
-# 
+
 [profile.production]
-inherits = "release"
+inherits  = "release"
 opt-level = 3
-lto = true
+lto       = true
+
+# Patches for workflows
+[patch.'https://gitlab.com/anagolay/operations/op_multihash']
+op_multihash = { git = "https://ipfs.anagolay.network/ipfs/bafybeig4y4fcwssfcxbjspvztgy2juba6c4nmc6lc5ah7fswjl5g6wokhq" }

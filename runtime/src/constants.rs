@@ -2,13 +2,18 @@
 pub mod currency {
   use crate::Balance;
 
-  pub const UNITS: Balance = 100_000_000_000;
-  pub const DOLLARS: Balance = UNITS; // 100_000_000_000
-  pub const CENTS: Balance = DOLLARS / 100; // 1_000_000_000
-  pub const MILLICENTS: Balance = CENTS / 1_000; // 1_000_000
+  pub const UNITS: Balance = 1_000_000_000_000;
+  pub const THOUSANDTHS: Balance = UNITS / 1_000; // 1_000_000_000
+  pub const MILLIONTHS: Balance = UNITS / 1_000_000; // 1_000_000
+  pub const BILLIONTHS: Balance = UNITS / 1_000_000_000; // 1_000
+  pub const TRILLIONTHS: Balance = UNITS / 1_000_000_000_000; // 1
+
+  pub const TRANSACTION_BYTE_FEE: Balance = 1 * TRILLIONTHS;
+  pub const STORAGE_BYTE_FEE: Balance = 100 * TRILLIONTHS;
+  pub const WEIGHT_FEE: Balance = 50 * TRILLIONTHS;
 
   pub const fn deposit(items: u32, bytes: u32) -> Balance {
-    items as Balance * 15 * CENTS + (bytes as Balance) * 6 * CENTS
+    items as Balance * 15 * TRILLIONTHS + (bytes as Balance) * 6 * TRILLIONTHS
   }
 }
 

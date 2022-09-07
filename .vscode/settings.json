@@ -22,6 +22,10 @@
     "editor.defaultFormatter": "esbenp.prettier-vscode",
     "editor.formatOnSave": true
   },
+  "[rust]": {
+    "editor.defaultFormatter": "matklad.rust-analyzer",
+    "editor.formatOnSave": true
+  },
   "search.exclude": {
     "**/target": true
   },
@@ -31,4 +35,6 @@
     // "editor.wordWrapColumn": 300,
     "editor.wordWrap": "off",
   },
+  "editor.experimental.stickyScroll.enabled": true,
+  "rust-analyzer.cargo.allFeatures": true,
 }

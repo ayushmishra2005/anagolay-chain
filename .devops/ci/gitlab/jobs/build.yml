@@ -24,6 +24,9 @@ build:
     - ldd ./target/production/anagolay
 
     - cp ./target/production/anagolay ./artifacts/.
+    - cp ./target/production/wbuild/anagolay-runtime/anagolay_runtime.compact.compressed.wasm ./artifacts/.
+    - cp ./target/production/wbuild/anagolay-runtime/anagolay_runtime.compact.wasm ./artifacts/.
+    - cp ./target/production/wbuild/anagolay-runtime/anagolay_runtime.wasm ./artifacts/.
     - cp LICENSE ./artifacts/.
 
     - chmod +x ./artifacts/anagolay

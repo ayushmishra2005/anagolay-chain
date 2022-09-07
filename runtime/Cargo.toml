@@ -22,9 +22,11 @@ scale-info = { version = "2.1.1", default-features = false, features = [
 
 pallet-aura                       = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
 pallet-balances                   = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
+pallet-treasury                   = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
 frame-support                     = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
 pallet-grandpa                    = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
 pallet-randomness-collective-flip = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
+pallet-scheduler                  = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
 pallet-sudo                       = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
 frame-system                      = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
 frame-try-runtime                 = { version = "0.10.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26", optional = true }
@@ -44,6 +46,7 @@ sp-transaction-pool               = { version = "4.0.0-dev", default-features = 
 sp-version                        = { version = "5.0.0", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
 pallet-utility                    = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.26" }
 pallet-vesting                    = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.26" }
+pallet-uniques                    = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.26" }
 
 # Used for the node template's RPCs
 frame-system-rpc-runtime-api               = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
@@ -55,6 +58,7 @@ frame-system-benchmarking = { version = "4.0.0-dev", default-features = false, g
 hex-literal               = { version = "0.3.4", optional = true }
 
 getrandom = { version = "0.2", features = ["js"] }
+smallvec = { version = "1.9.0", default-features = false }
 
 # Local Dependencies
 anagolay-support = { path = '../pallets/anagolay-support', default-features = false }
@@ -65,6 +69,9 @@ poe              = { path = '../pallets/poe', default-features = false }
 
 [build-dependencies]
 substrate-wasm-builder = { version = "5.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
+
+[dev-dependencies]
+sp-io      = { default-features = false, version = "6.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
 
 [features]
 default = ["std"]
@@ -78,8 +85,10 @@ std = [
   "frame-try-runtime/std",
   "pallet-aura/std",
   "pallet-balances/std",
+  "pallet-treasury/std",
   "pallet-grandpa/std",
   "pallet-randomness-collective-flip/std",
+  "pallet-scheduler/std",
   "pallet-sudo/std",
   "pallet-timestamp/std",
   "pallet-transaction-payment-rpc-runtime-api/std",
@@ -98,6 +107,7 @@ std = [
   'pallet-timestamp/std',
   'pallet-utility/std',
   'pallet-vesting/std',
+  'pallet-uniques/std',
   'anagolay-support/std',
   'operations/std',
   'statements/std',
@@ -116,6 +126,7 @@ runtime-benchmarks = [
   "sp-runtime/runtime-benchmarks",
   'pallet-utility/runtime-benchmarks',
   'pallet-vesting/runtime-benchmarks',
+  'pallet-uniques/runtime-benchmarks',
   'operations/runtime-benchmarks',
   'poe/runtime-benchmarks',
   'workflows/runtime-benchmarks',
@@ -134,6 +145,7 @@ try-runtime = [
   "pallet-timestamp/try-runtime",
   'pallet-utility/runtime-benchmarks',
   "pallet-vesting/try-runtime",
+  'pallet-uniques/try-runtime',
   'operations/try-runtime',
   'poe/try-runtime',
   'workflows/try-runtime',

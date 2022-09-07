@@ -7,7 +7,7 @@
   extends:
     - .use-kaniko
 
-build-main-image-with-artifact:
+build-idiyanale-main-image-with-artifact:
   when: manual
   extends:
     - .base-image-build
@@ -21,7 +21,7 @@ build-main-image-with-artifact:
   #   - !reference [.rule-friendly-word, rules]
   variables:
     IMAGE_DOCKERFILE_PATH: ./artifacts/Dockerfile
-    IMAGE_NAME: "${CI_REGISTRY}/${CI_PROJECT_PATH}:${CI_COMMIT_SHORT_SHA}"
+    IMAGE_NAME: "${CI_REGISTRY}/${CI_PROJECT_PATH}/idiyanale:${CI_COMMIT_SHORT_SHA}"
     AN_CI_LINUX_TAG: "19816159"
     GIT_STRATEGY: none
     CI_PROJECT_DIR: ./artifacts

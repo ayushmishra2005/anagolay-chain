@@ -1,5 +1,7 @@
 use anagolay_runtime::{
-  AccountId, AuraConfig, BalancesConfig, GenesisConfig, GrandpaConfig, Signature, SudoConfig, SystemConfig, WASM_BINARY,
+  constants::{currency::UNITS, time::MINUTES},
+  AccountId, AuraConfig, BalancesConfig, GenesisConfig, GrandpaConfig, Signature, SudoConfig, SystemConfig,
+  VestingConfig, WASM_BINARY,
 };
 use jsonrpsee::core::to_json_value;
 use sc_service::{ChainType, Properties};
@@ -11,8 +13,8 @@ use sp_runtime::traits::{IdentifyAccount, Verify};
 
 // The URL for the telemetry server.
 const STAGING_TELEMETRY_URL: &str = "wss://telemetry.anagolay.io/submit/";
-// The minimum balance for created accounts
-const EXISTENCIAL_DEPOSIT: u128 = 1 << 60;
+// The initial balance for created accounts
+const INITIAL_BALANCE: u128 = 100 * UNITS;
 
 /// Specialized `ChainSpec`. This is a specialization of the general Substrate ChainSpec type.
 pub type ChainSpec = sc_service::GenericChainSpec<GenesisConfig>;
@@ -62,22 +64,25 @@ pub fn development_config() -> Result<ChainSpec, String> {
         get_account_id_from_seed::<sr25519::Public>("Alice"),
         // Pre-funded accounts
         vec![
+          (get_account_id_from_seed::<sr25519::Public>("Alice"), INITIAL_BALANCE),
+          (get_account_id_from_seed::<sr25519::Public>("Bob"), INITIAL_BALANCE),
           (
-            get_account_id_from_seed::<sr25519::Public>("Alice"),
-            EXISTENCIAL_DEPOSIT,
+            // daniel
+            AccountId::from_ss58check("5Fn9SNUE8LihCm7Lq5dpPgBebGy5D7ZKWESDsWbdjsfV37d4").unwrap(),
+            INITIAL_BALANCE,
           ),
-          (get_account_id_from_seed::<sr25519::Public>("Bob"), EXISTENCIAL_DEPOSIT),
           (
-            AccountId::from_ss58check("5GukQt4gJW2XqzFwmm3RHa7x6sYuVcGhuhz72CN7oiBsgffx").unwrap(),
-            EXISTENCIAL_DEPOSIT,
+            // adriano
+            AccountId::from_ss58check("5EHkcDMhHgwW7V4GR4Us4dhkPkP9f2k71kdSVbzzzpNsHsYo").unwrap(),
+            INITIAL_BALANCE,
           ),
           (
             get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
-            EXISTENCIAL_DEPOSIT,
+            INITIAL_BALANCE,
           ),
           (
             get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
-            EXISTENCIAL_DEPOSIT,
+            INITIAL_BALANCE,
           ),
         ],
         true,
@@ -89,6 +94,7 @@ pub fn development_config() -> Result<ChainSpec, String> {
     Some(TelemetryEndpoints::new(vec![(STAGING_TELEMETRY_URL.to_string(), 3)]).unwrap()),
     // Protocol ID
     None,
+    // Fork ID
     None,
     // Properties
     Some(props),
@@ -120,48 +126,45 @@ pub fn local_testnet_config() -> Result<ChainSpec, String> {
         get_account_id_from_seed::<sr25519::Public>("Alice"),
         // Pre-funded accounts
         vec![
+          (get_account_id_from_seed::<sr25519::Public>("Alice"), INITIAL_BALANCE),
+          (get_account_id_from_seed::<sr25519::Public>("Bob"), INITIAL_BALANCE),
+          (get_account_id_from_seed::<sr25519::Public>("Charlie"), INITIAL_BALANCE),
+          (get_account_id_from_seed::<sr25519::Public>("Dave"), INITIAL_BALANCE),
+          (get_account_id_from_seed::<sr25519::Public>("Eve"), INITIAL_BALANCE),
+          (get_account_id_from_seed::<sr25519::Public>("Ferdie"), INITIAL_BALANCE),
           (
-            get_account_id_from_seed::<sr25519::Public>("Alice"),
-            EXISTENCIAL_DEPOSIT,
-          ),
-          (get_account_id_from_seed::<sr25519::Public>("Bob"), EXISTENCIAL_DEPOSIT),
-          (
-            get_account_id_from_seed::<sr25519::Public>("Charlie"),
-            EXISTENCIAL_DEPOSIT,
-          ),
-          (get_account_id_from_seed::<sr25519::Public>("Dave"), EXISTENCIAL_DEPOSIT),
-          (get_account_id_from_seed::<sr25519::Public>("Eve"), EXISTENCIAL_DEPOSIT),
-          (
-            get_account_id_from_seed::<sr25519::Public>("Ferdie"),
-            EXISTENCIAL_DEPOSIT,
+            // daniel
+            AccountId::from_ss58check("5Fn9SNUE8LihCm7Lq5dpPgBebGy5D7ZKWESDsWbdjsfV37d4").unwrap(),
+            INITIAL_BALANCE,
           ),
           (
-            AccountId::from_ss58check("5GukQt4gJW2XqzFwmm3RHa7x6sYuVcGhuhz72CN7oiBsgffx").unwrap(),
-            EXISTENCIAL_DEPOSIT,
+            // adriano
+            AccountId::from_ss58check("5EHkcDMhHgwW7V4GR4Us4dhkPkP9f2k71kdSVbzzzpNsHsYo").unwrap(),
+            INITIAL_BALANCE,
           ),
           (
             get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
-            EXISTENCIAL_DEPOSIT,
+            INITIAL_BALANCE,
           ),
           (
             get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
-            EXISTENCIAL_DEPOSIT,
+            INITIAL_BALANCE,
           ),
           (
             get_account_id_from_seed::<sr25519::Public>("Charlie//stash"),
-            EXISTENCIAL_DEPOSIT,
+            INITIAL_BALANCE,
           ),
           (
             get_account_id_from_seed::<sr25519::Public>("Dave//stash"),
-            EXISTENCIAL_DEPOSIT,
+            INITIAL_BALANCE,
           ),
           (
             get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
-            EXISTENCIAL_DEPOSIT,
+            INITIAL_BALANCE,
           ),
           (
             get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
-            EXISTENCIAL_DEPOSIT,
+            INITIAL_BALANCE,
           ),
         ],
         true,
@@ -199,6 +202,7 @@ fn testnet_genesis(
       // Configure endowed accounts with initial balance
       balances: endowed_accounts,
     },
+    treasury: Default::default(),
     aura: AuraConfig {
       authorities: initial_authorities.iter().map(|x| (x.0.clone())).collect(),
     },
@@ -212,6 +216,23 @@ fn testnet_genesis(
     transaction_payment: Default::default(),
     operations: Default::default(),
     workflows: Default::default(),
-    vesting: Default::default(),
+    vesting: VestingConfig {
+      vesting: vec![
+        (
+          // daniel
+          AccountId::from_ss58check("5Fn9SNUE8LihCm7Lq5dpPgBebGy5D7ZKWESDsWbdjsfV37d4").unwrap(),
+          1 * MINUTES,
+          10 * MINUTES,
+          (INITIAL_BALANCE / 2) as u128,
+        ),
+        (
+          // adriano
+          AccountId::from_ss58check("5EHkcDMhHgwW7V4GR4Us4dhkPkP9f2k71kdSVbzzzpNsHsYo").unwrap(),
+          1 * MINUTES,
+          10 * MINUTES,
+          (INITIAL_BALANCE / 2) as u128,
+        ),
+      ],
+    },
   }
 }
