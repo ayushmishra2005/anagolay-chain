@@ -21,8 +21,11 @@
 #![cfg(feature = "runtime-benchmarks")]
 use super::*;
 
-use crate::types::{Operation, OperationArtifactType, OperationData, OperationVersion, OperationVersionData};
-use anagolay_support::{AnagolayArtifactStructure, AnagolayVersionExtra, ArtifactId, OperationId, VersionId};
+use crate::types::{
+  Operation, OperationArtifactType, OperationData, OperationId, OperationVersion, OperationVersionData,
+  OperationVersionExtra, OperationVersionId,
+};
+use anagolay_support::{AnagolayArtifactStructure, ArtifactId};
 use core::convert::TryInto;
 use frame_benchmarking::{benchmarks, impl_benchmark_test_suite, whitelisted_caller};
 use frame_support::{sp_std::vec, traits::UnixTime};
@@ -47,7 +50,7 @@ benchmarks! {
       extra: None,
     };
     let op_ver = OperationVersion {
-      id: VersionId::from("bafybeihc2e5rshwlkcg47uojrhtw7dwhyq2cxwivf3sysfnx5jtuuafvia"),
+      id: OperationVersionId::from("bafybeihc2e5rshwlkcg47uojrhtw7dwhyq2cxwivf3sysfnx5jtuuafvia"),
       data: OperationVersionData {
         entity_id: Some(op.id.clone()),
         parent_id: None,
@@ -57,7 +60,7 @@ benchmarks! {
           ipfs_cid: ArtifactId::from("bafkreibft6r6ijt7lxmbu2x3oq2s2ehwm5kz2nflwnlktdhcq2yfhgd4ku"),
         }].try_into().unwrap(),
       },
-      extra: Some(AnagolayVersionExtra {
+      extra: Some(OperationVersionExtra {
         created_at: <T as Config>::TimeProvider::now().as_secs(),
       }),
     };

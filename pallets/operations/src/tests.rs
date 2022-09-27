@@ -20,12 +20,10 @@
 
 use super::{mock::*, *};
 use crate::types::{
-  Operation, OperationArtifactType, OperationData, OperationRecord, OperationVersion, OperationVersionData,
-  OperationVersionRecord,
+  Operation, OperationArtifactType, OperationData, OperationId, OperationRecord, OperationVersion,
+  OperationVersionData, OperationVersionExtra, OperationVersionId, OperationVersionRecord,
 };
-use anagolay_support::{
-  AnagolayArtifactStructure, AnagolayStructureData, AnagolayVersionExtra, ArtifactId, OperationId, VersionId,
-};
+use anagolay_support::{AnagolayArtifactStructure, AnagolayStructureData, ArtifactId};
 use core::convert::TryInto;
 use frame_support::{assert_noop, assert_ok, sp_std::vec, traits::UnixTime};
 
@@ -43,7 +41,7 @@ fn mock_request() -> (Operation, OperationVersion) {
     extra: None,
   };
   let op_ver = OperationVersion {
-    id: VersionId::from("bafybeihc2e5rshwlkcg47uojrhtw7dwhyq2cxwivf3sysfnx5jtuuafvia"),
+    id: OperationVersionId::from("bafybeihc2e5rshwlkcg47uojrhtw7dwhyq2cxwivf3sysfnx5jtuuafvia"),
     data: OperationVersionData {
       entity_id: Some(op.id.clone()),
       parent_id: None,
@@ -55,7 +53,7 @@ fn mock_request() -> (Operation, OperationVersion) {
       .try_into()
       .unwrap(),
     },
-    extra: Some(AnagolayVersionExtra {
+    extra: Some(OperationVersionExtra {
       created_at: <Test as crate::Config>::TimeProvider::now().as_secs(),
     }),
   };
@@ -188,7 +186,7 @@ fn operations_create_operation_error_mixing_operations() {
       extra: None,
     };
     let op_b_ver_mixed = OperationVersion {
-      id: VersionId::default(),
+      id: OperationVersionId::default(),
       data: op_a_ver.data.clone(),
       extra: None,
     };

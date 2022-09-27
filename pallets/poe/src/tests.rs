@@ -20,13 +20,14 @@
 
 #![cfg(test)]
 use super::{mock::*, *};
-use crate::types::ProofData;
-use anagolay_support::{
-  AnagolayArtifactStructure, AnagolayStructureData, AnagolayVersionExtra, ArtifactId, ProofId, VersionId, WorkflowId,
-};
+use crate::types::{ProofData, ProofId};
+use anagolay_support::{AnagolayArtifactStructure, AnagolayStructureData, ArtifactId};
 use core::convert::TryInto;
 use frame_support::{assert_noop, assert_ok, traits::UnixTime};
-use workflows::types::{Workflow, WorkflowArtifactType, WorkflowData, WorkflowVersion, WorkflowVersionData};
+use workflows::types::{
+  Workflow, WorkflowArtifactType, WorkflowData, WorkflowId, WorkflowVersion, WorkflowVersionData, WorkflowVersionExtra,
+  WorkflowVersionId,
+};
 
 const PERCEPTUAL_HASH: &[u8] = b"0x30303030303030303031313030303030303030303030303030303031313130303031313131313030313131313131313031313131313131313131313131313130303031313130303030303030303030303131313131313130303030303030303031313131313131313130303030303030313131313131313131313131313030303131313131313131313131313031313131313131313131313130313030313130313131303030303030303130303030303030303030303031303030303030303031313131313131313131313131313131313131313131313130303030303030303131313130303030303030303030303031313131303030303030303030303030";
 
@@ -42,7 +43,7 @@ pub fn mock_request() -> (Workflow, WorkflowVersion) {
     extra: None,
   };
   let wf_ver = WorkflowVersion {
-    id: VersionId::from("bafybeihc2e5rshwlkcg47uojrhtw7dwhyq2cxwivf3sysfnx5jtuuafvia"),
+    id: WorkflowVersionId::from("bafybeihc2e5rshwlkcg47uojrhtw7dwhyq2cxwivf3sysfnx5jtuuafvia"),
     data: WorkflowVersionData {
       entity_id: Some(wf.id.clone()),
       parent_id: None,
@@ -54,7 +55,7 @@ pub fn mock_request() -> (Workflow, WorkflowVersion) {
       .try_into()
       .unwrap(),
     },
-    extra: Some(AnagolayVersionExtra {
+    extra: Some(WorkflowVersionExtra {
       created_at: <Test as workflows::Config>::TimeProvider::now().as_secs(),
     }),
   };

@@ -36,6 +36,8 @@
 
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
+// Enable experimental features
+#![feature(type_name_of_val)]
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
@@ -60,11 +62,10 @@ mod constants {
 pub mod pallet {
   use super::{constants::*, *};
   use crate::types::{
-    Workflow, WorkflowData, WorkflowRecord, WorkflowVersion, WorkflowVersionData, WorkflowVersionRecord,
+    Workflow, WorkflowData, WorkflowId, WorkflowRecord, WorkflowVersion, WorkflowVersionData, WorkflowVersionExtra,
+    WorkflowVersionId, WorkflowVersionRecord,
   };
-  use anagolay_support::{
-    AnagolayStructureData, AnagolayVersionData, AnagolayVersionExtra, Characters, VersionId, WorkflowId,
-  };
+  use anagolay_support::{AnagolayStructureData, Characters};
   use core::convert::TryInto;
   use frame_support::{log::error, pallet_prelude::*, traits::UnixTime};
   use frame_system::pallet_prelude::*;
@@ -109,14 +110,19 @@ pub mod pallet {
   /// Retrieve all Versions for a single Workflow Manifest.
   #[pallet::storage]
   #[pallet::getter(fn version_ids_by_workflow_id)]
-  pub type VersionIdsByWorkflowId<T: Config> =
-    StorageMap<_, Blake2_128Concat, WorkflowId, BoundedVec<VersionId, MaxVersionsPerWorkflowGet<T>>, ValueQuery>;
+  pub type VersionIdsByWorkflowId<T: Config> = StorageMap<
+    _,
+    Blake2_128Concat,
+    WorkflowId,
+    BoundedVec<WorkflowVersionId, MaxVersionsPerWorkflowGet<T>>,
+    ValueQuery,
+  >;
 
   /// Retrieve the Version.
   #[pallet::storage]
   #[pallet::getter(fn version_by_version_id)]
   pub type VersionByVersionId<T: Config> =
-    StorageMap<_, Blake2_128Concat, VersionId, WorkflowVersionRecord<T>, OptionQuery>;
+    StorageMap<_, Blake2_128Concat, WorkflowVersionId, WorkflowVersionRecord<T>, OptionQuery>;
 
   /// Amount of saved workflows
   #[pallet::storage]
@@ -285,11 +291,11 @@ pub mod pallet {
       Self::do_create_workflow(&workflow, &sender, &current_block);
 
       let workflow_version = WorkflowVersion::new_with_extra(
-        AnagolayVersionData {
+        WorkflowVersionData {
           entity_id: Some(workflow.id.clone()),
           ..version_data.clone()
         },
-        AnagolayVersionExtra {
+        WorkflowVersionExtra {
           created_at: T::TimeProvider::now().as_secs(),
         },
       );

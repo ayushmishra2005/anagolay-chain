@@ -18,11 +18,11 @@
 
 use super::{constants::*, *};
 use crate::{
-  types::{Statement, StatementData, StatementRecord},
+  types::{Statement, StatementData, StatementId, StatementRecord},
   Error::NoSuchStatement,
 };
-use anagolay_support::{AnagolayRecord, ProofId, StatementId};
 use frame_support::BoundedVec;
+use poe::types::ProofId;
 
 impl<T: Config> Pallet<T> {
   /// Decrease the statements count
@@ -66,7 +66,7 @@ impl<T: Config> Pallet<T> {
   /// # Arguments
   ///  * record - The record of the Statement to store
   ///  * account_id - The issuer of the Statement
-  pub fn insert_statement(record: &AnagolayRecord<Statement, T::AccountId, T::BlockNumber>, account_id: &T::AccountId) {
+  pub fn insert_statement(record: &StatementRecord<T>, account_id: &T::AccountId) {
     StatementByStatementIdAndAccountId::<T>::insert(&record.record.id, &account_id, record.clone());
     Self::increase_statements_count();
   }
@@ -99,7 +99,7 @@ impl<T: Config> Pallet<T> {
   /// # Return
   /// A unit-type `Result` if the connection was removed, `Error` otherwise
   pub fn remove_statement_proof_connection(poe_id: ProofId, statement_id: StatementId) -> Result<(), Error<T>> {
-    let mut proof_statement_list: BoundedVec<ProofId, MaxStatementsPerProofGet<T>> =
+    let mut proof_statement_list: BoundedVec<StatementId, MaxStatementsPerProofGet<T>> =
       StatementIdsByProofId::<T>::get(&poe_id);
 
     match proof_statement_list.binary_search(&statement_id) {
@@ -122,7 +122,7 @@ impl<T: Config> Pallet<T> {
   /// # Return
   /// A unit-type `Result` if no Proof is currently associated to the statement, `Error` otherwise
   pub fn is_proof_statement_list_empty(statement_data: &StatementData) -> Result<(), Error<T>> {
-    let proof_statement_list: BoundedVec<ProofId, MaxStatementsPerProofGet<T>> =
+    let proof_statement_list: BoundedVec<StatementId, MaxStatementsPerProofGet<T>> =
       StatementIdsByProofId::<T>::get(&statement_data.claim.poe_id);
 
     if !proof_statement_list.is_empty() {
@@ -143,7 +143,7 @@ impl<T: Config> Pallet<T> {
   /// # Return
   /// A unit-type `Result` if the connection was created, `Error` otherwise
   pub fn add_statement_to_proof(poe_id: ProofId, statement_id: StatementId) -> Result<(), Error<T>> {
-    let mut proof_statement_list: BoundedVec<ProofId, MaxStatementsPerProofGet<T>> =
+    let mut proof_statement_list: BoundedVec<StatementId, MaxStatementsPerProofGet<T>> =
       StatementIdsByProofId::<T>::get(&poe_id);
 
     match proof_statement_list.binary_search(&statement_id) {

@@ -16,26 +16,32 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use anagolay_support::{
-  getter_for_hardcoded_constant, AnagolayRecord, AnagolayStructure, AnagolayStructureData, AnagolayStructureExtra,
-  Characters, CreatorId, ProofId, SignatureId, StatementId, WorkflowId,
-};
+use anagolay_support::{constants::*, generic_id::GenericId, *};
 use codec::{Decode, Encode};
 use frame_support::{
   pallet_prelude::*,
   sp_runtime::RuntimeDebug,
   sp_std::{clone::Clone, default::Default},
 };
+use poe::types::ProofId;
+use workflows::types::WorkflowId;
 
 getter_for_hardcoded_constant!(MaxSignatureLen, u32, 256);
 
+// Statement id
+anagolay_generic_id!(Statement);
+
+// Signature id
+anagolay_generic_id!(Signature);
+
 /// Signature
 #[derive(Default, Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, MaxEncodedLen, TypeInfo)]
+#[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
 pub struct Signature {
   /// signing key in urn/did format 'urn:pgp:9cdf8dd38531511968c8d8cb524036585b62f15b'
   pub sig_key: Characters,
   /// Signature sign(prepared_statement, pvtKey(sigKey)) and encoded using multibase
-  /// https://gitlab.com/sensio_group/sensio-faas/-/blob/master/sp-api/src/plugins/copyright/helpers.ts#L76
+  /// <https://gitlab.com/sensio_group/sensio-faas/-/blob/master/sp-api/src/plugins/copyright/helpers.ts#L76>
   pub sig: BoundedVec<u8, MaxSignatureLenGet>,
   /// Content identifier of the sig field -- CID(sig)
   pub cid: SignatureId,
@@ -43,12 +49,14 @@ pub struct Signature {
 
 /// Signatures
 #[derive(Default, Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, MaxEncodedLen, TypeInfo)]
+#[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
 pub struct Signatures {
   pub holder: Signature,
   pub issuer: Signature,
 }
 /// Claim Proportion
 #[derive(Default, Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, MaxEncodedLen, TypeInfo)]
+#[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
 pub struct Proportion {
   /// Proportion sign, can be %
   pub sign: Characters,
@@ -57,6 +65,7 @@ pub struct Proportion {
 }
 /// Validity
 #[derive(Default, Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, MaxEncodedLen, TypeInfo)]
+#[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
 pub struct Validity {
   /// When the validity starts, this should be DATE_TIME
   pub from: Characters,
@@ -66,6 +75,7 @@ pub struct Validity {
 
 /// Possible Expiration types
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, MaxEncodedLen, TypeInfo)]
+#[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
 pub enum ExpirationType {
   Forever,
   Years,
@@ -83,6 +93,7 @@ impl Default for ExpirationType {
 
 /// Claim Expiration
 #[derive(Default, Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, MaxEncodedLen, TypeInfo)]
+#[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
 pub struct Expiration {
   ///Possible Expiration types
   pub expiration_type: ExpirationType,
@@ -92,6 +103,7 @@ pub struct Expiration {
 
 /// Claim types
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, MaxEncodedLen, TypeInfo)]
+#[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
 pub enum ClaimType {
   Copyright,
   Ownership,
@@ -105,6 +117,7 @@ impl Default for ClaimType {
 
 /// Generic Claim
 #[derive(Default, Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, MaxEncodedLen, TypeInfo)]
+#[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
 pub struct Claim {
   /// Prev Statement id in case this statement is revoked or changed
   pub prev_id: Option<StatementId>,
@@ -137,18 +150,22 @@ pub struct Claim {
 
 /// Copyright data
 #[derive(Default, Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, MaxEncodedLen, TypeInfo)]
+#[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
 pub struct StatementData {
   pub signatures: Signatures,
   pub claim: Claim,
 }
 
 impl AnagolayStructureData for StatementData {
+  type Id = StatementId;
+
   fn validate(&self) -> Result<(), Characters> {
     Ok(())
   }
 }
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, MaxEncodedLen, TypeInfo)]
+#[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
 pub struct StatementExtra {}
 impl AnagolayStructureExtra for StatementExtra {}
 impl Default for StatementExtra {
@@ -157,6 +174,8 @@ impl Default for StatementExtra {
   }
 }
 
-pub type Statement = AnagolayStructure<StatementData, StatementExtra>;
-pub type StatementRecord<T> =
-  AnagolayRecord<Statement, <T as frame_system::Config>::AccountId, <T as frame_system::Config>::BlockNumber>;
+// Statement entity
+anagolay_structure!(Statement, StatementId, StatementData, StatementExtra);
+
+// This produces `StatementRecord<T>`, the Storage record of the Statement.
+anagolay_record!(Statement);

@@ -16,10 +16,17 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
+use crate::Characters;
 use codec::{Decode, Encode};
 use frame_support::{pallet_prelude::*, storage::bounded_btree_map::BoundedBTreeMap};
-use serde::*;
-use std::collections::{btree_map::IntoKeys, BTreeMap};
+use serde::{
+  ser::{Error, SerializeMap},
+  *,
+};
+use std::{
+  any::{Any, TypeId},
+  collections::btree_map::IntoKeys,
+};
 
 /// NewType pattern to handle (de)serializable BoundedBTreeMap.
 #[derive(Encode, Decode, Clone, PartialEq, Eq, Ord, PartialOrd, Debug, MaxEncodedLen, TypeInfo)]
@@ -78,7 +85,7 @@ where
 /// Delegates to the inner type
 impl<K, V, S> Serialize for MaybeSerializableBoundedBTreeMap<K, V, S>
 where
-  K: Ord + Serialize + Clone,
+  K: Ord + Serialize + Clone + 'static,
   V: Ord + Serialize + Clone,
   S: Get<u32>,
 {
@@ -86,9 +93,40 @@ where
   where
     U: Serializer,
   {
-    let mut map = BTreeMap::new();
-    map.clone_from(&self.0);
-    map.serialize(s)
+    let mut ser_map = s.serialize_map(None)?;
+    let mut iter = self.0.iter();
+    if TypeId::of::<K>() == TypeId::of::<String>() {
+      // handle strings specially so they don't get escaped and wrapped inside another string
+      while let Some((k, v)) = iter.next() {
+        let s = (k as &dyn Any)
+          .downcast_ref::<String>()
+          .ok_or(U::Error::custom("Failed to serialize String as string"))?;
+        ser_map.serialize_entry(s, &v)?;
+      }
+    } else if TypeId::of::<K>() == TypeId::of::<Characters>() {
+      // handle Characters specially so they don't get serialized to Hex
+      while let Some((k, v)) = iter.next() {
+        let s = (k as &dyn Any)
+          .downcast_ref::<Characters>()
+          .ok_or(U::Error::custom("Failed to serialize Characters as string"))?
+          .as_str()
+          .to_string();
+        ser_map.serialize_entry(&s, &v)?;
+      }
+    } else {
+      while let Some((k, v)) = iter.next() {
+        ser_map.serialize_entry(
+          match &serde_json::to_string(&k) {
+            Ok(key_string) => key_string,
+            Err(e) => {
+              return Err(e).map_err(U::Error::custom);
+            }
+          },
+          &v,
+        )?;
+      }
+    }
+    ser_map.end()
   }
 }
 

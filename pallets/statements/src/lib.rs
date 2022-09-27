@@ -44,11 +44,12 @@ mod constants {
 #[frame_support::pallet]
 pub mod pallet {
   use super::{constants::*, *};
-  use crate::types::{ClaimType, Statement, StatementData, StatementRecord};
-  use anagolay_support::{AnagolayStructureData, Characters, ProofId, StatementId};
+  use crate::types::{ClaimType, Statement, StatementData, StatementId, StatementRecord};
+  use anagolay_support::{AnagolayStructureData, Characters};
   use core::convert::TryInto;
   use frame_support::pallet_prelude::*;
   use frame_system::pallet_prelude::*;
+  use poe::types::ProofId;
 
   #[pallet::pallet]
   #[pallet::generate_store(pub(super) trait Store)]

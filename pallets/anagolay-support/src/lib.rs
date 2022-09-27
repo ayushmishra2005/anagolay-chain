@@ -18,7 +18,6 @@
 
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
-#![feature(type_name_of_val)]
 #![feature(pattern)]
 
 //! # Anagolay blockchain
@@ -53,14 +52,13 @@
 //! * Identifiers - Every entity has their own (`OperationId`, `WorkflowId`, etc.) but they are all
 //! aliases of a private struct `GenericId` that deals with validation and (de)serialization
 //! * Characters - Offers an interface to deal with strings in nostd
-//! * AnagolayStructure - Provides a pattern struct with an id, some data nad an optional extra.
-//! The id is guaranteed to be computed from the data.
-//! * AnagolayVersion - Another pattern struct used by all entity to deal with their published
-//!   artifacts and
-//! incremental versions on the blockchain
-//! * AnagolayRecord - Pattern struct used to store the entities on the chain along with the caller
-//!   and the
-//! block number
+//! * anagolay_structure! -  Macro that produces a pattern struct with an id, some data nad an
+//!   optional extra. The id is guaranteed to be computed from the data.
+//! * anagolay_version_data!, anagolay_version_extra! - Other macros to produce pattern structs used
+//!   by all entity to deal with their published artifacts and incremental versions on the
+//!   blockchain
+//! * anagolay_record! - Macro that produces a pattern struct used to store the entities on the
+//!   chain along with the caller and the block number
 
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]

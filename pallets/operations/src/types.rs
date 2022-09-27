@@ -20,7 +20,7 @@
 //!
 //! Each pallet must have this file.
 
-use anagolay_support::{constants::*, *};
+use anagolay_support::{constants::*, generic_id::GenericId, *};
 use codec::{Decode, Encode};
 use frame_support::{
   pallet_prelude::*,
@@ -30,6 +30,12 @@ use frame_support::{
 
 getter_for_hardcoded_constant!(MaxOperationConfigValuesPerEntry, u32, 16);
 getter_for_hardcoded_constant!(MaxOperationFeatures, u32, 16);
+
+// Operation id
+anagolay_generic_id!(Operation);
+
+// OperationVersion id
+anagolay_generic_id!(OperationVersion);
 
 /// Operation data. This contains all the needed parameters which define the Operation and is hashed
 /// to produce its id
@@ -87,6 +93,8 @@ impl Default for OperationData {
 
 /// Implementation of AnagolayStructureData trait for OperationData
 impl AnagolayStructureData for OperationData {
+  type Id = OperationId;
+
   fn validate(&self) -> Result<(), Characters> {
     if self.name.len() < 4 || self.name.len() > 128 {
       Err("OperationData.name: length must be between 4 and 128 characters".into())
@@ -115,12 +123,11 @@ impl Default for OperationExtra {
   }
 }
 
-/// Operation entity, alias of `AnagolayStructure<OperationData, OperationExtra>`
-pub type Operation = AnagolayStructure<OperationData, OperationExtra>;
+// Operation entity
+anagolay_structure!(Operation, OperationId, OperationData, OperationExtra);
 
-/// This is the Storage record of Operation
-pub type OperationRecord<T> =
-  AnagolayRecord<Operation, <T as frame_system::Config>::AccountId, <T as frame_system::Config>::BlockNumber>;
+// This produces `OperationRecord<T>`, the Storage record of the Operation
+anagolay_record!(Operation);
 
 /// Operation Version artifact types. This enum corresponds to the different types of
 /// packages created by the publisher service when an Operation Version is published
@@ -138,15 +145,19 @@ pub enum OperationArtifactType {
   Wasm(WasmArtifactSubType),
 }
 
-impl ArtifactType for OperationArtifactType {}
+// The data type of the OperationVersion
+anagolay_version_data!(OperationVersion, OperationVersionId, OperationId, OperationArtifactType);
 
-/// Alias for the data type of the Workflow version
-pub type OperationVersionData = AnagolayVersionData<OperationArtifactType>;
+// The extra type of the OperationVersion
+anagolay_version_extra!(OperationVersion);
 
-/// `OperationVersion` type, alias of
-/// [`AnagolayStructure<WorkflowVersionData,AnagolayVersionExtra>`]
-pub type OperationVersion = AnagolayStructure<OperationVersionData, AnagolayVersionExtra>;
+// OperationVersion entity
+anagolay_structure!(
+  OperationVersion,
+  OperationVersionId,
+  OperationVersionData,
+  OperationVersionExtra
+);
 
-/// This is the Storage record of Operation Version.
-pub type OperationVersionRecord<T> =
-  AnagolayRecord<OperationVersion, <T as frame_system::Config>::AccountId, <T as frame_system::Config>::BlockNumber>;
+// This produces `OperationVersionRecord<T>`, the Storage record of the Operation Version.
+anagolay_record!(OperationVersion);

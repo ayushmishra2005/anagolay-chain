@@ -16,20 +16,25 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use anagolay_support::{constants::*, *};
+use anagolay_support::{constants::*, generic_id::GenericId, *};
 use codec::{Decode, Encode};
 use frame_support::{
   pallet_prelude::*,
   sp_runtime::RuntimeDebug,
   sp_std::{clone::Clone, default::Default},
 };
+use workflows::types::WorkflowId;
 
 getter_for_hardcoded_constant!(MaxOperationOutputLen, u32, 1024);
 getter_for_hardcoded_constant!(MaxPHashLen, u32, 1024);
 getter_for_hardcoded_constant!(MaxProofParams, u32, 16);
 
+// Proof id
+anagolay_generic_id!(Proof);
+
 /// key-value where key is Operation.op and value is fn(Operation)
 #[derive(Default, Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, MaxEncodedLen, TypeInfo)]
+#[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
 pub struct ProofParams {
   /// Operation.name, hex encoded using Parity scale codec
   k: Characters,
@@ -39,6 +44,7 @@ pub struct ProofParams {
 
 /// Perceptive hash information, what gets stored
 #[derive(Encode, Decode, Clone, PartialEq, Default, RuntimeDebug, MaxEncodedLen, TypeInfo)]
+#[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
 pub struct PhashInfo {
   /// The perceptive hash bytes
   pub p_hash: BoundedVec<u8, MaxPHashLenGet>,
@@ -48,6 +54,7 @@ pub struct PhashInfo {
 
 /// Proof Incoming data
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, MaxEncodedLen, TypeInfo)]
+#[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
 pub struct ProofData {
   /// The id of the Workflow that generated this Proof
   pub workflow_id: WorkflowId,
@@ -63,6 +70,8 @@ pub struct ProofData {
 }
 
 impl AnagolayStructureData for ProofData {
+  type Id = ProofId;
+
   fn validate(&self) -> Result<(), Characters> {
     Ok(())
   }
@@ -81,12 +90,12 @@ impl Default for ProofData {
 }
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, MaxEncodedLen, TypeInfo)]
+#[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
 pub struct ProofExtra {}
 impl AnagolayStructureExtra for ProofExtra {}
 
-/// PoE Proof
-pub type Proof = AnagolayStructure<ProofData, ProofExtra>;
+// PoE Proof entity
+anagolay_structure!(Proof, ProofId, ProofData, ProofExtra);
 
-/// Storage record type
-pub type ProofRecord<T> =
-  AnagolayRecord<Proof, <T as frame_system::Config>::AccountId, <T as frame_system::Config>::BlockNumber>;
+// This produces `ProofRecord<T>`,  the Storage record of the Proof.
+anagolay_record!(Proof);

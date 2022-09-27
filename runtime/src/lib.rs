@@ -345,7 +345,7 @@ impl WeightToFeePolynomial for LengthToFee {
       WeightToFeeCoefficient {
         degree: 3,
         coeff_frac: Perbill::zero(),
-        coeff_integer: 1,
+        coeff_integer: constants::currency::SUPPLY_FACTOR,
         negative: false,
       },
     ]
@@ -386,7 +386,7 @@ impl pallet_transaction_payment::Config for Runtime {
   type OnChargeTransaction = CurrencyAdapter<Balances, DealWithFees<Runtime>>;
   type OperationalFeeMultiplier = ConstU8<5>;
   type WeightToFee = ConstantMultiplier<Balance, ConstU128<{ currency::WEIGHT_FEE }>>;
-  type LengthToFee = IdentityFee<Balance>;
+  type LengthToFee = LengthToFee;
   type FeeMultiplierUpdate = SlowAdjustingFeeUpdate<Runtime>;
 }
 
@@ -704,6 +704,40 @@ impl_runtime_apis! {
       len: u32,
     ) -> pallet_transaction_payment::FeeDetails<Balance> {
       TransactionPayment::query_fee_details(uxt, len)
+    }
+  }
+
+  impl operations_rpc_runtime_api::OperationsApi<Block> for Runtime {
+    fn get_operations_by_ids(
+      operation_ids: Vec<operations::types::OperationId>,
+      offset: u64,
+      limit: u16,
+    ) -> Vec<operations::types::Operation> {
+      Operations::get_operations_by_ids(operation_ids, offset, limit)
+    }
+    fn get_operation_versions_by_ids(
+      operation_versions_ids: Vec<operations::types::OperationVersionId>,
+      offset: u64,
+      limit: u16,
+    ) -> Vec<operations::types::OperationVersion> {
+      Operations::get_operation_versions_by_ids(operation_versions_ids, offset, limit)
+    }
+  }
+
+  impl workflows_rpc_runtime_api::WorkflowsApi<Block> for Runtime {
+    fn get_workflows_by_ids(
+      workflow_ids: Vec<workflows::types::WorkflowId>,
+      offset: u64,
+      limit: u16,
+    ) -> Vec<workflows::types::Workflow> {
+      Workflows::get_workflows_by_ids(workflow_ids, offset, limit)
+    }
+    fn get_workflow_versions_by_ids(
+      workflow_version_ids: Vec<workflows::types::WorkflowVersionId>,
+      offset: u64,
+      limit: u16,
+    ) -> Vec<workflows::types::WorkflowVersion> {
+      Workflows::get_workflow_versions_by_ids(workflow_version_ids, offset, limit)
     }
   }
 
