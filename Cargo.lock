@@ -112,6 +112,7 @@ dependencies = [
  "frame-benchmarking-cli",
  "frame-system",
  "jsonrpsee",
+ "operations-rpc",
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc",
  "sc-basic-authorship",
@@ -143,6 +144,7 @@ dependencies = [
  "substrate-frame-rpc-system",
  "tracing-core",
  "try-runtime-cli",
+ "workflows-rpc",
 ]
 
 [[package]]
@@ -160,6 +162,7 @@ dependencies = [
  "getrandom 0.2.7",
  "hex-literal",
  "operations",
+ "operations-rpc-runtime-api",
  "pallet-aura",
  "pallet-balances",
  "pallet-grandpa",
@@ -192,6 +195,7 @@ dependencies = [
  "statements",
  "substrate-wasm-builder",
  "workflows",
+ "workflows-rpc-runtime-api",
 ]
 
 [[package]]
@@ -207,6 +211,7 @@ dependencies = [
  "paste",
  "scale-info",
  "serde",
+ "serde_json",
  "sp-core",
  "sp-io",
  "sp-runtime",
@@ -4066,6 +4071,35 @@ dependencies = [
 ]
 
 [[package]]
+name = "operations-rpc"
+version = "0.3.0"
+dependencies = [
+ "anagolay-support",
+ "frame-support",
+ "jsonrpsee",
+ "operations",
+ "operations-rpc-runtime-api",
+ "parity-scale-codec",
+ "sp-api",
+ "sp-blockchain",
+ "sp-core",
+ "sp-rpc",
+ "sp-runtime",
+]
+
+[[package]]
+name = "operations-rpc-runtime-api"
+version = "0.3.0"
+dependencies = [
+ "anagolay-support",
+ "frame-support",
+ "operations",
+ "parity-scale-codec",
+ "sp-api",
+ "sp-runtime",
+]
+
+[[package]]
 name = "os_str_bytes"
 version = "6.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4634,6 +4668,7 @@ dependencies = [
  "operations",
  "parity-scale-codec",
  "scale-info",
+ "serde",
  "sp-core",
  "sp-io",
  "sp-runtime",
@@ -7308,10 +7343,13 @@ dependencies = [
  "frame-support",
  "frame-system",
  "parity-scale-codec",
+ "poe",
  "scale-info",
+ "serde",
  "sp-core",
  "sp-io",
  "sp-runtime",
+ "workflows",
 ]
 
 [[package]]
@@ -8606,12 +8644,42 @@ dependencies = [
  "frame-benchmarking",
  "frame-support",
  "frame-system",
+ "operations",
  "parity-scale-codec",
  "scale-info",
  "serde",
  "sp-core",
  "sp-io",
  "sp-runtime",
+]
+
+[[package]]
+name = "workflows-rpc"
+version = "0.3.0"
+dependencies = [
+ "anagolay-support",
+ "frame-support",
+ "jsonrpsee",
+ "parity-scale-codec",
+ "sp-api",
+ "sp-blockchain",
+ "sp-core",
+ "sp-rpc",
+ "sp-runtime",
+ "workflows",
+ "workflows-rpc-runtime-api",
+]
+
+[[package]]
+name = "workflows-rpc-runtime-api"
+version = "0.3.0"
+dependencies = [
+ "anagolay-support",
+ "frame-support",
+ "parity-scale-codec",
+ "sp-api",
+ "sp-runtime",
+ "workflows",
 ]
 
 [[package]]

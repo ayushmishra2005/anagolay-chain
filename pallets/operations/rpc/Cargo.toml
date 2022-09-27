@@ -1,0 +1,30 @@
+[package]
+authors      = ['did:substrate:GHm6gp6khjcxQvnbnSsHdYejsFK1nNVxcGyGAsbDfsymtLr']
+repository   = 'https://gitlab.com/anagolay/anagolay/'
+homepage     = 'https://anagolay.network/pallet/operations'
+edition      = '2018'
+license-file = "./LICENSE"
+name         = 'operations-rpc'
+version      = '0.3.0'
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
+
+[dependencies]
+codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = [
+    "derive",
+] }
+frame-support = { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
+
+jsonrpsee = { version = "0.14.0", features = ["server", "macros"] }
+
+sp-api        = { version = "4.0.0-dev", git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.26', default-features = false }
+sp-blockchain = { version = "4.0.0-dev", git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.26', default-features = false }
+sp-core       = { version = "6.0.0", git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.26', default-features = false }
+sp-rpc        = { version = "6.0.0", git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.26', default-features = false }
+sp-runtime    = { version = "6.0.0", git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.26', default-features = false }
+
+operations-rpc-runtime-api = { default-features = false, path = 'runtime-api' }
+
+anagolay-support = { path = '../../anagolay-support', default-features = false }
+operations       = { path = '..', default-features = false }

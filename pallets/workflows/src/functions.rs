@@ -16,11 +16,11 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 use super::*;
-use crate::types::{Workflow, WorkflowRecord, WorkflowVersion, WorkflowVersionRecord};
-use frame_support::sp_std::borrow::ToOwned;
+use crate::types::{Workflow, WorkflowId, WorkflowRecord, WorkflowVersion, WorkflowVersionId, WorkflowVersionRecord};
+use frame_support::sp_std::{borrow::ToOwned, vec::Vec};
 
 impl<T: Config> Pallet<T> {
-  /// Inserts the Operation into the `WorkflowsByAccountIdAndWorkflowId` storage
+  /// Inserts the Workflow into the `WorkflowsByAccountIdAndWorkflowId` storage
   /// Increases the `Total` Workflow count
   ///
   /// Does no checks.
@@ -41,14 +41,14 @@ impl<T: Config> Pallet<T> {
     Total::<T>::put(Self::total().saturating_add(1));
   }
 
-  /// Inserts the Workflow Version into the `VersionsByOperationId` and
+  /// Inserts the Workflow Version into the `VersionsByWorkflowId` and
   /// `Versions` storages Insert each package cid in the `PackageCid` storage
   ///
   /// Does no checks.
   ///
   /// # Arguments
-  ///  * workflow_version - The Operation to insert
-  ///  * account_id - The owner of the Operation
+  ///  * workflow_version - The Workflow to insert
+  ///  * account_id - The owner of the Workflow
   ///  * block_number - Current block
   pub fn do_create_workflow_version(
     workflow_version: &WorkflowVersion,
@@ -74,5 +74,85 @@ impl<T: Config> Pallet<T> {
 
     anagolay_support::Pallet::<T>::store_artifacts(&workflow_version.data.artifacts)
       .map_err(|_err| Error::<T>::MaxArtifactsLimitReached)
+  }
+
+  /// Get a subset of Workflows representing a page, given the full set of the ids to paginate
+  /// and the pagination information
+  ///
+  /// # Arguments
+  ///  * workflow_ids - The full set of WorkflowIds. If empty, all Workflows will be considered
+  ///  * offset - The index, inside the ids set, of the first Workflow on the page
+  ///  * limit - The count of Workflows on the page
+  ///
+  /// # Return
+  /// Collection of Workflows
+  pub fn get_workflows_by_ids(workflow_ids: Vec<WorkflowId>, offset: u64, limit: u16) -> Vec<Workflow> {
+    let mut workflows = Vec::new();
+
+    let workflow_ids = if workflow_ids.len() == 0 {
+      let mut ids = Vec::new();
+      WorkflowByWorkflowIdAndAccountId::<T>::iter_keys().for_each(|(k1, _)| ids.push(k1));
+      ids
+    } else {
+      workflow_ids
+    };
+
+    let (_, workflow_ids) = workflow_ids.split_at(offset as usize);
+
+    for workflow_id in workflow_ids.iter() {
+      if workflows.len() >= limit as usize {
+        break;
+      }
+
+      let workflow_record: Option<WorkflowRecord<T>> =
+        WorkflowByWorkflowIdAndAccountId::<T>::iter_prefix_values(workflow_id).next();
+      if let Some(workflow_record) = workflow_record {
+        workflows.push(workflow_record.record)
+      }
+    }
+
+    workflows
+  }
+
+  /// Get a subset of WorkflowVersions representing a page, given the full set of the ids to
+  /// paginate and the pagination information
+  ///
+  /// # Arguments
+  ///  * version_ids - The full set of WorkflowVersionIds. If empty, all WorkflowVersions will be
+  ///    considered
+  ///  * offset - The index, inside the ids set, of the first Workflow on the page
+  ///  * limit - The count of Workflows on the page
+  ///
+  /// # Return
+  /// Collection of WorkflowVersions
+  pub fn get_workflow_versions_by_ids(
+    workflow_version_ids: Vec<WorkflowVersionId>,
+    offset: u64,
+    limit: u16,
+  ) -> Vec<WorkflowVersion> {
+    let mut workflow_versions = Vec::new();
+
+    let workflow_version_ids = if workflow_version_ids.len() == 0 {
+      let mut ids = Vec::new();
+      VersionByVersionId::<T>::iter_keys().for_each(|k| ids.push(k));
+      ids
+    } else {
+      workflow_version_ids
+    };
+
+    let (_, workflow_version_ids) = workflow_version_ids.split_at(offset as usize);
+
+    for workflow_version_id in workflow_version_ids.iter() {
+      if workflow_versions.len() >= limit as usize {
+        break;
+      }
+
+      let workflow_version_record: Option<WorkflowVersionRecord<T>> = VersionByVersionId::<T>::get(workflow_version_id);
+      if let Some(workflow_version_record) = workflow_version_record {
+        workflow_versions.push(workflow_version_record.record)
+      }
+    }
+
+    workflow_versions
   }
 }

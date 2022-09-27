@@ -51,6 +51,8 @@ pallet-uniques                    = { version = "4.0.0-dev", git = "https://gith
 # Used for the node template's RPCs
 frame-system-rpc-runtime-api               = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
 pallet-transaction-payment-rpc-runtime-api = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
+operations-rpc-runtime-api                 = { path = '../pallets/operations/rpc/runtime-api', default-features = false }
+workflows-rpc-runtime-api                  = { path = '../pallets/workflows/rpc/runtime-api', default-features = false }
 
 # Used for runtime benchmarking
 frame-benchmarking        = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26", optional = true }
@@ -58,7 +60,7 @@ frame-system-benchmarking = { version = "4.0.0-dev", default-features = false, g
 hex-literal               = { version = "0.3.4", optional = true }
 
 getrandom = { version = "0.2", features = ["js"] }
-smallvec = { version = "1.9.0", default-features = false }
+smallvec  = { version = "1.9.0", default-features = false }
 
 # Local Dependencies
 anagolay-support = { path = '../pallets/anagolay-support', default-features = false }
@@ -71,7 +73,7 @@ poe              = { path = '../pallets/poe', default-features = false }
 substrate-wasm-builder = { version = "5.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
 
 [dev-dependencies]
-sp-io      = { default-features = false, version = "6.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
+sp-io = { default-features = false, version = "6.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
 
 [features]
 default = ["std"]
@@ -110,6 +112,7 @@ std = [
   'pallet-uniques/std',
   'anagolay-support/std',
   'operations/std',
+  'operations-rpc-runtime-api/std',
   'statements/std',
   'poe/std',
   'workflows/std',

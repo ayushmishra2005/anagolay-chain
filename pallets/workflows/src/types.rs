@@ -16,9 +16,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use anagolay_support::constants::*;
+use anagolay_support::{constants::*, generic_id::GenericId, *};
+use operations::types::OperationVersionId;
 
-use anagolay_support::getter_for_hardcoded_constant;
 use codec::{Decode, Encode};
 use frame_support::{
   pallet_prelude::*,
@@ -31,12 +31,18 @@ getter_for_hardcoded_constant!(MaxOperationVersionReferencesPerSegment, u32, 128
 getter_for_hardcoded_constant!(MaxCreatorsPerWorkflow, u32, 1);
 getter_for_hardcoded_constant!(MaxSegmentsPerWorkflow, u32, 128);
 
+// Workflow id
+anagolay_generic_id!(Workflow);
+
+// WorkflowVersion id
+anagolay_generic_id!(WorkflowVersion);
+
 /// Definition of an Operation to execute in a Workflow Segment
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, MaxEncodedLen, TypeInfo)]
 #[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
 pub struct OperationVersionReference {
   /// The Version id of the Operation to execute
-  pub version_id: VersionId,
+  pub version_id: OperationVersionId,
   /// The map representing the Operation configuration to apply upon execution
   pub config: MaybeSerializableBoundedBTreeMap<Characters, Characters, MaxOperationConfigEntriesGet>,
 }
@@ -74,6 +80,8 @@ pub struct WorkflowData {
 }
 
 impl AnagolayStructureData for WorkflowData {
+  type Id = WorkflowId;
+
   fn validate(&self) -> Result<(), Characters> {
     if self.name.len() < 8 || self.name.len() > 128 {
       Err("WorkflowData.name: length must be between 8 and 128 characters".into())
@@ -113,11 +121,11 @@ impl Default for WorkflowData {
   }
 }
 
-pub type Workflow = AnagolayStructure<WorkflowData, WorkflowExtra>;
+// Workflow entity
+anagolay_structure!(Workflow, WorkflowId, WorkflowData, WorkflowExtra);
 
-/// Storage record type
-pub type WorkflowRecord<T> =
-  AnagolayRecord<Workflow, <T as frame_system::Config>::AccountId, <T as frame_system::Config>::BlockNumber>;
+// This produces `WorkflowRecord<T>`, the Storage record of the Workflow.
+anagolay_record!(Workflow);
 
 /// Workflow Version artifact types. This enum corresponds to the different types of
 /// packages created by the publisher service when an Workflow Version is published
@@ -135,15 +143,19 @@ pub enum WorkflowArtifactType {
   Wasm(WasmArtifactSubType),
 }
 
-impl ArtifactType for WorkflowArtifactType {}
+// The data type of the Workflow version
+anagolay_version_data!(WorkflowVersion, WorkflowVersionId, WorkflowId, WorkflowArtifactType);
 
-/// Alias for the data type of the Workflow version
-pub type WorkflowVersionData = AnagolayVersionData<WorkflowArtifactType>;
+// The extra type of the Operation version
+anagolay_version_extra!(WorkflowVersion);
 
-/// `WorkflowVersion` type, alias of [`AnagolayStructure<WorkflowVersionData,
-/// AnagolayVersionExtra>`]
-pub type WorkflowVersion = AnagolayStructure<WorkflowVersionData, AnagolayVersionExtra>;
+// WorkflowVersion entity
+anagolay_structure!(
+  WorkflowVersion,
+  WorkflowVersionId,
+  WorkflowVersionData,
+  WorkflowVersionExtra
+);
 
-/// This is the Storage record of Operation Version.
-pub type WorkflowVersionRecord<T> =
-  AnagolayRecord<WorkflowVersion, <T as frame_system::Config>::AccountId, <T as frame_system::Config>::BlockNumber>;
+// This produces `WorkflowVersionRecord<T>`, the Storage record of Workflow Version.
+anagolay_record!(WorkflowVersion);

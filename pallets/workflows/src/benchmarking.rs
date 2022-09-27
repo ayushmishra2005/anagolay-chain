@@ -20,8 +20,11 @@
 
 #![cfg(feature = "runtime-benchmarks")]
 use super::*;
-use crate::types::{Workflow, WorkflowArtifactType, WorkflowData, WorkflowVersion, WorkflowVersionData};
-use anagolay_support::{AnagolayArtifactStructure, AnagolayVersionExtra, ArtifactId, VersionId, WorkflowId};
+use crate::types::{
+  Workflow, WorkflowArtifactType, WorkflowData, WorkflowId, WorkflowVersion, WorkflowVersionData, WorkflowVersionExtra,
+  WorkflowVersionId,
+};
+use anagolay_support::{AnagolayArtifactStructure, ArtifactId};
 use core::convert::TryInto;
 use frame_benchmarking::{benchmarks, impl_benchmark_test_suite, whitelisted_caller};
 use frame_support::{sp_std::vec, traits::UnixTime};
@@ -44,7 +47,7 @@ benchmarks! {
       extra: None,
     };
     let wf_ver = WorkflowVersion {
-      id: VersionId::from("bafybeihc2e5rshwlkcg47uojrhtw7dwhyq2cxwivf3sysfnx5jtuuafvia"),
+      id: WorkflowVersionId::from("bafybeihc2e5rshwlkcg47uojrhtw7dwhyq2cxwivf3sysfnx5jtuuafvia"),
       data: WorkflowVersionData {
         entity_id: Some(wf.id.clone()),
         parent_id: None,
@@ -54,7 +57,7 @@ benchmarks! {
           ipfs_cid: ArtifactId::from("bafkreibft6r6ijt7lxmbu2x3oq2s2ehwm5kz2nflwnlktdhcq2yfhgd4ku"),
         }].try_into().unwrap(),
       },
-      extra: Some(AnagolayVersionExtra {
+      extra: Some(WorkflowVersionExtra {
         created_at: <T as Config>::TimeProvider::now().as_secs(),
       }),
     };

@@ -16,9 +16,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-/// Private package used to hide the types that are not supposed to be referenced by dependent
-/// crates
-mod private;
+/// Package that contains the types dealing with ids
+pub mod ids;
+pub use ids::*;
 
 /// Package that contains the types dealing with strings of characters
 pub mod characters;
@@ -28,10 +28,11 @@ pub use characters::*;
 pub mod maps;
 pub use maps::*;
 
-use self::private::GenericId;
-use crate::getter_for_hardcoded_constant;
+/// Package that contains the types dealing with rpc
+pub mod rpc;
+
+use crate::{anagolay_generic_id, getter_for_hardcoded_constant, types::ids::GenericId};
 use codec::{Decode, Encode};
-use core::any::type_name_of_val;
 use frame_support::pallet_prelude::*;
 
 getter_for_hardcoded_constant!(MaxArtifactsPerVersion, u32, 8);
@@ -39,32 +40,14 @@ getter_for_hardcoded_constant!(MaxArtifactsPerVersion, u32, 8);
 /// Placeholder for SSI and DID
 pub type CreatorId = Characters;
 
-/// The type of the values in the `ArtifactsByArtifactId` storage
-pub type ArtifactId = GenericId;
-
-/// The type used for an Operation ID
-pub type OperationId = GenericId;
-
-/// The type used for a Workflow ID
-pub type WorkflowId = GenericId;
-
-/// The type used for a Statement ID
-pub type StatementId = GenericId;
-
-/// The type used for a Proof ID
-pub type ProofId = GenericId;
-
-/// The type used for a Signature ID
-pub type SignatureId = GenericId;
-
-/// The type used for any entity Version ID
-pub type VersionId = GenericId;
+// The type of the values in the `ArtifactsByArtifactId` storage
+anagolay_generic_id!(Artifact);
 
 /// Textual representation of a type
 pub type TypeName = Characters;
 
 /// List of equipment that needs workflows generated
-#[derive(Encode, Decode, Clone, PartialEq, Eq, Ord, PartialOrd, Debug, MaxEncodedLen, TypeInfo)]
+#[derive(Encode, Decode, Clone, PartialEq, Eq, Ord, PartialOrd, RuntimeDebug, MaxEncodedLen, TypeInfo)]
 #[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
 pub enum ForWhat {
   /// We are creating it For what? This can be a part of the group
@@ -84,54 +67,329 @@ impl Default for ForWhat {
   }
 }
 
-/// Info, this is what gets stored. The Generic `A` is usally the `AccountId` and `B` is
-/// `BlockNumber`
-#[derive(Default, Encode, Decode, Clone, PartialEq, Eq, MaxEncodedLen, TypeInfo)]
-#[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
-pub struct AnagolayRecord<T, A, B> {
-  pub record: T,
-  pub account_id: A,
-  pub block_number: B,
+/// This macro produces a record for an entity to be stored on chain. The struct defines the
+/// following fields:
+///  * record: the entity
+///  * account_id: the owner of the entity
+///  * block_number: the number of the block where the entity was stored on chain
+///
+/// According to the identifier `n` passed in as argument, the resulting struct will be called
+/// `<n>Record`
+///
+/// # Arguments
+///  * n - The identifier of the entity
+#[macro_export]
+macro_rules! anagolay_record {
+  ( $n:ident ) => {
+    $crate::paste::paste! {
+      /// Record of an Anagolay entity that gets stored on chain along with owner `AccountId` and insertion `BlockNumber`
+      #[derive(Default, Encode, Decode, Clone, PartialEq, Eq, MaxEncodedLen, TypeInfo)]
+      #[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
+      #[scale_info(skip_type_params(T))]
+      pub struct [<$n Record>] <T: frame_system::Config> {
+        pub record: $n,
+        pub account_id: T::AccountId,
+        pub block_number: T::BlockNumber,
+      }
+    }
+  };
+}
+
+/// This macro produces an Anagolay entity to be stored on chain. The struct defines the following
+/// fields:
+///  * id: the entity id
+///  * data: the invariable, hashed AnagolayStructureData
+///  * extra: an additional AnagolayStructureExtra struct that contains non-hashed, entity-specific
+///    fields
+///
+/// According to the name `n` passed in as argument, the resulting struct will be called `<n>` and
+/// will require three types for its fields as argument
+///
+/// # Arguments
+///  * n - The name of the entity
+///  * i - The type of the id of the entity
+///
+/// # Examples
+///
+/// ```
+/// # use anagolay_support::MaxGenericIdLenGet;
+/// use frame_support::pallet_prelude::*;
+/// use codec::{Decode, Encode};
+/// use anagolay_support::{anagolay_structure, anagolay_generic_id, AnagolayStructureData, AnagolayStructureExtra, Characters, generic_id::GenericId};
+///
+/// anagolay_generic_id!(Entity);
+///
+/// #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, MaxEncodedLen, TypeInfo)]
+/// #[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
+/// pub struct EntityData {
+///   text: Characters
+/// };
+///
+/// impl Default for EntityData {
+///   fn default() -> Self {
+///     EntityData {
+///       text: Characters::default()
+///     }
+///   }
+/// }
+///
+/// impl AnagolayStructureData for EntityData {
+///   type Id = EntityId;
+///
+///   fn validate(&self) -> Result<(), Characters> {
+///      Ok(())
+///   }
+/// }
+///
+/// #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, MaxEncodedLen, TypeInfo)]
+/// #[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
+/// pub struct EntityExtra {
+///   created_at: u64
+/// };
+///
+/// impl AnagolayStructureExtra for EntityExtra {}
+///
+/// anagolay_structure!(Entity, EntityId, EntityData, EntityExtra);
+///
+/// let entity = Entity::new_with_extra(EntityData {
+///   text: "hello".into()
+/// }, EntityExtra {
+///   created_at: 0
+/// });
+///
+/// assert_eq!(Characters::from("hello"), entity.data.text);
+/// assert!(entity.extra.is_some());
+/// assert_eq!(0, entity.extra.unwrap().created_at);
+#[macro_export]
+macro_rules! anagolay_structure {
+  ( $n:ident, $i:ty, $d:ty, $e:ty ) => {
+    $crate::paste::paste! {
+      /// Generic Anagolay structure representing composed of `id`, `data` and `extra` fields.
+      /// Refer to [`anagolay_structure`] macro for the details
+      #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, MaxEncodedLen, TypeInfo)]
+      #[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
+      pub struct $n {
+        pub id: $i,
+        pub data: $d,
+        pub extra: Option<$e>,
+      }
+
+      impl Default for $n {
+        fn default() -> Self {
+          $n {
+            id: $i::default(),
+            data: $d::default(),
+            extra: None,
+          }
+        }
+      }
+
+      impl $n {
+        /// Produces an Anagolay structure with no extra information.
+        pub fn new(data: $d) -> Self {
+          $n {
+            id: data.to_cid(),
+            data,
+            extra: None,
+          }
+        }
+
+        /// Produces a an Anagolay structure with some extra information
+        pub fn new_with_extra(data: $d, extra: $e) -> Self {
+          $n {
+            id: data.to_cid(),
+            data,
+            extra: Some(extra),
+          }
+        }
+      }
+    }
+  }
+}
+
+/// This macro produces the hashed data structure of the Version of an entity stored on chain. The
+/// struct defines the following fields:
+///  * entity_id: the id of the entity
+///  * parent_id: the id of the previous Version for the same entity
+///  * artifacts: Collection of packages that the publisher produced
+///
+/// According to the name `n` passed in as argument, the resulting struct will be called `<n>Data`
+///
+/// # Arguments
+///  * n - The name of the entity version
+///  * i - The type of the id of the entity
+///  * a - The type of the artifacts
+#[macro_export]
+macro_rules! anagolay_version_data {
+  ( $n:ident, $i:ty, $j:ty, $a:ty ) => {
+    $crate::paste::paste! {
+      impl ArtifactType for $a {}
+
+      /// Anagolay Version data. It contains all the needed parameters which define the Version and is
+      /// hashed to produce the Version id. Refer to [`anagolay_version_data`] macro for more details.
+      ///
+      /// # Examples
+      ///
+      /// ```
+      /// #![feature(type_name_of_val)]
+      ///
+      /// use frame_support::pallet_prelude::*;
+      /// use codec::{Decode, Encode};
+      /// use anagolay_support::{*, generic_id::GenericId};
+      ///
+      /// # struct Operation {}
+      ///
+      /// anagolay_generic_id!(Operation);
+      ///
+      /// anagolay_generic_id!(OperationVersion);
+      ///
+      /// #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, MaxEncodedLen, TypeInfo)]
+      /// #[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
+      /// pub enum OperationArtifactType {
+      ///   Wasm, Docs, Git
+      /// }
+      ///
+      /// anagolay_version_data!(OperationVersion, OperationVersionId, OperationId, OperationArtifactType);
+      /// anagolay_version_extra!(OperationVersion);
+      /// anagolay_structure!(OperationVersion, OperationVersionId, OperationVersionData, OperationVersionExtra);
+      /// ```
+      #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, MaxEncodedLen, TypeInfo)]
+      #[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
+      pub struct [<$n Data>] {
+        /// The id of the Operation, Workflow or other entity to which this Version is
+        /// associated. __This field is read-only__
+        pub entity_id: Option<$j>,
+        /// The id of the previous Operation Version for the same operation, if any.
+        pub parent_id: Option<$i>,
+        /// Collection of packages that the publisher produced
+        pub artifacts: BoundedVec<AnagolayArtifactStructure<$a>, MaxArtifactsPerVersionGet>,
+      }
+
+      /// Implementation of Default trait for
+      impl Default for [<$n Data>] {
+        fn default() -> Self {
+          [<$n Data>] {
+            entity_id: None,
+            parent_id: None,
+            artifacts: BoundedVec::with_bounded_capacity(0),
+          }
+        }
+      }
+
+      /// Implementation of AnagolayStructureData trait
+      impl AnagolayStructureData for [<$n Data>] {
+        type Id = $i;
+
+        fn validate(&self) -> Result<(), Characters> {
+          if let Some(entity_id) = &self.entity_id {
+            entity_id.validate().map_err(|err| {
+              Characters::from(core::any::type_name_of_val(&self))
+                .concat(".entity_id: ")
+                .concat(err.as_str())
+            })?;
+          }
+          if let Some(parent_id) = &self.parent_id {
+            parent_id.validate().map_err(|err| {
+              Characters::from(core::any::type_name_of_val(&self))
+                .concat(".parent_id: ")
+                .concat(err.as_str())
+            })?;
+          }
+          if let Some((index, artifact)) = &self
+            .artifacts
+            .iter()
+            .enumerate()
+            .find(|(_, artifact)| artifact.ipfs_cid.validate().is_err() || artifact.file_extension.len() == 0)
+          {
+            let message = Characters::from(core::any::type_name_of_val(&self))
+              .concat(".artifacts[")
+              .concat_u8(*index as u8)
+              .concat("]");
+            if artifact.file_extension.len() == 0 {
+              return Err(message.concat(".file_extension: cannot be empty".into()));
+            } else {
+              artifact
+                .ipfs_cid
+                .validate()
+                .map_err(|err| message.concat(".ipfs_cid: ").concat(err.as_str()))?;
+            }
+          }
+          Ok(())
+        }
+      }
+    }
+  };
+}
+
+/// This macro produces the extra structure of the Version of an entity stored on chain. The struct
+/// defines the following fields:
+///  * created_at: the creation timestamp
+///
+/// According to the name `n` passed in as argument, the resulting struct will be called `<n>Extra`
+///
+/// # Arguments
+///  * n - The name of the entity version
+#[macro_export]
+macro_rules! anagolay_version_extra {
+  ( $n:ident ) => {
+    $crate::paste::paste! {
+      #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, MaxEncodedLen, TypeInfo)]
+      #[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
+      /// Extra information (non hashed) for the Anagolay Version
+      pub struct [<$n Extra>] {
+        pub created_at: u64,
+      }
+
+      /// Implementation of AnagolayStructureExtra trait
+      impl AnagolayStructureExtra for [<$n Extra>] {}
+    }
+  };
 }
 
 /// The trait for the data field of an Anagolay entity.
 pub trait AnagolayStructureData: Default + Encode + Clone + PartialEq + Eq {
+  type Id: GenericId;
   /// Computes cid of the data, after encoding it using parity SCALE codec
   ///
   /// # Examples
   ///
   /// ```
+  /// # use anagolay_support::MaxGenericIdLenGet;
+  /// use frame_support::pallet_prelude::*;
   /// use codec::{Decode, Encode};
-  /// use anagolay_support::{AnagolayStructureData, AnagolayStructureExtra, Characters};
-  /// # use anagolay_support::ArtifactId;
+  /// use anagolay_support::{anagolay_generic_id, AnagolayStructureData, AnagolayStructureExtra, Characters, generic_id::GenericId};
+  ///
+  /// anagolay_generic_id!(Entity);
   ///
   /// #[derive(Encode, Decode, Clone, PartialEq, Eq)]
   /// struct EntityData {
-  ///   text: Vec<u8>
+  ///   text: Characters
   /// };
   ///
   /// impl Default for EntityData {
   ///   fn default() -> Self {
   ///     EntityData {
-  ///       text: b"".to_vec()
+  ///       text: Characters::default()
   ///     }
   ///   }
   /// }
   ///
   /// impl AnagolayStructureData for EntityData {
+  ///   type Id = EntityId;
+  ///
   ///   fn validate(&self) -> Result<(), Characters> {
   ///      Ok(())
   ///   }
   /// }
   ///
   /// let entity = EntityData {
-  ///   text: b"hello".to_vec()
+  ///   text: "hello".into()
   /// };
   ///
   /// let cid = entity.to_cid();
-  /// # assert_eq!(ArtifactId::from("bafkr4iac2luovbttsv5iftbg2zl4okalixafa2vjwtbmf6exgwiuvukhmi"), cid);
+  /// # assert_eq!(EntityId::from("bafkr4iac2luovbttsv5iftbg2zl4okalixafa2vjwtbmf6exgwiuvukhmi"), cid);
   /// ```
-  fn to_cid(&self) -> GenericId {
+  fn to_cid(&self) -> Self::Id {
     extern crate alloc;
     use alloc::{rc::Rc, vec, vec::*};
     use core::any::Any;
@@ -146,102 +404,28 @@ pub trait AnagolayStructureData: Default + Encode + Clone + PartialEq + Eq {
         .downcast_ref::<alloc::string::String>()
         .unwrap()
         .clone();
-      GenericId::from(&cid_str)
+      Self::Id::from(cid_str.as_str())
     } else {
-      GenericId::default()
+      Self::Id::default()
     }
   }
 
+  /// Validate the following constraints:
+  /// * entity_id: If present, must be a valid CID
+  /// * parent_id: If present, must be a valid CID
+  /// * artifacts: For each artifact, the file_extension must not be empty and the ipfs_cid must be
+  ///   a valid CID
+  ///
+  /// # Return
+  /// An unit result if the validation is successful, a `Character` error with a description in
+  /// case it fails
   fn validate(&self) -> Result<(), Characters>;
 }
 
 /// The trait for the extra field of an Anagolay entity
 pub trait AnagolayStructureExtra: Clone + PartialEq + Eq {}
 
-/// Generic structure representing an Anagolay entity
-#[derive(Encode, Decode, Clone, PartialEq, Eq, Debug, MaxEncodedLen, TypeInfo)]
-#[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
-pub struct AnagolayStructure<T: AnagolayStructureData, U: AnagolayStructureExtra> {
-  pub id: GenericId,
-  pub data: T,
-  pub extra: Option<U>,
-}
-
-impl<T: AnagolayStructureData, U: AnagolayStructureExtra> Default for AnagolayStructure<T, U> {
-  fn default() -> Self {
-    AnagolayStructure {
-      id: GenericId::default(),
-      data: T::default(),
-      extra: None,
-    }
-  }
-}
-
-impl<T: AnagolayStructureData, U: AnagolayStructureExtra> AnagolayStructure<T, U> {
-  /// Produces an Anagolay entity with no extra information
-  pub fn new(data: T) -> Self {
-    AnagolayStructure {
-      id: data.to_cid(),
-      data,
-      extra: None,
-    }
-  }
-
-  /// Produces an Anagolay entity with some extra information
-  ///
-  /// # Examples
-  ///
-  /// ```
-  /// use codec::{Decode, Encode};
-  /// use anagolay_support::{AnagolayStructure, AnagolayStructureData, AnagolayStructureExtra, Characters};
-  ///
-  /// #[derive(Encode, Decode, Clone, PartialEq, Eq)]
-  /// struct EntityData {
-  ///   text: Vec<u8>
-  /// };
-  ///
-  /// impl Default for EntityData {
-  ///   fn default() -> Self {
-  ///     EntityData {
-  ///       text: b"".to_vec()
-  ///     }
-  ///   }
-  /// }
-  ///
-  /// impl AnagolayStructureData for EntityData {
-  ///   fn validate(&self) -> Result<(), Characters> {
-  ///      Ok(())
-  ///   }
-  /// }
-  ///
-  /// #[derive(Encode, Decode, Clone, PartialEq, Eq)]
-  /// struct EntityExtra {
-  ///   created_at: u64
-  /// };
-  ///
-  /// impl AnagolayStructureExtra for EntityExtra {}
-  ///
-  /// type Entity = AnagolayStructure<EntityData, EntityExtra>;
-  ///
-  /// let entity = Entity::new_with_extra(EntityData {
-  ///   text: b"hello".to_vec()
-  /// }, EntityExtra {
-  ///   created_at: 0
-  /// });
-  ///
-  /// assert_eq!(b"hello".to_vec(), entity.data.text);
-  /// assert!(entity.extra.is_some());
-  /// assert_eq!(0, entity.extra.unwrap().created_at);
-  pub fn new_with_extra(data: T, extra: U) -> Self {
-    AnagolayStructure {
-      id: data.to_cid(),
-      data,
-      extra: Some(extra),
-    }
-  }
-}
-
-/// Trait used as type parameter in [`AnagolayPackageStructure`], allowing different structures to
+/// Trait used as type parameter in [`AnagolayArtifactStructure`], allowing different structures to
 /// define the enumeration of possible artifact types depending on the specific case:
 ///
 /// # Examples
@@ -280,106 +464,6 @@ pub struct AnagolayArtifactStructure<T: ArtifactType> {
   pub file_extension: Characters,
   /// IPFS cid
   pub ipfs_cid: ArtifactId,
-}
-
-#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, MaxEncodedLen, TypeInfo)]
-#[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
-/// Extra information (non hashed) for an entity Version
-pub struct AnagolayVersionExtra {
-  pub created_at: u64,
-}
-
-/// Implementation of AnagolayStructureExtra trait for OperationVersionExtra
-impl AnagolayStructureExtra for AnagolayVersionExtra {}
-
-/// Version data. It contains all the needed parameters which define the entity Version and is
-/// hashed to produce the Version id
-///
-/// # Examples
-///
-/// ```
-/// use codec::{Decode, Encode};
-/// use anagolay_support::{AnagolayStructure, AnagolayVersionData, AnagolayVersionExtra, ArtifactType};
-///
-/// #[derive(Encode, Decode, Clone, PartialEq, Eq)]
-/// enum OperationArtifactType {
-///   Wasm, Docs, Git
-/// }
-/// impl ArtifactType for OperationArtifactType {}
-///
-/// type OperationVersionData = AnagolayVersionData<OperationArtifactType>;
-/// type OperationVersion = AnagolayStructure<OperationVersionData, AnagolayVersionExtra>;
-/// ```
-#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, MaxEncodedLen, TypeInfo)]
-#[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
-pub struct AnagolayVersionData<T: ArtifactType> {
-  /// The id of the Operation, Workflow or other entity to which this Version is
-  /// associated. __This field is read-only__
-  pub entity_id: Option<GenericId>,
-  /// The id of the previous Operation Version for the same operation, if any.
-  pub parent_id: Option<VersionId>,
-  /// Collection of packages that the publisher produced
-  pub artifacts: BoundedVec<AnagolayArtifactStructure<T>, MaxArtifactsPerVersionGet>,
-}
-
-/// Implementation of Default trait for AnagolayVersionData
-impl<T: ArtifactType> Default for AnagolayVersionData<T> {
-  fn default() -> Self {
-    AnagolayVersionData {
-      entity_id: None,
-      parent_id: None,
-      artifacts: BoundedVec::with_bounded_capacity(0),
-    }
-  }
-}
-
-/// Implementation of AnagolayStructureData trait for AnagolayVersionData
-impl<T: ArtifactType> AnagolayStructureData for AnagolayVersionData<T> {
-  /// Validate the following constraints:
-  /// * entity_id: If present, must be a valid CID
-  /// * parent_id: If present, must be a valid CID
-  /// * artifacts: For each artifact, the file_extension must not be empty and the ipfs_cid must be
-  ///   a valid CID
-  ///
-  /// # Return
-  /// An unit result if the validation is successful, a `Character` error with a description in
-  /// case it fails
-  fn validate(&self) -> Result<(), Characters> {
-    if let Some(entity_id) = &self.entity_id {
-      entity_id.validate().map_err(|err| {
-        Characters::from(type_name_of_val(&self))
-          .concat(".entity_id: ")
-          .concat(err.as_str())
-      })?;
-    }
-    if let Some(parent_id) = &self.parent_id {
-      parent_id.validate().map_err(|err| {
-        Characters::from(type_name_of_val(&self))
-          .concat(".parent_id: ")
-          .concat(err.as_str())
-      })?;
-    }
-    if let Some((index, artifact)) = &self
-      .artifacts
-      .iter()
-      .enumerate()
-      .find(|(_, artifact)| artifact.ipfs_cid.validate().is_err() || artifact.file_extension.len() == 0)
-    {
-      let message = Characters::from(type_name_of_val(&self))
-        .concat(".artifacts[")
-        .concat_u8(*index as u8)
-        .concat("]");
-      if artifact.file_extension.len() == 0 {
-        return Err(message.concat(".file_extension: cannot be empty".into()));
-      } else {
-        artifact
-          .ipfs_cid
-          .validate()
-          .map_err(|err| message.concat(".ipfs_cid: ").concat(err.as_str()))?;
-      }
-    }
-    Ok(())
-  }
 }
 
 /// WASM artifacts commonly produced for a published entity. The subtype should be passed as

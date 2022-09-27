@@ -24,14 +24,15 @@ use super::*;
 use crate::types::ProofData;
 #[allow(unused)]
 use crate::Pallet as Poe;
-use anagolay_support::{
-  AnagolayArtifactStructure, AnagolayStructureData, AnagolayVersionExtra, ArtifactId, VersionId, WorkflowId,
-};
+use anagolay_support::{AnagolayArtifactStructure, AnagolayStructureData, ArtifactId};
 use core::convert::TryInto;
 use frame_benchmarking::{benchmarks, impl_benchmark_test_suite, whitelisted_caller};
 use frame_support::{sp_std::prelude::*, traits::UnixTime};
 use frame_system::RawOrigin;
-use workflows::types::{Workflow, WorkflowArtifactType, WorkflowData, WorkflowVersion, WorkflowVersionData};
+use workflows::types::{
+  Workflow, WorkflowArtifactType, WorkflowData, WorkflowId, WorkflowVersion, WorkflowVersionData, WorkflowVersionExtra,
+  WorkflowVersionId,
+};
 
 const PERCEPTUAL_HASH: &[u8] = b"0x30303030303030303031313030303030303030303030303030303031313130303031313131313030313131313131313031313131313131313131313131313130303031313130303030303030303030303131313131313130303030303030303031313131313131313130303030303030313131313131313131313131313030303131313131313131313131313031313131313131313131313130313030313130313131303030303030303130303030303030303030303031303030303030303031313131313131313131313131313131313131313131313130303030303030303131313130303030303030303030303031313131303030303030303030303030";
 
@@ -47,7 +48,7 @@ pub fn mock_request<T: workflows::Config>() -> (Workflow, WorkflowVersion) {
     extra: None,
   };
   let wf_ver = WorkflowVersion {
-    id: VersionId::from("bafybeihc2e5rshwlkcg47uojrhtw7dwhyq2cxwivf3sysfnx5jtuuafvia"),
+    id: WorkflowVersionId::from("bafybeihc2e5rshwlkcg47uojrhtw7dwhyq2cxwivf3sysfnx5jtuuafvia"),
     data: WorkflowVersionData {
       entity_id: Some(wf.id.clone()),
       parent_id: None,
@@ -59,7 +60,7 @@ pub fn mock_request<T: workflows::Config>() -> (Workflow, WorkflowVersion) {
       .try_into()
       .unwrap(),
     },
-    extra: Some(AnagolayVersionExtra {
+    extra: Some(WorkflowVersionExtra {
       created_at: T::TimeProvider::now().as_secs(),
     }),
   };

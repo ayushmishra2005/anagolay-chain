@@ -22,12 +22,10 @@
 
 use super::{mock::*, *};
 use crate::types::{
-  Workflow, WorkflowArtifactType, WorkflowData, WorkflowRecord, WorkflowVersion, WorkflowVersionData,
-  WorkflowVersionRecord,
+  Workflow, WorkflowArtifactType, WorkflowData, WorkflowId, WorkflowRecord, WorkflowVersion, WorkflowVersionData,
+  WorkflowVersionExtra, WorkflowVersionId, WorkflowVersionRecord,
 };
-use anagolay_support::{
-  AnagolayArtifactStructure, AnagolayStructureData, AnagolayVersionExtra, ArtifactId, VersionId, WorkflowId,
-};
+use anagolay_support::{AnagolayArtifactStructure, AnagolayStructureData, ArtifactId};
 use core::convert::TryInto;
 use frame_support::{assert_noop, assert_ok, sp_std::vec, traits::UnixTime};
 
@@ -43,7 +41,7 @@ fn mock_request() -> (Workflow, WorkflowVersion) {
     extra: None,
   };
   let wf_ver = WorkflowVersion {
-    id: VersionId::from("bafybeihc2e5rshwlkcg47uojrhtw7dwhyq2cxwivf3sysfnx5jtuuafvia"),
+    id: WorkflowVersionId::from("bafybeihc2e5rshwlkcg47uojrhtw7dwhyq2cxwivf3sysfnx5jtuuafvia"),
     data: WorkflowVersionData {
       entity_id: Some(wf.id.clone()),
       parent_id: None,
@@ -55,7 +53,7 @@ fn mock_request() -> (Workflow, WorkflowVersion) {
       .try_into()
       .unwrap(),
     },
-    extra: Some(AnagolayVersionExtra {
+    extra: Some(WorkflowVersionExtra {
       created_at: <Test as crate::Config>::TimeProvider::now().as_secs(),
     }),
   };
@@ -186,7 +184,7 @@ fn workflows_create_workflow_error_mixing_workflows() {
       extra: None,
     };
     let wf_b_ver_mixed = WorkflowVersion {
-      id: VersionId::default(),
+      id: WorkflowVersionId::default(),
       data: wf_a_ver.data.clone(),
       extra: None,
     };

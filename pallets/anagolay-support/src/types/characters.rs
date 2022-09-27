@@ -15,14 +15,10 @@
 
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
-use crate::constants::MaxCharactersLenGet;
+use crate::constants::*;
 use codec::{Decode, Encode};
 use core::str::pattern::Pattern;
-use frame_support::{
-  pallet_prelude::{Get, *},
-  sp_std::vec::Vec,
-  BoundedVec,
-};
+use frame_support::{pallet_prelude::*, sp_std::vec::Vec, BoundedVec};
 
 /// NewType pattern to handle strings.
 /// It conveniently allows concatenation and deals with (de)serialization as well.
@@ -41,6 +37,12 @@ use frame_support::{
 #[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
 pub struct Characters(BoundedVec<u8, MaxCharactersLenGet>);
 
+impl From<Characters> for BoundedVec<u8, MaxCharactersLenGet> {
+  fn from(from: Characters) -> BoundedVec<u8, MaxCharactersLenGet> {
+    from.0
+  }
+}
+
 impl From<&str> for Characters {
   /// Creates a [`Characters'] from a string.
   /// The method is infallible, but the result will be truncated to the limit allowed by
@@ -52,9 +54,10 @@ impl From<&str> for Characters {
   /// # Return
   /// A ['Characters'] from the argument, truncated if it's larger than the allowed limit
   fn from(from: &str) -> Characters {
-    let truncate_index = from.len().min(MaxCharactersLenGet::get() as usize);
+    let truncate_index = from.len().min(MAX_CHARACTERS_LEN as usize);
     let mut bytes = from.as_bytes()[0..truncate_index].to_vec();
-    let mut bounded_vec: BoundedVec<u8, MaxCharactersLenGet> = BoundedVec::with_bounded_capacity(bytes.len());
+    let mut bounded_vec: BoundedVec<u8, MaxCharactersLenGet> =
+      BoundedVec::with_bounded_capacity(MAX_CHARACTERS_LEN as usize);
     bounded_vec.try_append(&mut bytes).unwrap_or_default();
     Characters(bounded_vec)
   }
@@ -62,14 +65,18 @@ impl From<&str> for Characters {
 
 impl From<BoundedVec<u8, MaxCharactersLenGet>> for Characters {
   fn from(from: BoundedVec<u8, MaxCharactersLenGet>) -> Characters {
-    Characters(from)
+    let mut bounded_vec: BoundedVec<u8, MaxCharactersLenGet> =
+      BoundedVec::with_bounded_capacity(MAX_CHARACTERS_LEN as usize);
+    bounded_vec.clone_from(&from);
+    Characters(bounded_vec)
   }
 }
 
 impl Default for Characters {
   fn default() -> Self {
-    let bounded_vec: BoundedVec<u8, MaxCharactersLenGet> = BoundedVec::with_bounded_capacity(0);
-    bounded_vec.into()
+    let bounded_vec: BoundedVec<u8, MaxCharactersLenGet> =
+      BoundedVec::with_bounded_capacity(MAX_CHARACTERS_LEN as usize);
+    Characters(bounded_vec)
   }
 }
 
@@ -110,7 +117,7 @@ impl Characters {
   /// This `Characters` with the argument appended
   pub fn concat_u8(self, uint: u8) -> Self {
     let mut n = uint;
-    let mut vec = self.0.into_inner();
+    let mut vec = self.0.to_vec();
     if n == 0 {
       vec.append(&mut b"0".to_vec());
     } else {
@@ -125,11 +132,12 @@ impl Characters {
       slice.reverse();
       vec.append(&mut slice.to_vec());
     }
-    let mut bounded_vec: BoundedVec<u8, MaxCharactersLenGet> = BoundedVec::with_bounded_capacity(vec.len());
-    let truncate_index = vec.len().min(MaxCharactersLenGet::get() as usize);
+    let mut bounded_vec: BoundedVec<u8, MaxCharactersLenGet> =
+      BoundedVec::with_bounded_capacity(MAX_CHARACTERS_LEN as usize);
+    let truncate_index = vec.len().min(MAX_CHARACTERS_LEN as usize);
     let mut truncated = vec.as_slice()[0..truncate_index].to_vec();
     bounded_vec.try_append(&mut truncated).unwrap_or_default();
-    Characters(bounded_vec)
+    bounded_vec.into()
   }
 
   /// Concatenate a string slice to this `Characters`.
@@ -143,13 +151,14 @@ impl Characters {
   /// This `Characters` with the argument concatenated, truncated if it's larger than the allowed
   /// limit
   pub fn concat(self, other: &str) -> Self {
-    let mut vec = self.0.into_inner();
+    let mut vec = self.0.to_vec();
     vec.append(&mut other.as_bytes().to_vec());
-    let mut bounded_vec: BoundedVec<u8, MaxCharactersLenGet> = BoundedVec::with_bounded_capacity(vec.len());
-    let truncate_index = vec.len().min(MaxCharactersLenGet::get() as usize);
+    let mut bounded_vec: BoundedVec<u8, MaxCharactersLenGet> =
+      BoundedVec::with_bounded_capacity(MAX_CHARACTERS_LEN as usize);
+    let truncate_index = vec.len().min(MAX_CHARACTERS_LEN as usize);
     let mut truncated = vec.as_slice()[0..truncate_index].to_vec();
     bounded_vec.try_append(&mut truncated).unwrap_or_default();
-    Characters(bounded_vec)
+    bounded_vec.into()
   }
 
   /// # Return

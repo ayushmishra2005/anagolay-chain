@@ -35,6 +35,6 @@
     // "editor.wordWrapColumn": 300,
     "editor.wordWrap": "off",
   },
-  "editor.experimental.stickyScroll.enabled": true,
   "rust-analyzer.cargo.allFeatures": true,
+  "editor.stickyScroll.enabled": true,
 }

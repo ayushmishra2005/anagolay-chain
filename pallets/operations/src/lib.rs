@@ -28,6 +28,8 @@
 
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
+// Enable experimental features
+#![feature(type_name_of_val)]
 
 // use frame_support::debug;
 #[cfg(feature = "runtime-benchmarks")]
@@ -53,11 +55,10 @@ mod constants {
 pub mod pallet {
   use super::{constants::*, *};
   use crate::types::{
-    Operation, OperationData, OperationRecord, OperationVersion, OperationVersionData, OperationVersionRecord,
+    Operation, OperationData, OperationId, OperationRecord, OperationVersion, OperationVersionData,
+    OperationVersionExtra, OperationVersionId, OperationVersionRecord,
   };
-  use anagolay_support::{
-    AnagolayStructureData, AnagolayVersionData, AnagolayVersionExtra, Characters, OperationId, VersionId,
-  };
+  use anagolay_support::{AnagolayStructureData, Characters};
   use core::convert::TryInto;
   use frame_support::{log::error, pallet_prelude::*, traits::UnixTime};
   use frame_system::pallet_prelude::*;
@@ -100,14 +101,19 @@ pub mod pallet {
   /// Retrieve all Versions for a single Operation Manifest.
   #[pallet::storage]
   #[pallet::getter(fn version_ids_by_operation_id)]
-  pub type VersionIdsByOperationId<T: Config> =
-    StorageMap<_, Blake2_128Concat, OperationId, BoundedVec<VersionId, MaxVersionsPerOperationGet<T>>, ValueQuery>;
+  pub type VersionIdsByOperationId<T: Config> = StorageMap<
+    _,
+    Blake2_128Concat,
+    OperationId,
+    BoundedVec<OperationVersionId, MaxVersionsPerOperationGet<T>>,
+    ValueQuery,
+  >;
 
   /// Retrieve the Version.
   #[pallet::storage]
   #[pallet::getter(fn version_by_version_id)]
   pub type VersionByVersionId<T: Config> =
-    StorageMap<_, Blake2_128Concat, VersionId, OperationVersionRecord<T>, OptionQuery>;
+    StorageMap<_, Blake2_128Concat, OperationVersionId, OperationVersionRecord<T>, OptionQuery>;
 
   /// Total amount of Operations.
   #[pallet::storage]
@@ -275,11 +281,11 @@ pub mod pallet {
       Self::do_create_operation(&operation, &sender, current_block);
 
       let operation_version = OperationVersion::new_with_extra(
-        AnagolayVersionData {
+        OperationVersionData {
           entity_id: Some(operation.id.clone()),
           ..version_data.clone()
         },
-        AnagolayVersionExtra {
+        OperationVersionExtra {
           created_at: T::TimeProvider::now().as_secs(),
         },
       );

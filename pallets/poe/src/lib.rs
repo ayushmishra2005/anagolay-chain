@@ -31,14 +31,14 @@ pub mod types;
 pub mod weights;
 
 pub use pallet::*;
-use types::{PhashInfo, Proof};
+use types::{PhashInfo, Proof, ProofId};
 pub use weights::WeightInfo;
 
 #[frame_support::pallet]
 pub mod pallet {
   use super::*;
   use crate::types::{ProofData, ProofRecord};
-  use anagolay_support::{AnagolayStructureData, Characters, ProofId};
+  use anagolay_support::{AnagolayStructureData, Characters};
   use core::convert::TryInto;
   use frame_support::{pallet_prelude::*, sp_runtime::traits::Hash, sp_std::prelude::*};
   use frame_system::pallet_prelude::*;
@@ -138,12 +138,13 @@ pub mod pallet {
 
       let proof = Proof::new(proof_data);
 
-      // let workflow_id = &proof.data.workflow_id;
+      let workflow_id = proof.data.workflow_id.clone();
 
       let proof_id = proof.id.clone();
 
-      // let workflow = workflows::Pallet::<T>::workflow_by_workflow_id_and_account_id(workflow_id,
-      // &sender) .ok_or(Error::<T>::NoSuchWorkflow)?;
+      let workflows = workflows::Pallet::<T>::get_workflows_by_ids(vec![workflow_id], 0, 1);
+      // Workflow exists?
+      ensure!(!workflows.is_empty(), Error::<T>::NoSuchWorkflow);
 
       let current_block = <frame_system::Pallet<T>>::block_number();
 

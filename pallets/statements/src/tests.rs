@@ -21,8 +21,8 @@
 #![cfg(test)]
 
 use super::{mock::*, *};
-use crate::types::{ClaimType, StatementData};
-use anagolay_support::{AnagolayStructureData, StatementId};
+use crate::types::{ClaimType, StatementData, StatementId};
+use anagolay_support::AnagolayStructureData;
 use frame_support::{assert_noop, assert_ok};
 
 #[test]
