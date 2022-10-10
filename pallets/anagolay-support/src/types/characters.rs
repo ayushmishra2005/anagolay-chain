@@ -72,6 +72,16 @@ impl From<BoundedVec<u8, MaxCharactersLenGet>> for Characters {
   }
 }
 
+impl From<&[u8]> for Characters {
+  fn from(from: &[u8]) -> Characters {
+    let mut bytes = from.to_vec();
+    let mut bounded_vec: BoundedVec<u8, MaxCharactersLenGet> =
+      BoundedVec::with_bounded_capacity(MaxCharactersLenGet::get() as usize);
+    bounded_vec.try_append(&mut bytes).unwrap_or_default();
+    Characters(bounded_vec)
+  }
+}
+
 impl Default for Characters {
   fn default() -> Self {
     let bounded_vec: BoundedVec<u8, MaxCharactersLenGet> =
@@ -104,6 +114,12 @@ impl Characters {
   /// The `Characters` representation as a string slice
   pub fn as_str(&self) -> &str {
     frame_support::sp_std::str::from_utf8(self.0.as_slice()).unwrap()
+  }
+
+  /// # Return
+  /// The `Characters` representation as a slice of bytes
+  pub fn as_bytes(&self) -> &[u8] {
+    self.0.as_slice()
   }
 
   /// Append an unsigned integer to this `Characters`

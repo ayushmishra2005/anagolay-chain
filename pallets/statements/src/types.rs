@@ -40,8 +40,7 @@ anagolay_generic_id!(Signature);
 pub struct Signature {
   /// signing key in urn/did format 'urn:pgp:9cdf8dd38531511968c8d8cb524036585b62f15b'
   pub sig_key: Characters,
-  /// Signature sign(prepared_statement, pvtKey(sigKey)) and encoded using multibase
-  /// <https://gitlab.com/sensio_group/sensio-faas/-/blob/master/sp-api/src/plugins/copyright/helpers.ts#L76>
+  /// Signature sign(prepared_statement, pvtKey(sigKey))
   pub sig: BoundedVec<u8, MaxSignatureLenGet>,
   /// Content identifier of the sig field -- CID(sig)
   pub cid: SignatureId,

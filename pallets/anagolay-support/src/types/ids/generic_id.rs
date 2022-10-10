@@ -75,6 +75,11 @@ macro_rules! anagolay_generic_id {
       }
 
       impl [<$n Id>] {
+        /// # Return
+        /// The `GenericId` representation as a string slice
+        pub fn as_str(&self) -> &str {
+          frame_support::sp_std::str::from_utf8(self.0.as_slice()).unwrap()
+        }
       }
 
       impl From<&[u8]> for [<$n Id>] {

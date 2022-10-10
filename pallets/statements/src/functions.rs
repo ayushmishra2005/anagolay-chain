@@ -18,11 +18,14 @@
 
 use super::{constants::*, *};
 use crate::{
-  types::{Statement, StatementData, StatementId, StatementRecord},
+  types::{Claim, Signature, Statement, StatementData, StatementId, StatementRecord},
   Error::NoSuchStatement,
 };
-use frame_support::BoundedVec;
+use anagolay_support::Characters;
+use codec::{Decode, Encode};
+use frame_support::{sp_std::vec::Vec, BoundedVec};
 use poe::types::ProofId;
+use sp_runtime::traits::Verify;
 
 impl<T: Config> Pallet<T> {
   /// Decrease the statements count
@@ -33,6 +36,25 @@ impl<T: Config> Pallet<T> {
   /// Increase the statements count
   fn increase_statements_count() {
     Total::<T>::mutate(|v| *v += 1);
+  }
+
+  /// Verify the Signature of a Claim
+  pub fn verify_substrate_signature(claim: &Claim, signature: &Signature, public_key: &str) -> bool {
+    let public_key = hex::decode(public_key.strip_prefix("0x").unwrap_or(public_key)).unwrap_or_default();
+    let public_key = sp_core::sr25519::Public::decode(&mut public_key.as_slice());
+    let signature = sp_core::sr25519::Signature::decode(&mut signature.sig.as_slice());
+    let message = claim.encode();
+    // Wrap message as polkadot-js extension does https://substrate.stackexchange.com/questions/4209/verify-a-signature-in-pallet
+    let wrapped = ["<Bytes>".as_bytes(), message.as_slice(), "</Bytes>".as_bytes()].concat();
+
+    let verified = match (public_key, signature) {
+      // Try with the wrapping or without
+      (Ok(public_key), Ok(signature)) => {
+        signature.verify(wrapped.as_slice(), &public_key) || signature.verify(message.as_slice(), &public_key)
+      }
+      _ => false,
+    };
+    return verified;
   }
 
   /// Remove the Statement from the storage
@@ -69,26 +91,6 @@ impl<T: Config> Pallet<T> {
   pub fn insert_statement(record: &StatementRecord<T>, account_id: &T::AccountId) {
     StatementByStatementIdAndAccountId::<T>::insert(&record.record.id, &account_id, record.clone());
     Self::increase_statements_count();
-  }
-
-  /// Build the [`StatementRecord`] to store
-  ///
-  /// # Arguments
-  ///  * statement - The Statement
-  ///  * account_id - The issuer of the Statement
-  ///  * block_number - Current block
-  /// # Return
-  /// A [`StatementRecord`] containing the information provided as argument
-  pub fn build_statement_info(
-    statement: &Statement,
-    account_id: &T::AccountId,
-    block_number: &T::BlockNumber,
-  ) -> StatementRecord<T> {
-    StatementRecord::<T> {
-      record: statement.clone(),
-      account_id: account_id.clone(),
-      block_number: *block_number,
-    }
   }
 
   /// Remove the connection between a Statement and a Proof
@@ -160,5 +162,51 @@ impl<T: Config> Pallet<T> {
         Ok(())
       }
     }
+  }
+
+  /// Validate the Statement signature and save it
+  /// The signature must be in the form `urn:substrate:<hex encoded public key>` and must
+  /// sign the associated Claim, encoded by parity scale encoder.
+  ///
+  /// # Arguments
+  ///  * statement - The Statement to validate and save
+  ///  * account_id - The issuer of the Statement
+  ///  * block_number - Current block
+  /// # Return
+  /// A boolean determining whether the Statement validation passed or not. If not, the statement
+  /// is not saved.
+  pub fn validate_and_save_statement(
+    statement: Statement,
+    account_id: &T::AccountId,
+    block_number: &T::BlockNumber,
+  ) -> Result<(), Error<T>> {
+    let holder_signature = &statement.data.signatures.holder;
+    let split: Vec<Characters> = holder_signature.sig_key.split(":");
+    if split.len() == 3 {
+      let algorithm = split.get(1).unwrap().clone();
+      let public_key = split.get(2).unwrap().clone();
+      return match algorithm.as_str() {
+        "substrate" => {
+          if Self::verify_substrate_signature(&statement.data.claim, holder_signature, public_key.as_str()) {
+            //@FUCK this needs fixing, it's a work-around for https://gitlab.com/anagolay/node/-/issues/31
+            let statement_info = StatementRecord::<T> {
+              record: statement.clone(),
+              account_id: account_id.clone(),
+              block_number: *block_number,
+            };
+
+            Self::add_statement_to_proof(statement.data.claim.poe_id.clone(), statement.id.clone())?;
+
+            Self::insert_statement(&statement_info, &account_id);
+
+            Ok(())
+          } else {
+            Err(Error::<T>::InvalidSignature)
+          }
+        }
+        _ => Err(Error::<T>::UnrecognizedSignature),
+      };
+    }
+    Err(Error::<T>::UnrecognizedSignature)
   }
 }
