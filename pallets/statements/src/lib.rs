@@ -152,6 +152,10 @@ pub mod pallet {
     BadRequest,
     /// Insertion of Statement failed since MaxStatementsPerProof limit is reached
     MaxStatementsPerProofLimitReached,
+    /// Statement signature did not validate
+    InvalidSignature,
+    /// Statement signature could not be parsed correctly
+    UnrecognizedSignature,
   }
 
   #[pallet::hooks]
@@ -212,12 +216,7 @@ pub mod pallet {
         Error::<T>::ProofHasStatement
       );
 
-      //@FUCK this needs fixing, it's a work-around for https://gitlab.com/anagolay/node/-/issues/31
-      let statement_info = Self::build_statement_info(&statement, &sender, &current_block);
-
-      Self::add_statement_to_proof(statement.data.claim.poe_id.clone(), statement.id.clone())?;
-
-      Self::insert_statement(&statement_info, &sender);
+      Self::validate_and_save_statement(statement.clone(), &sender, &current_block)?;
 
       // Emit an event when copyright is created
       Self::deposit_event(Event::CopyrightCreated(sender, statement.id));
@@ -277,12 +276,7 @@ pub mod pallet {
         Error::<T>::ProofHasStatement
       );
 
-      //@FUCK this needs fixing, it's a work-around for https://gitlab.com/anagolay/node/-/issues/31
-      let statement_info = Self::build_statement_info(&statement, &sender, &current_block);
-
-      Self::add_statement_to_proof(statement.data.claim.poe_id.clone(), statement.id.clone())?;
-
-      Self::insert_statement(&statement_info, &sender);
+      Self::validate_and_save_statement(statement.clone(), &sender, &current_block)?;
 
       // Emit an event when ownership is created
       Self::deposit_event(Event::OwnershipCreated(sender, statement.id));
