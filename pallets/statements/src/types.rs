@@ -24,7 +24,6 @@ use frame_support::{
   sp_std::{clone::Clone, default::Default},
 };
 use poe::types::ProofId;
-use workflows::types::WorkflowId;
 
 getter_for_hardcoded_constant!(MaxSignatureLen, u32, 256);
 
@@ -122,8 +121,6 @@ pub struct Claim {
   pub prev_id: Option<StatementId>,
   /// PoE id of the record in question.
   pub poe_id: ProofId,
-  /// Implemented workflow id
-  pub workflow_id: WorkflowId,
   /// In which proportion the statement is held
   pub proportion: Proportion,
   /// ATM this is the same as poe_id @TODO this should be unique representation of the subject that

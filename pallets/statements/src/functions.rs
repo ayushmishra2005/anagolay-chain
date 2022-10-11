@@ -18,7 +18,7 @@
 
 use super::{constants::*, *};
 use crate::{
-  types::{Claim, Signature, Statement, StatementData, StatementId, StatementRecord},
+  types::{Claim, Signature, Statement, StatementId, StatementRecord},
   Error::NoSuchStatement,
 };
 use anagolay_support::Characters;
@@ -113,7 +113,7 @@ impl<T: Config> Pallet<T> {
         Ok(())
       }
       // If the search fails, the caller is not a member of the connection
-      Err(_) => Err(Error::<T>::ProofHasStatement),
+      Err(_) => Err(Error::<T>::NoSuchStatement),
     }
   }
   /// Check does the Proof list is empty or not
@@ -123,14 +123,14 @@ impl<T: Config> Pallet<T> {
   ///  * statement_data - The data section of the Statement
   /// # Return
   /// A unit-type `Result` if no Proof is currently associated to the statement, `Error` otherwise
-  pub fn is_proof_statement_list_empty(statement_data: &StatementData) -> Result<(), Error<T>> {
+  pub fn is_proof_statement_list_empty(statement: Statement) -> Result<(), Error<T>> {
     let proof_statement_list: BoundedVec<StatementId, MaxStatementsPerProofGet<T>> =
-      StatementIdsByProofId::<T>::get(&statement_data.claim.poe_id);
+      StatementIdsByProofId::<T>::get(&statement.data.claim.poe_id);
 
     if !proof_statement_list.is_empty() {
       // check here for existence of the statement given the condition where proportion is 100% or less
       // For now return error since we only can have one statement 100% per proof
-      Err(Error::<T>::ProofHasStatement)
+      Err(Error::<T>::ProofHasStatements)
     } else {
       // ProofValidStatements::insert(&poe_id, vec![]);
       Ok(())
@@ -150,7 +150,7 @@ impl<T: Config> Pallet<T> {
 
     match proof_statement_list.binary_search(&statement_id) {
       // If the search succeeds, the caller is already a member, so just return
-      Ok(_) => Err(Error::<T>::ProofHasStatement),
+      Ok(_) => Err(Error::<T>::StatementAlreadyExists),
       // If the search fails, the caller is not a member and we learned the index where
       // they should be inserted
       Err(index) => {
@@ -188,17 +188,13 @@ impl<T: Config> Pallet<T> {
       return match algorithm.as_str() {
         "substrate" => {
           if Self::verify_substrate_signature(&statement.data.claim, holder_signature, public_key.as_str()) {
-            //@FUCK this needs fixing, it's a work-around for https://gitlab.com/anagolay/node/-/issues/31
             let statement_info = StatementRecord::<T> {
               record: statement.clone(),
               account_id: account_id.clone(),
               block_number: *block_number,
             };
-
             Self::add_statement_to_proof(statement.data.claim.poe_id.clone(), statement.id.clone())?;
-
             Self::insert_statement(&statement_info, &account_id);
-
             Ok(())
           } else {
             Err(Error::<T>::InvalidSignature)

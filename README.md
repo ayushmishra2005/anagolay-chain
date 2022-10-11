@@ -62,23 +62,23 @@ To test documentation examples, run `makers test --doc -- --show-output`
 To generate pallet weights run from the root of the project. Use the folder name for the pallet. This script will compile the node for you and run the benchmarks.
 
 ```sh
-# TEMPLATE  ./scripts/run-benchmarks.sh CHAIN PALLET $RUN_WITH_BUILD[true << default |false]
+# TEMPLATE  ./.devops/run-benchmarks.sh CHAIN PALLET $RUN_WITH_BUILD[true << default |false]
 
 # PoE
-./scripts/run-benchmarks.sh dev poe false # this will not build it it will only run it
+./.devops/run-benchmarks.sh dev poe false # this will not build it it will only run it
 
 # Rules
-./scripts/run-benchmarks.sh dev rules # this will build it and run it
+./.devops/run-benchmarks.sh dev workflows # this will build it and run it
 
 # Operations
-./scripts/run-benchmarks.sh dev operations
+./.devops/run-benchmarks.sh dev operations
 
 
 # All pallets and all extrinsics with the release build
-./scripts/run-all-benchmarks.sh dev
+./.devops/run-all-benchmarks.sh dev
 
 # All pallets and all extrinsics without the release build
-./scripts/run-all-benchmarks.sh dev false
+./.devops/run-all-benchmarks.sh dev false
 
 ```
 

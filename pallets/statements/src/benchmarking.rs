@@ -34,7 +34,7 @@ benchmarks! {
     //Initializing benchmark for Copyright Extrinsic
     let caller: T::AccountId = whitelisted_caller();
     let mut copyright_statement = StatementData::default();
-    copyright_statement.signatures.holder.sig = frame_support::sp_std::vec![232, 148, 217, 202, 67, 152, 64, 219, 171, 158, 57, 45, 243, 4, 178, 197, 37, 165, 172, 245, 16, 45, 94, 64, 230, 110, 158, 82, 13, 242, 174, 15, 214, 47, 113, 167, 4, 195, 19, 208, 191, 156, 246, 202, 23, 180, 205, 224, 106, 201, 144, 132, 184, 227, 44, 24, 88, 54, 105, 7, 110, 82, 142, 139].try_into().unwrap();
+    copyright_statement.signatures.holder.sig = frame_support::sp_std::vec![188, 174, 18, 5, 230, 169, 26, 59, 5, 221, 70, 121, 33, 198, 98, 19, 241, 149, 42, 114, 34, 137, 156, 255, 69, 104, 157, 166, 232, 238, 129, 100, 163, 13, 118, 59, 5, 136, 88, 103, 153, 36, 161, 203, 48, 71, 17, 80, 179, 11, 107, 167, 225, 81, 210, 31, 15, 112, 203, 122, 60, 78, 153, 138].try_into().unwrap();
     copyright_statement.signatures.holder.sig_key = Characters::from("urn:substrate:0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d");
   }: _(RawOrigin::Signed(caller), copyright_statement)
 
@@ -43,7 +43,7 @@ benchmarks! {
     let caller: T::AccountId = whitelisted_caller();
     let mut ownership_statement = StatementData::default();
     ownership_statement.claim.claim_type = ClaimType::Ownership;
-    ownership_statement.signatures.holder.sig = frame_support::sp_std::vec![148, 217, 120, 247, 168, 90, 43, 154, 142, 154, 134, 7, 247, 252, 27, 121, 113, 150, 197, 57, 16, 9, 182, 140, 188, 203, 85, 92, 152, 190, 212, 91, 227, 30, 24, 129, 15, 207, 25, 122, 2, 185, 167, 72, 220, 137, 41, 215, 26, 57, 87, 195, 110, 13, 77, 49, 243, 167, 170, 187, 134, 200, 213, 137].try_into().unwrap();
+    ownership_statement.signatures.holder.sig = frame_support::sp_std::vec![4, 162, 137, 242, 15, 129, 216, 106, 125, 59, 141, 17, 134, 176, 229, 224, 108, 11, 244, 151, 218, 201, 30, 104, 192, 84, 61, 109, 206, 151, 222, 63, 140, 244, 153, 184, 240, 163, 40, 0, 169, 52, 44, 42, 52, 254, 75, 210, 159, 237, 237, 98, 64, 129, 170, 176, 32, 36, 140, 231, 32, 128, 72, 140].try_into().unwrap();
     ownership_statement.signatures.holder.sig_key = Characters::from("urn:substrate:0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d");
 
   }: _(RawOrigin::Signed(caller), ownership_statement)
@@ -52,7 +52,7 @@ benchmarks! {
     //Initializing benchmark for Revoke Extrinsic
     let caller: T::AccountId = whitelisted_caller();
     let mut statement = StatementData::default();
-    statement.signatures.holder.sig = frame_support::sp_std::vec![232, 148, 217, 202, 67, 152, 64, 219, 171, 158, 57, 45, 243, 4, 178, 197, 37, 165, 172, 245, 16, 45, 94, 64, 230, 110, 158, 82, 13, 242, 174, 15, 214, 47, 113, 167, 4, 195, 19, 208, 191, 156, 246, 202, 23, 180, 205, 224, 106, 201, 144, 132, 184, 227, 44, 24, 88, 54, 105, 7, 110, 82, 142, 139].try_into().unwrap();
+    statement.signatures.holder.sig = frame_support::sp_std::vec![188, 174, 18, 5, 230, 169, 26, 59, 5, 221, 70, 121, 33, 198, 98, 19, 241, 149, 42, 114, 34, 137, 156, 255, 69, 104, 157, 166, 232, 238, 129, 100, 163, 13, 118, 59, 5, 136, 88, 103, 153, 36, 161, 203, 48, 71, 17, 80, 179, 11, 107, 167, 225, 81, 210, 31, 15, 112, 203, 122, 60, 78, 153, 138].try_into().unwrap();
     statement.signatures.holder.sig_key = Characters::from("urn:substrate:0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d");
     let statement_id = statement.to_cid();
     crate::Pallet::<T>::create_copyright(RawOrigin::Signed(caller.clone()).into(), statement)?;
