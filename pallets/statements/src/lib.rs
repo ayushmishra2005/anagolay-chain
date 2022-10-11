@@ -140,8 +140,10 @@ pub mod pallet {
   pub enum Error<T> {
     /// Wrong claim type
     WrongClaimType,
-    /// Proof already has this statement
-    ProofHasStatement,
+    /// Statement already exists
+    StatementAlreadyExists,
+    /// Proof already has associated statements
+    ProofHasStatements,
     /// Statement doesn't exist.
     NoSuchStatement,
     /// Statement has child statement and it cannot be revoked
@@ -176,7 +178,8 @@ pub mod pallet {
     /// * `WrongClaimType` - if the Statement type is not[`ClaimType::Copyright`]
     /// * `CreatingChildStatementNotSupported` - creating child Statements is not supported at the
     ///   moment
-    /// * `ProofHasStatement` - the Statement is already associated to an existing Proof
+    /// * `StatementAlreadyExists` - the Statement already exists
+    /// * `ProofHasStatements` - the Proof is already associated to existing Statements
     /// * `BadRequest` - if the request is invalid or does not respect a given constraint
     ///
     /// # Return
@@ -205,16 +208,16 @@ pub mod pallet {
         Error::<T>::CreatingChildStatementNotSupported
       );
 
-      // Ensure that ProofValidStatements has or not the statement
-      Self::is_proof_statement_list_empty(&statement_data)?;
-
       let statement = Statement::new(statement_data);
 
       // Do we have such a statement?
       ensure!(
         !StatementByStatementIdAndAccountId::<T>::contains_key(&statement.id, &sender),
-        Error::<T>::ProofHasStatement
+        Error::<T>::StatementAlreadyExists
       );
+
+      // Ensure that Proof has or no associated statements
+      Self::is_proof_statement_list_empty(statement.clone())?;
 
       Self::validate_and_save_statement(statement.clone(), &sender, &current_block)?;
 
@@ -237,7 +240,8 @@ pub mod pallet {
     /// * `WrongClaimType` - if the Statement type is not [`ClaimType::Ownership`]
     /// * `CreatingChildStatementNotSupported` - creating child Statements is not supported at the
     ///   moment
-    /// * `ProofHasStatement` - the Statement is already associated to an existing Proof
+    /// * `StatementAlreadyExists` - the Statement already exists
+    /// * `ProofHasStatements` - the Proof is already associated to existing Statements
     /// * `BadRequest` - if the request is invalid or does not respect a given constraint
     ///
     /// # Return
@@ -265,16 +269,16 @@ pub mod pallet {
         Error::<T>::CreatingChildStatementNotSupported
       );
 
-      // Ensure that ProofValidStatements has or not the statement
-      Self::is_proof_statement_list_empty(&statement_data)?;
-
       let statement = Statement::new(statement_data);
 
-      // Do we have such a statement
+      // Do we have such a statement?
       ensure!(
         !StatementByStatementIdAndAccountId::<T>::contains_key(&statement.id, &sender),
-        Error::<T>::ProofHasStatement
+        Error::<T>::StatementAlreadyExists
       );
+
+      // Ensure that Proof has or no associated statements
+      Self::is_proof_statement_list_empty(statement.clone())?;
 
       Self::validate_and_save_statement(statement.clone(), &sender, &current_block)?;
 

@@ -14,14 +14,14 @@ makers --profile=production build-release-benchmarks
 echo "2. Running the benchmarks for all pallets individually."
 for i in $(find pallets -type f -name 'benchmarking.rs' | sed -r 's|pallets\/([^/]+)\/src\/benchmarking.rs$|\1|' |sort -u); do
   echo "Calculating weights for [$i] ..."
-  ./scripts/run-benchmarks.sh $chain $i false
+  ./.devops/run-benchmarks.sh $chain $i false
 done
 echo "Done!"
 
 echo "3. Benchmarking dependencies ⚒⚒"
 for i in $(find runtime/src/weights -type f -name 'pallet_*.rs' | sed -r 's|runtime\/src\/weights/pallet_([^/]+).rs$|\1|' |sort -u); do
   echo "Calculating weights for [$i] ..."
-  ./scripts/run-benchmarks.sh $chain pallet_$i false ./runtime/src/weights/pallet_$i.rs ./templates/dep-weight-template.hbs
+  ./.devops/run-benchmarks.sh $chain pallet_$i false ./runtime/src/weights/pallet_$i.rs ./templates/dep-weight-template.hbs
 done
 echo "Done!"
 

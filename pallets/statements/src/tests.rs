@@ -21,16 +21,16 @@
 #![cfg(test)]
 
 use super::{mock::*, *};
-use crate::types::{ClaimType, StatementData, StatementId};
+use crate::types::{Claim, ClaimType, StatementData, StatementId};
 use anagolay_support::{AnagolayStructureData, Characters};
 use codec::Encode;
 use core::convert::TryInto;
 use frame_support::{assert_noop, assert_ok, BoundedVec};
+use poe::types::ProofId;
 use sp_core::{sr25519, Pair};
 
 fn sign_statement(statement_data: &mut StatementData) {
   let (pair, _) = sr25519::Pair::from_string_with_seed("//Alice", None).unwrap();
-
   let message = [
     "<Bytes>".as_bytes(),
     &statement_data.claim.encode(),
@@ -65,7 +65,7 @@ fn statements_create_ownership_error_on_duplicate() {
     assert_ok!(res_first);
 
     let res_duplicate = TestStatements::create_ownership(mock::Origin::signed(1), r.clone());
-    assert_noop!(res_duplicate, Error::<Test>::ProofHasStatement);
+    assert_noop!(res_duplicate, Error::<Test>::StatementAlreadyExists);
   });
 }
 #[test]
@@ -123,9 +123,39 @@ fn statements_create_copyright_error_on_duplicate() {
     assert_ok!(res_first);
 
     let res_duplicate = TestStatements::create_copyright(mock::Origin::signed(1), r.clone());
-    assert_noop!(res_duplicate, Error::<Test>::ProofHasStatement);
+    assert_noop!(res_duplicate, Error::<Test>::StatementAlreadyExists);
   });
 }
+
+#[test]
+fn statements_create_error_on_proof_has_statements() {
+  new_test_ext().execute_with(|| {
+    let mut r = StatementData {
+      claim: Claim {
+        poe_id: ProofId::from("my-fake-proof-id"),
+        ..Claim::default()
+      },
+      ..StatementData::default()
+    };
+    sign_statement(&mut r);
+
+    let res_first = TestStatements::create_copyright(mock::Origin::signed(1), r.clone());
+    assert_ok!(res_first);
+
+    let s = StatementData {
+      claim: Claim {
+        poe_id: ProofId::from("my-fake-proof-id"),
+        claim_type: ClaimType::Ownership,
+        ..Claim::default()
+      },
+      ..StatementData::default()
+    };
+
+    let res_second = TestStatements::create_ownership(mock::Origin::signed(1), s.clone());
+    assert_noop!(res_second, Error::<Test>::ProofHasStatements);
+  });
+}
+
 #[test]
 fn statements_create_copyright_wrong_claim_type() {
   new_test_ext().execute_with(|| {
@@ -201,13 +231,11 @@ fn statements_signature_verification_substrate() {
   use anagolay_support::CreatorId;
   use frame_support::pallet_prelude::Get;
   use poe::types::ProofId;
-  use workflows::types::WorkflowId;
 
   new_test_ext().execute_with(|| {
     let claim: Claim = Claim {
       prev_id: None,
       poe_id: ProofId::from("bafkr4ifwrblquyv4hskayffmo7llmpcha4vkgcfwcgeenzt63u5m74ukz4"),
-      workflow_id: WorkflowId::from("bafkr4icflbi5pbomtcyejivr4l7dcdvcmvcsviwmnn7qp52flfnkvy2ebe"),
       proportion: Proportion {
         name: "percentage".into(),
         sign: "%".into(),
