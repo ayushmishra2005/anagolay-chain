@@ -20,3 +20,23 @@ test-flow:
     - echo -e "\e[0Ksection_end:`date +%s`:test\r\e[0K"
   after_script:
     - !reference [.with-local-cachier, after_script]
+
+clippy:
+  stage: test
+  allow_failure: true
+  tags:
+    - rust
+  rules:
+    - !reference [.rule-friendly-word, rules]
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+  before_script:
+    - !reference [.info-compiler, before_script]
+    - !reference [.with-local-cachier, before_script]
+  script:
+    - echo -e "\e[0Ksection_start:`date +%s`:test\r\e[0KFull clippy phase"
+    # - makers clippy-allow-fail
+    - makers clippy-flow
+    - sccache --show-stats
+    - echo -e "\e[0Ksection_end:`date +%s`:test\r\e[0K"
+  after_script:
+    - !reference [.with-local-cachier, after_script]

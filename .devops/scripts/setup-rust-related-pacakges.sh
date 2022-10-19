@@ -9,10 +9,10 @@ rustup default nightly-2022-08-29
 rustup target add wasm32-unknown-unknown --toolchain nightly-2022-08-29
 rustup target add x86_64-unknown-linux-gnu --toolchain nightly-2022-08-29
 
-if [ -z $CI_PROJECT_NAME ]; then
-  rustup update nightly
-  rustup update stable
-fi
+# if [ -z $CI_PROJECT_NAME ]; then
+#   rustup update nightly
+#   rustup update stable
+# fi
 
 if [[ "${1}" =~ "dev" ]]; then
   echo "$2"
@@ -24,6 +24,7 @@ if [[ "${1}" =~ "dev" ]]; then
   # rustup component add rust-analysis
   rustup component add rust-src
   rustup component add rust-docs
+  rustup component add clippy
 fi
 
 #### make this optional and with the flag fo the dev contianer
