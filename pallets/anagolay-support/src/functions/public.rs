@@ -6,6 +6,7 @@
 ///   - const_name: Constant name
 ///   - const_type: Type of the constant value
 #[macro_export]
+#[allow(clippy::crate_in_macro_def)]
 macro_rules! getter_for_constant {
   ($const_name:ident, $const_type:ident) => {
     $crate::paste::paste! {

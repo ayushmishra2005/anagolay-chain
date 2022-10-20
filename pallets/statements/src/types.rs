@@ -160,15 +160,10 @@ impl AnagolayStructureData for StatementData {
   }
 }
 
-#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, MaxEncodedLen, TypeInfo)]
+#[derive(Encode, Decode, Clone, Default, PartialEq, Eq, RuntimeDebug, MaxEncodedLen, TypeInfo)]
 #[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
 pub struct StatementExtra {}
 impl AnagolayStructureExtra for StatementExtra {}
-impl Default for StatementExtra {
-  fn default() -> Self {
-    StatementExtra {}
-  }
-}
 
 // Statement entity
 anagolay_structure!(Statement, StatementId, StatementData, StatementExtra);

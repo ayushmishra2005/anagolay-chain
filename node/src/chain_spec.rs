@@ -185,6 +185,7 @@ pub fn local_testnet_config() -> Result<ChainSpec, String> {
   ))
 }
 
+#[allow(clippy::identity_op)]
 /// Configure initial storage state for FRAME modules.
 fn testnet_genesis(
   wasm_binary: &[u8],

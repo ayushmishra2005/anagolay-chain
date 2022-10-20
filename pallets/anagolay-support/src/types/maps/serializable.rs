@@ -34,6 +34,17 @@ pub struct MaybeSerializableBoundedBTreeMap<K: Ord + Serialize, V: Ord + Seriali
   BoundedBTreeMap<K, V, S>,
 );
 
+impl<K, V, S> Default for MaybeSerializableBoundedBTreeMap<K, V, S>
+where
+  K: Ord + Serialize + Clone,
+  V: Ord + Serialize + Clone,
+  S: Get<u32>,
+{
+  fn default() -> Self {
+    Self::new()
+  }
+}
+
 /// Implementation of MaybeSerializableBoundedBTreeMap.
 /// Delegates to the inner type
 impl<K, V, S> MaybeSerializableBoundedBTreeMap<K, V, S>
@@ -97,24 +108,24 @@ where
     let mut iter = self.0.iter();
     if TypeId::of::<K>() == TypeId::of::<String>() {
       // handle strings specially so they don't get escaped and wrapped inside another string
-      while let Some((k, v)) = iter.next() {
+      for (k, v) in iter.by_ref() {
         let s = (k as &dyn Any)
           .downcast_ref::<String>()
-          .ok_or(U::Error::custom("Failed to serialize String as string"))?;
+          .ok_or_else(|| U::Error::custom("Failed to serialize String as string"))?;
         ser_map.serialize_entry(s, &v)?;
       }
     } else if TypeId::of::<K>() == TypeId::of::<Characters>() {
       // handle Characters specially so they don't get serialized to Hex
-      while let Some((k, v)) = iter.next() {
+      for (k, v) in iter.by_ref() {
         let s = (k as &dyn Any)
           .downcast_ref::<Characters>()
-          .ok_or(U::Error::custom("Failed to serialize Characters as string"))?
+          .ok_or_else(|| U::Error::custom("Failed to serialize Characters as string"))?
           .as_str()
           .to_string();
         ser_map.serialize_entry(&s, &v)?;
       }
     } else {
-      while let Some((k, v)) = iter.next() {
+      for (k, v) in iter.by_ref() {
         ser_map.serialize_entry(
           match &serde_json::to_string(&k) {
             Ok(key_string) => key_string,
@@ -130,6 +141,7 @@ where
   }
 }
 
+type VisitorGetter<K, S, V> = fn() -> MaybeSerializableBoundedBTreeMap<K, V, S>;
 /// A Visitor is a type that holds methods that a Deserializer can drive
 /// depending on what is contained in the input data.
 ///
@@ -144,7 +156,7 @@ where
   V: Ord + Serialize,
   S: Get<u32>,
 {
-  marker: PhantomData<fn() -> MaybeSerializableBoundedBTreeMap<K, V, S>>,
+  marker: PhantomData<VisitorGetter<K, S, V>>,
 }
 
 /// This is the trait that Deserializers are going to be driving. There

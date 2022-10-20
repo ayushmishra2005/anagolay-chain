@@ -54,7 +54,7 @@ impl<T: Config> Pallet<T> {
       }
       _ => false,
     };
-    return verified;
+    verified
   }
 
   /// Remove the Statement from the storage
@@ -71,7 +71,7 @@ impl<T: Config> Pallet<T> {
       Some(statement_info) => {
         Self::remove_statement_proof_connection(
           statement_info.record.data.claim.poe_id.clone(),
-          statement_info.record.id.clone(),
+          statement_info.record.id,
         )?;
         StatementByStatementIdAndAccountId::<T>::remove(&statement_id, &account_id);
         Self::decrease_statements_count();
@@ -194,7 +194,7 @@ impl<T: Config> Pallet<T> {
               block_number: *block_number,
             };
             Self::add_statement_to_proof(statement.data.claim.poe_id.clone(), statement.id.clone())?;
-            Self::insert_statement(&statement_info, &account_id);
+            Self::insert_statement(&statement_info, account_id);
             Ok(())
           } else {
             Err(Error::<T>::InvalidSignature)

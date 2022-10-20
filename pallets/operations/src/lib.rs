@@ -52,6 +52,7 @@ mod constants {
 }
 
 #[frame_support::pallet]
+#[allow(clippy::large_enum_variant)]
 pub mod pallet {
   use super::{constants::*, *};
   use crate::types::{
@@ -151,14 +152,7 @@ pub mod pallet {
 
         for ver_record in &self.versions {
           let version_id = ver_record.record.id.clone();
-          if ver_record
-            .record
-            .data
-            .entity_id
-            .clone()
-            .unwrap_or(OperationId::default()) ==
-            operation_id
-          {
+          if ver_record.record.data.entity_id.clone().unwrap_or_default() == operation_id {
             let error_fn = |err| {
               error!(
                 "Pallet operations genesis build (operation_id={:?}): {:?}",
@@ -243,7 +237,7 @@ pub mod pallet {
       operation_data: OperationData,
       version_data: OperationVersionData,
     ) -> DispatchResultWithPostInfo {
-      let sender = ensure_signed(origin.clone())?;
+      let sender = ensure_signed(origin)?;
 
       let operation_data_validation = operation_data.validate();
       if let Err(ref message) = operation_data_validation {
@@ -268,11 +262,10 @@ pub mod pallet {
         Error::<T>::OperationAlreadyInitialized
       );
       ensure!(
-        version_data
+        !version_data
           .artifacts
           .iter()
-          .find(|package| anagolay_support::Pallet::<T>::is_existing_artifact(package))
-          .is_none(),
+          .any(|package| anagolay_support::Pallet::<T>::is_existing_artifact(package)),
         Error::<T>::OperationVersionPackageAlreadyExists
       );
 
@@ -283,7 +276,7 @@ pub mod pallet {
       let operation_version = OperationVersion::new_with_extra(
         OperationVersionData {
           entity_id: Some(operation.id.clone()),
-          ..version_data.clone()
+          ..version_data
         },
         OperationVersionExtra {
           created_at: T::TimeProvider::now().as_secs(),
@@ -292,7 +285,7 @@ pub mod pallet {
 
       Self::do_create_operation_version(&operation_version, &sender, current_block)?;
 
-      Self::deposit_event(Event::OperationCreated(sender, operation.id.clone()));
+      Self::deposit_event(Event::OperationCreated(sender, operation.id));
 
       Ok(().into())
     }

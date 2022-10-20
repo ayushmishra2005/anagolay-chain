@@ -183,6 +183,12 @@ impl Characters {
     self.0.len()
   }
 
+  /// # Return
+  /// True if this is an empty string of Characters, false otherwise
+  pub fn is_empty(&self) -> bool {
+    self.0.len() == 0
+  }
+
   /// Splits this `Characters` using pat as delimeter
   ///
   /// # Example

@@ -104,7 +104,7 @@ where
 
     api
       .get_workflows_by_ids(&at, workflow_ids, offset, limit)
-      .map_err(|e| map_jsonrpc_err(e))
+      .map_err(map_jsonrpc_err)
   }
 
   fn get_workflow_versions_by_ids(
@@ -119,6 +119,6 @@ where
 
     api
       .get_workflow_versions_by_ids(&at, workflow_version_ids, offset, limit)
-      .map_err(|e| map_jsonrpc_err(e))
+      .map_err(map_jsonrpc_err)
   }
 }

@@ -51,7 +51,7 @@ where
     deny_unsafe,
   } = deps;
 
-  module.merge(System::new(client.clone(), pool.clone(), deny_unsafe).into_rpc())?;
+  module.merge(System::new(client.clone(), pool, deny_unsafe).into_rpc())?;
   module.merge(TransactionPayment::new(client.clone()).into_rpc())?;
 
   // Extend this RPC with a custom API by using the following syntax.
@@ -59,7 +59,7 @@ where
   // to call into the runtime.
   // `module.merge(YourRpcTrait::into_rpc(YourRpcStruct::new(ReferenceToClient, ...)))?;`
   module.merge(Operations::new(client.clone()).into_rpc())?;
-  module.merge(Workflows::new(client.clone()).into_rpc())?;
+  module.merge(Workflows::new(client).into_rpc())?;
 
   Ok(module)
 }
