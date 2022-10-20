@@ -99,15 +99,10 @@ impl AnagolayStructureData for WorkflowData {
   }
 }
 
-#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, MaxEncodedLen, TypeInfo)]
+#[derive(Encode, Decode, Clone, Default, PartialEq, Eq, RuntimeDebug, MaxEncodedLen, TypeInfo)]
 #[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
 pub struct WorkflowExtra {}
 impl AnagolayStructureExtra for WorkflowExtra {}
-impl Default for WorkflowExtra {
-  fn default() -> Self {
-    WorkflowExtra {}
-  }
-}
 
 impl Default for WorkflowData {
   fn default() -> Self {

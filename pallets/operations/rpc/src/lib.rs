@@ -104,7 +104,7 @@ where
 
     api
       .get_operations_by_ids(&at, operation_ids, offset, limit)
-      .map_err(|e| map_jsonrpc_err(e))
+      .map_err(map_jsonrpc_err)
   }
 
   fn get_operation_versions_by_ids(
@@ -119,6 +119,6 @@ where
 
     api
       .get_operation_versions_by_ids(&at, operation_version_ids, offset, limit)
-      .map_err(|e| map_jsonrpc_err(e))
+      .map_err(map_jsonrpc_err)
   }
 }

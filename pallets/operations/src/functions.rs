@@ -95,7 +95,7 @@ impl<T: Config> Pallet<T> {
   pub fn get_operations_by_ids(operation_ids: Vec<OperationId>, offset: u64, limit: u16) -> Vec<Operation> {
     let mut operations = Vec::new();
 
-    let operation_ids = if operation_ids.len() == 0 {
+    let operation_ids = if operation_ids.is_empty() {
       let mut ids = Vec::new();
       OperationByOperationIdAndAccountId::<T>::iter_keys().for_each(|(k1, _)| ids.push(k1));
       ids
@@ -138,7 +138,7 @@ impl<T: Config> Pallet<T> {
   ) -> Vec<OperationVersion> {
     let mut operation_versions = Vec::new();
 
-    let operation_version_ids = if operation_version_ids.len() == 0 {
+    let operation_version_ids = if operation_version_ids.is_empty() {
       let mut ids = Vec::new();
       VersionByVersionId::<T>::iter_keys().for_each(|k| ids.push(k));
       ids

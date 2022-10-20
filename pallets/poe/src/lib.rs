@@ -128,7 +128,7 @@ pub mod pallet {
     /// `DispatchResultWithPostInfo` containing Unit type
     #[pallet::weight(<T as Config>::WeightInfo::create_proof())]
     pub fn create_proof(origin: OriginFor<T>, proof_data: ProofData) -> DispatchResultWithPostInfo {
-      let sender = ensure_signed(origin.clone())?;
+      let sender = ensure_signed(origin)?;
 
       let proof_validation = proof_data.validate();
       if let Err(ref message) = proof_validation {

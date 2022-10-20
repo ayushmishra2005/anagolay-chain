@@ -160,14 +160,7 @@ pub mod pallet {
 
         for ver_record in &self.versions {
           let version_id = ver_record.record.id.clone();
-          if ver_record
-            .record
-            .data
-            .entity_id
-            .clone()
-            .unwrap_or(WorkflowId::default()) ==
-            workflow_id
-          {
+          if ver_record.record.data.entity_id.clone().unwrap_or_default() == workflow_id {
             let error_fn = |err| {
               error!(
                 "Pallet workflows genesis build (workflow_id={:?}): {:?}",
@@ -253,7 +246,7 @@ pub mod pallet {
       workflow_data: WorkflowData,
       version_data: WorkflowVersionData,
     ) -> DispatchResultWithPostInfo {
-      let sender = ensure_signed(origin.clone())?;
+      let sender = ensure_signed(origin)?;
 
       let workflow_data_validation = workflow_data.validate();
       if let Err(ref message) = workflow_data_validation {
@@ -278,11 +271,10 @@ pub mod pallet {
         Error::<T>::WorkflowAlreadyInitialized
       );
       ensure!(
-        version_data
+        !version_data
           .artifacts
           .iter()
-          .find(|package| anagolay_support::Pallet::<T>::is_existing_artifact(package))
-          .is_none(),
+          .any(|package| anagolay_support::Pallet::<T>::is_existing_artifact(package)),
         Error::<T>::WorkflowVersionPackageAlreadyExists
       );
 
@@ -293,7 +285,7 @@ pub mod pallet {
       let workflow_version = WorkflowVersion::new_with_extra(
         WorkflowVersionData {
           entity_id: Some(workflow.id.clone()),
-          ..version_data.clone()
+          ..version_data
         },
         WorkflowVersionExtra {
           created_at: T::TimeProvider::now().as_secs(),
@@ -302,7 +294,7 @@ pub mod pallet {
 
       Self::do_create_workflow_version(&workflow_version, &sender, current_block)?;
 
-      Self::deposit_event(Event::WorkflowCreated(sender, workflow.id.clone()));
+      Self::deposit_event(Event::WorkflowCreated(sender, workflow.id));
 
       Ok(().into())
     }

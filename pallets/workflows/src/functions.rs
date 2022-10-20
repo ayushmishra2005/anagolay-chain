@@ -36,7 +36,7 @@ impl<T: Config> Pallet<T> {
       block_number: *block_number,
     };
 
-    WorkflowByWorkflowIdAndAccountId::<T>::insert(&workflow.id, &account_id, workflow_record.clone());
+    WorkflowByWorkflowIdAndAccountId::<T>::insert(&workflow.id, &account_id, workflow_record);
 
     Total::<T>::put(Self::total().saturating_add(1));
   }
@@ -89,7 +89,7 @@ impl<T: Config> Pallet<T> {
   pub fn get_workflows_by_ids(workflow_ids: Vec<WorkflowId>, offset: u64, limit: u16) -> Vec<Workflow> {
     let mut workflows = Vec::new();
 
-    let workflow_ids = if workflow_ids.len() == 0 {
+    let workflow_ids = if workflow_ids.is_empty() {
       let mut ids = Vec::new();
       WorkflowByWorkflowIdAndAccountId::<T>::iter_keys().for_each(|(k1, _)| ids.push(k1));
       ids
@@ -132,7 +132,7 @@ impl<T: Config> Pallet<T> {
   ) -> Vec<WorkflowVersion> {
     let mut workflow_versions = Vec::new();
 
-    let workflow_version_ids = if workflow_version_ids.len() == 0 {
+    let workflow_version_ids = if workflow_version_ids.is_empty() {
       let mut ids = Vec::new();
       VersionByVersionId::<T>::iter_keys().for_each(|k| ids.push(k));
       ids

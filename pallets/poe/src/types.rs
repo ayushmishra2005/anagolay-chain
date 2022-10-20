@@ -43,7 +43,7 @@ pub struct ProofParams {
 }
 
 /// Perceptive hash information, what gets stored
-#[derive(Encode, Decode, Clone, PartialEq, Default, RuntimeDebug, MaxEncodedLen, TypeInfo)]
+#[derive(Encode, Decode, Clone, Eq, PartialEq, Default, RuntimeDebug, MaxEncodedLen, TypeInfo)]
 #[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
 pub struct PhashInfo {
   /// The perceptive hash bytes
