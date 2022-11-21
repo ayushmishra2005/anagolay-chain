@@ -6,6 +6,7 @@ members = [
   'pallets/statements',
   'pallets/workflows',
   'pallets/poe',
+  'pallets/verification',
   'runtime',
 ]
 

@@ -11,6 +11,10 @@ LABEL description="Production ready image for Anagolay: a platform for web3 Righ
 	network.anagolay.image.source="https://gitlab.com/anagolay/anagolay/blob/${GIT_LATEST_REVISION}/.devops/prod/anagolay-with-artifact.dockerfile" \
 	network.anagolay.image.documentation="https://gitlab.com/anagolay/anagolay"
 
+RUN apt-get update \ 
+&& apt-get install -y \ 
+ca-certificates
+
 COPY ./anagolay /
 COPY ./anagolay.sha256 /
 COPY ./LICENSE /

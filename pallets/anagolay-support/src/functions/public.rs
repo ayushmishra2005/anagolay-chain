@@ -24,7 +24,8 @@ macro_rules! getter_for_constant {
 }
 
 /// Macro that generates a wrapper for a constant to satisfy `trait Get`.
-/// The constant is hardcoded
+/// The constant is hardcoded. This approach has advantages over using
+/// `ConstU32` since it implements all the traits used in the datamodel
 ///
 /// # Arguments
 ///   - const_name: Constant name

@@ -1,13 +1,16 @@
 [package]
-name         = 'anagolay'
-version      = '0.3.0'
-description  = "A Substrate-based node for Anagolay network"
-authors      = ['did:substrate:GHm6gp6khjcxQvnbnSsHdYejsFK1nNVxcGyGAsbDfsymtLr']
-homepage     = 'https://anagolay.network'
-edition      = '2021'
+name = 'anagolay'
+version = '0.3.0'
+description = "A Substrate-based node for Anagolay network"
+authors = [
+  'did:substrate:5Fn9SNUE8LihCm7Lq5dpPgBebGy5D7ZKWESDsWbdjsfV37d4',
+  'did:substrate:5EHkcDMhHgwW7V4GR4Us4dhkPkP9f2k71kdSVbzzzpNsHsYo',
+]
+homepage = 'https://anagolay.network'
+edition = '2021'
 license-file = "./LICENSE"
-repository   = 'https://gitlab.com/anagolay/anagolay/'
-build        = 'build.rs'
+repository = 'https://gitlab.com/anagolay/anagolay/'
+build = 'build.rs'
 
 
 [package.metadata.docs.rs]
@@ -65,7 +68,7 @@ frame-benchmarking-cli = { version = "4.0.0-dev", git = "https://github.com/pari
 # Local Dependencies
 anagolay-runtime = { path = '../runtime' }
 operations-rpc   = { path = "../pallets/operations/rpc" }
-workflows-rpc   = { path = "../pallets/workflows/rpc" }
+workflows-rpc    = { path = "../pallets/workflows/rpc" }
 
 # CLI-specific dependencies
 try-runtime-cli = { version = "0.10.0-dev", optional = true, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }

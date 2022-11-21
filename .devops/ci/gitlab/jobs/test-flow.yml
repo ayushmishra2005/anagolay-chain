@@ -13,7 +13,7 @@ test-flow:
   script:
     - echo -e "\e[0Ksection_start:`date +%s`:test\r\e[0KFull ci-flow phase"
     # we need to format this due to the moving the /build dir and cargo chef
-    - makers format
+    # - makers format
     - time makers ci-flow-light
     # - time makers test --partition count:${CI_NODE_INDEX}/${CI_NODE_TOTAL}
     - sccache --show-stats
@@ -24,6 +24,9 @@ test-flow:
 clippy:
   stage: test
   allow_failure: true
+  needs: ["test-flow"]
+  cache:
+    policy: pull
   tags:
     - rust
   rules:
@@ -38,5 +41,3 @@ clippy:
     - makers clippy-flow
     - sccache --show-stats
     - echo -e "\e[0Ksection_end:`date +%s`:test\r\e[0K"
-  after_script:
-    - !reference [.with-local-cachier, after_script]

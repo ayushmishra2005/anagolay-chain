@@ -9,13 +9,14 @@
 .use-kaniko:
   extends: .use-kaniko-base
   script:
+    - set -ex
     - >-
       /kaniko/executor
       --cache=true
       --cache-copy-layers
       --build-arg "GIT_LAST_REVISION=${GIT_LAST_REVISION}"
       --reproducible
-      --context "${CI_PROJECT_DIR}"
+      --context "${KANIKO_CONTEXT}"
       --dockerfile "${IMAGE_DOCKERFILE_PATH}"
       --destination "${IMAGE_NAME}"
 
@@ -28,6 +29,6 @@
       --cache-copy-layers
       --reproducible
       --build-arg "GIT_LAST_REVISION=${GIT_LAST_REVISION}"
-      --context "${CI_PROJECT_DIR}"
+      --context "${KANIKO_CONTEXT}"
       --dockerfile "${IMAGE_DOCKERFILE_PATH}"
       --destination "${IMAGE_NAME}"

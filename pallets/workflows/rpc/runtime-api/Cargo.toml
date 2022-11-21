@@ -1,5 +1,5 @@
 [package]
-authors      = ['did:substrate:GHm6gp6khjcxQvnbnSsHdYejsFK1nNVxcGyGAsbDfsymtLr']
+authors      = ['did:substrate:5Fn9SNUE8LihCm7Lq5dpPgBebGy5D7ZKWESDsWbdjsfV37d4']
 repository   = 'https://gitlab.com/anagolay/anagolay/'
 homepage     = 'https://anagolay.network/pallet/workflows'
 edition      = '2018'
@@ -21,7 +21,7 @@ sp-api     = { default-features = false, version = "4.0.0-dev", git = "https://g
 sp-runtime = { version = "6.0.0", git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.26', default-features = false }
 
 anagolay-support = { path = '../../../anagolay-support', default-features = false }
-workflows       = { path = '../..', default-features = false }
+workflows        = { path = '../..', default-features = false }
 
 [features]
 default = ["std"]

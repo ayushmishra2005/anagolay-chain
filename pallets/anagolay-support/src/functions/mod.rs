@@ -25,9 +25,42 @@ pub mod public;
 pub use public::*;
 
 use super::constants::*;
-use frame_support::BoundedVec;
+use frame_support::{
+  sp_std::{vec, vec::Vec},
+  BoundedVec,
+};
 
 impl<T: Config> Pallet<T> {
+  /// Produces a CID v1 out of some bytes using an Anagolay workflow
+  ///
+  /// # Arguments
+  /// * holder - The verification holder (unused)
+  /// * context - The verification context (unused)
+  /// * identifier - The identifier to use to compute the CID
+  ///
+  /// # Return
+  /// The CID string ("bafk...") in the form of a collection of bytes
+  pub fn produce_cid(bytes: Vec<u8>) -> Vec<u8> {
+    extern crate alloc;
+    use alloc::rc::Rc;
+    use core::any::Any;
+
+    let inputs: Vec<Rc<dyn Any>> = vec![Rc::new(bytes)];
+    let workflow = wf_cidv1_from_array::Workflow::new();
+    if let Ok(result) = workflow.next(inputs) {
+      let result = result.as_ref();
+      let cid_str = result
+        .get_output()
+        .unwrap()
+        .downcast_ref::<alloc::string::String>()
+        .unwrap()
+        .clone();
+      cid_str.as_bytes().to_vec()
+    } else {
+      "".as_bytes().to_vec()
+    }
+  }
+
   /// Verifies if the package passed as argument is already stored
   ///
   /// # Arguments

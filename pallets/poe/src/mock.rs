@@ -21,11 +21,11 @@
 #![cfg(test)]
 
 use crate as poe;
-use crate::Config;
+use crate::{types::PoeVerificationKeyGenerator, Config};
 use frame_support::{parameter_types, traits::UnixTime};
 use sp_core::H256;
 use sp_runtime::{
-  testing::Header,
+  testing::{Header, TestXt},
   traits::{BlakeTwo256, IdentityLookup},
 };
 use std::{
@@ -33,6 +33,7 @@ use std::{
   time::Duration,
 };
 
+type Extrinsic = TestXt<Call, ()>;
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
 
@@ -82,6 +83,30 @@ impl frame_system::Config for Test {
   type MaxConsumers = frame_support::traits::ConstU32<16>;
 }
 
+impl verification::Config for Test {
+  type Event = ();
+  type VerificationKeyGenerator = PoeVerificationKeyGenerator<Self>;
+  type WeightInfo = ();
+  type Currency = ();
+
+  const REGISTRATION_FEE: u32 = 10;
+}
+
+type VerificationCall = verification::Call<Test>;
+impl From<VerificationCall> for Call {
+  fn from(_: VerificationCall) -> Self {
+    todo!()
+  }
+}
+
+impl<VerificationCall> frame_system::offchain::SendTransactionTypes<VerificationCall> for Test
+where
+  Call: From<VerificationCall>,
+{
+  type OverarchingCall = Call;
+  type Extrinsic = Extrinsic;
+}
+
 pub struct MockTime {}
 
 impl UnixTime for MockTime {
@@ -93,6 +118,8 @@ impl UnixTime for MockTime {
 impl Config for Test {
   type Event = ();
   type WeightInfo = ();
+
+  const MAX_PROOFS_PER_WORKFLOW: u32 = 1;
 }
 
 impl workflows::Config for Test {

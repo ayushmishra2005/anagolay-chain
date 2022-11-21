@@ -25,15 +25,24 @@
       },
       "grandpa": {
         "authorities": [
-          ["5F1BezmvfHuUPZ4YKCUy6KSiUq3p1LC7wbbz2oAuLQJuhJno", 1],
-          ["5Fti89RV1AXTAQtFVJq6gMnoABM5TKxw8Rg56fRfYRTobxqf", 1],
-          ["5GZRZAshxDLQ8FkBNyXvnr9BYPWMS1g8af64fc9t7DmTNB5y", 1]
+          [
+            "5F1BezmvfHuUPZ4YKCUy6KSiUq3p1LC7wbbz2oAuLQJuhJno",
+            1
+          ],
+          [
+            "5Fti89RV1AXTAQtFVJq6gMnoABM5TKxw8Rg56fRfYRTobxqf",
+            1
+          ],
+          [
+            "5GZRZAshxDLQ8FkBNyXvnr9BYPWMS1g8af64fc9t7DmTNB5y",
+            1
+          ]
         ]
       },
       "balances": {
         "balances": [
           [
-            "5Fn9SNUE8LihCm7Lq5dpPgBebGy5D7ZKWESDsWbdjsfV37d4",
+            "5EJA1oSrTx7xYMBerrUHLNktA3P89YHJBeTrevotTQab6gEY",
             1100152921504606846976
           ],
           [

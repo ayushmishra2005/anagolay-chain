@@ -1,5 +1,5 @@
 [package]
-authors      = ['did:substrate:GHm6gp6khjcxQvnbnSsHdYejsFK1nNVxcGyGAsbDfsymtLr']
+authors      = ['did:substrate:5Fn9SNUE8LihCm7Lq5dpPgBebGy5D7ZKWESDsWbdjsfV37d4']
 repository   = 'https://gitlab.com/anagolay/anagolay/'
 homepage     = 'https://anagolay.network/pallet/operations'
 edition      = '2018'

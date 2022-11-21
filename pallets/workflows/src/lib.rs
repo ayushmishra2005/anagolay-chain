@@ -88,7 +88,7 @@ pub mod pallet {
     /// Timestamps provider
     type TimeProvider: UnixTime;
 
-    /// Maximum number of Versions for a single Operation registered on Anagolay network at a given
+    /// Maximum number of Versions for a single Workflow registered on Anagolay network at a given
     /// time.
     const MAX_VERSIONS_PER_WORKFLOW: u32;
   }

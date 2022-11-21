@@ -20,15 +20,17 @@ build-idiyanale-main-image-with-artifact:
   #   - !reference [.rules-build, rules]
   #   - !reference [.rule-friendly-word, rules]
   variables:
-    IMAGE_DOCKERFILE_PATH: ./artifacts/Dockerfile
+    IMAGE_DOCKERFILE_PATH: Dockerfile
     IMAGE_NAME: "${CI_REGISTRY}/${CI_PROJECT_PATH}/idiyanale:${CI_COMMIT_SHORT_SHA}"
     AN_CI_LINUX_TAG: "19816159"
+    KANIKO_CONTEXT: "$CI_PROJECT_DIR/artifacts"
     GIT_STRATEGY: none
-    CI_PROJECT_DIR: ./artifacts
     GIT_LAST_REVISION: $CI_COMMIT_SHA
 
   script:
     - echo $IMAGE_NAME
+    - echo $IMAGE_DOCKERFILE_PATH
+    - echo $KANIKO_CONTEXT
     # docs  https://docs.gitlab.com/ee/ci/yaml/yaml_optimization.html#reference-tags
     - !reference [.base-image-build, script]
 
