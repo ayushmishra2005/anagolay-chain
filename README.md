@@ -67,7 +67,7 @@ To generate pallet weights run from the root of the project. Use the folder name
 # PoE
 ./.devops/run-benchmarks.sh dev poe false # this will not build it it will only run it
 
-# Rules
+# Workflows
 ./.devops/run-benchmarks.sh dev workflows # this will build it and run it
 
 # Operations

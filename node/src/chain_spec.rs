@@ -14,7 +14,7 @@ use sp_runtime::traits::{IdentifyAccount, Verify};
 // The URL for the telemetry server.
 const STAGING_TELEMETRY_URL: &str = "wss://telemetry.anagolay.io/submit/";
 // The initial balance for created accounts
-const INITIAL_BALANCE: u128 = 100 * UNITS;
+const INITIAL_BALANCE: u128 = 3_000_000 * UNITS;
 
 /// Specialized `ChainSpec`. This is a specialization of the general Substrate ChainSpec type.
 pub type ChainSpec = sc_service::GenericChainSpec<GenesisConfig>;
@@ -68,7 +68,7 @@ pub fn development_config() -> Result<ChainSpec, String> {
           (get_account_id_from_seed::<sr25519::Public>("Bob"), INITIAL_BALANCE),
           (
             // daniel
-            AccountId::from_ss58check("5Fn9SNUE8LihCm7Lq5dpPgBebGy5D7ZKWESDsWbdjsfV37d4").unwrap(),
+            AccountId::from_ss58check("5EJA1oSrTx7xYMBerrUHLNktA3P89YHJBeTrevotTQab6gEY").unwrap(),
             INITIAL_BALANCE,
           ),
           (
@@ -134,7 +134,7 @@ pub fn local_testnet_config() -> Result<ChainSpec, String> {
           (get_account_id_from_seed::<sr25519::Public>("Ferdie"), INITIAL_BALANCE),
           (
             // daniel
-            AccountId::from_ss58check("5Fn9SNUE8LihCm7Lq5dpPgBebGy5D7ZKWESDsWbdjsfV37d4").unwrap(),
+            AccountId::from_ss58check("5EJA1oSrTx7xYMBerrUHLNktA3P89YHJBeTrevotTQab6gEY").unwrap(),
             INITIAL_BALANCE,
           ),
           (
@@ -221,7 +221,7 @@ fn testnet_genesis(
       vesting: vec![
         (
           // daniel
-          AccountId::from_ss58check("5Fn9SNUE8LihCm7Lq5dpPgBebGy5D7ZKWESDsWbdjsfV37d4").unwrap(),
+          AccountId::from_ss58check("5EJA1oSrTx7xYMBerrUHLNktA3P89YHJBeTrevotTQab6gEY").unwrap(),
           1 * MINUTES,
           10 * MINUTES,
           (INITIAL_BALANCE / 2) as u128,

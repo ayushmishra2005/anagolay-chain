@@ -18,25 +18,20 @@
 
 //! Test utilities
 
-#![cfg(test)]
-
-use crate as statements;
-use crate::Config;
+use crate as verification;
+use crate::{types::*, Config};
+use core::convert::{TryFrom, TryInto};
 use frame_support::parameter_types;
+use pallet_balances::AccountData;
 use sp_core::{sr25519, H256};
 use sp_runtime::{
   testing::{Header, TestXt},
   traits::{BlakeTwo256, IdentityLookup},
 };
-use std::convert::{TryFrom, TryInto};
-use verification::types::NaiveVerificationKeyGenerator;
 
 type Extrinsic = TestXt<Call, ()>;
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
-
-use core::time::Duration;
-use frame_support::traits::UnixTime;
 
 // Configure a mock runtime to test the pallet.
 frame_support::construct_runtime!(
@@ -45,16 +40,19 @@ frame_support::construct_runtime!(
         NodeBlock = Block,
         UncheckedExtrinsic = UncheckedExtrinsic,
     {
-        System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-        Poe: poe::{Pallet, Call, Storage, Event<T>},
-        Verification: verification::{Pallet, Call, Storage, Event<T>, ValidateUnsigned},
-        TestStatements: statements::{Pallet, Call, Storage, Event<T>},
+      System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
+      Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
+      VerificationTest: verification::{Pallet, Call, Storage, Event<T>, ValidateUnsigned} = 18,
     }
 );
 
 parameter_types! {
-    pub const BlockHashCount: u64 = 250;
-    pub const SS58Prefix: u8 = 42;
+  pub const BlockHashCount: u64 = 250;
+  pub const SS58Prefix: u8 = 42;
+
+  pub static ExistentialDeposit: u32 = 0;
+  pub const MaxLocks: u32 = 50;
+  pub const MaxReserves: u32 = 2;
 }
 
 impl frame_system::Config for Test {
@@ -70,12 +68,12 @@ impl frame_system::Config for Test {
   type AccountId = sr25519::Public;
   type Lookup = IdentityLookup<Self::AccountId>;
   type Header = Header;
-  type Event = ();
+  type Event = Event;
   type BlockHashCount = BlockHashCount;
   type DbWeight = ();
   type Version = ();
   type PalletInfo = PalletInfo;
-  type AccountData = ();
+  type AccountData = AccountData<u64>;
   type OnNewAccount = ();
   type OnKilledAccount = ();
   type SystemWeightInfo = ();
@@ -84,60 +82,41 @@ impl frame_system::Config for Test {
   type MaxConsumers = frame_support::traits::ConstU32<16>;
 }
 
-impl verification::Config for Test {
-  type Event = ();
-  type VerificationKeyGenerator = NaiveVerificationKeyGenerator<Self>;
+impl pallet_balances::Config for Test {
+  type MaxLocks = ();
+  type MaxReserves = ();
+  type ReserveIdentifier = [u8; 8];
+  type Balance = u64;
+  type DustRemoval = ();
+  type Event = Event;
+  type ExistentialDeposit = ExistentialDeposit;
+  type AccountStore = System;
   type WeightInfo = ();
-  type Currency = ();
-
-  const REGISTRATION_FEE: u32 = 10;
 }
 
-impl<VerificationCall> frame_system::offchain::SendTransactionTypes<VerificationCall> for Test
+impl Config for Test {
+  type Event = Event;
+  type VerificationKeyGenerator = NaiveVerificationKeyGenerator<Self>;
+  type WeightInfo = ();
+  type Currency = Balances;
+
+  const REGISTRATION_FEE: u64 = 10;
+}
+
+impl<LocalCall> frame_system::offchain::SendTransactionTypes<LocalCall> for Test
 where
-  Call: From<VerificationCall>,
+  Call: From<LocalCall>,
 {
   type OverarchingCall = Call;
   type Extrinsic = Extrinsic;
 }
 
-impl poe::Config for Test {
-  type Event = ();
-  type WeightInfo = ();
-
-  const MAX_PROOFS_PER_WORKFLOW: u32 = 1;
-}
-
-pub struct MockTime {}
-
-impl UnixTime for MockTime {
-  fn now() -> Duration {
-    core::time::Duration::from_millis(1000)
-  }
-}
-
-impl workflows::Config for Test {
-  type Event = ();
-  type WeightInfo = ();
-  type TimeProvider = MockTime;
-
-  const MAX_VERSIONS_PER_WORKFLOW: u32 = 100;
-}
-
-impl anagolay_support::Config for Test {
-  const MAX_ARTIFACTS: u32 = 1_000_000;
-}
-
-impl Config for Test {
-  type Event = ();
-  type WeightInfo = crate::weights::AnagolayWeight<Test>;
-  const MAX_STATEMENTS_PER_PROOF: u32 = 16;
-}
-
 // Build genesis storage according to the mock runtime.
-pub fn new_test_ext() -> sp_io::TestExternalities {
-  frame_system::GenesisConfig::default()
-    .build_storage::<Test>()
-    .unwrap()
-    .into()
+pub fn new_test_ext(balances: Vec<(sr25519::Public, u64)>) -> sp_io::TestExternalities {
+  let mut ext = frame_system::GenesisConfig::default().build_storage::<Test>().unwrap();
+  pallet_balances::GenesisConfig::<Test> { balances }
+    .assimilate_storage(&mut ext)
+    .unwrap();
+
+  ext.into()
 }

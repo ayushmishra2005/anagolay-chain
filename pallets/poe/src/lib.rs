@@ -34,21 +34,30 @@ pub use pallet::*;
 use types::{PhashInfo, Proof, ProofId};
 pub use weights::WeightInfo;
 
+pub mod constants {
+  use anagolay_support::getter_for_constant;
+  getter_for_constant!(MaxProofsPerWorkflow, u32);
+}
+
 #[frame_support::pallet]
 pub mod pallet {
   use super::*;
-  use crate::types::{ProofData, ProofRecord};
+  use crate::{
+    constants::*,
+    types::{ProofData, ProofRecord},
+  };
   use anagolay_support::{AnagolayStructureData, Characters};
   use core::convert::TryInto;
   use frame_support::{pallet_prelude::*, sp_runtime::traits::Hash, sp_std::prelude::*};
   use frame_system::pallet_prelude::*;
+  use verification::types::VerificationContext;
 
   #[pallet::pallet]
   pub struct Pallet<T>(_);
 
   /// The pallet's configuration trait.
   #[pallet::config]
-  pub trait Config: frame_system::Config + workflows::Config {
+  pub trait Config: frame_system::Config + workflows::Config + verification::Config {
     /// The overarching event type.
     type Event: From<Event<Self>>
       + Into<<Self as frame_system::Config>::Event>
@@ -56,6 +65,17 @@ pub mod pallet {
 
     /// Weight information for extrinsics for this pallet.
     type WeightInfo: WeightInfo;
+
+    /// Maximum number of Proofs a Workflow can produce as output
+    const MAX_PROOFS_PER_WORKFLOW: u32;
+  }
+
+  #[pallet::extra_constants]
+  impl<T: Config> Pallet<T> {
+    #[pallet::constant_name(MaxProofsPerWorkflow)]
+    fn max_proofs_per_workflow() -> u32 {
+      T::MAX_PROOFS_PER_WORKFLOW
+    }
   }
 
   /// Retrieve the Proof with the ProofId and the AccountId
@@ -63,6 +83,12 @@ pub mod pallet {
   #[pallet::getter(fn proof_by_proof_id_and_account_id)]
   pub type ProofByProofIdAndAccountId<T: Config> =
     StorageDoubleMap<_, Blake2_128Concat, ProofId, Twox64Concat, T::AccountId, ProofRecord<T>, OptionQuery>;
+
+  /// Retrieve the ProofIds with the [`VerificationContext`]
+  #[pallet::storage]
+  #[pallet::getter(fn proof_ids_by_verification_context)]
+  pub type ProofIdsByVerificationContext<T: Config> =
+    StorageMap<_, Blake2_128Concat, VerificationContext, BoundedVec<ProofId, MaxProofsPerWorkflowGet<T>>, OptionQuery>;
 
   /// Amount of saved Proofs
   #[pallet::storage]
@@ -136,6 +162,9 @@ pub mod pallet {
       }
       ensure!(proof_validation.is_ok(), Error::<T>::BadRequest);
 
+      // Make sure VerificationContext is Unbounded for proofs created off-chain
+      let mut proof_data = proof_data;
+      proof_data.context = VerificationContext::Unbounded;
       let proof = Proof::new(proof_data);
 
       let workflow_id = proof.data.workflow_id.clone();
@@ -156,7 +185,7 @@ pub mod pallet {
       //   ensure!(false, Error::<T>::ProofWorkflowTypeMismatch);
       // }
 
-      // Proof exists?
+      // Proof exists?ProofByProofIdAndAccountId
       ensure!(
         !ProofByProofIdAndAccountId::<T>::contains_key(&proof_id, &sender),
         Error::<T>::ProofAlreadyClaimed

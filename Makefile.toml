@@ -4,17 +4,17 @@ default_to_workspace = false
 
 [tasks.docs]
 description = "Generate rust documentation (override to include all deps, all features). This will overwrite the default docs which is the part of `makers docs-flow` so you can safely use it. It accepst all arguments as docs would"
-args = ["doc", "--all-features", "${@}"]
+args        = ["doc", "--all-features", "${@}"]
 
 
 ##########################
 #####  TEST SECTION  #####
 ##########################
 [tasks.test]
-description = "Test the project in less verbose mode for all features. It accepst all arguments as nexttest crate would with partitions for the testing in parallel"
-command = "cargo"
+description   = "Test the project in less verbose mode for all features. It accepst all arguments as nexttest crate would with partitions for the testing in parallel"
+command       = "cargo"
 install_crate = true
-args = ["nextest", "run", "--all-features", "${@}"]
+args          = ["nextest", "run", "--all-features", "${@}"]
 
 
 [tasks.test-parallel]
@@ -27,83 +27,83 @@ args = [
 ]
 [tasks.test-with-release]
 command = "makers"
-args = ["test", "--release", "${@}"]
+args    = ["test", "--release", "${@}"]
 
 [tasks.test-operations]
 description = "Test `operations` pallet. This is using `makers test` to run"
-command = "makers"
-args = ["test", "-p", "operations", "${@}"]
+command     = "makers"
+args        = ["test", "-p", "operations", "${@}"]
 
 [tasks.test-poe]
 description = "Test `poe` pallet. This is using `makers test` to run"
-command = "makers"
-args = ["test", "-p", "poe", "${@}"]
+command     = "makers"
+args        = ["test", "-p", "poe", "${@}"]
 
 [tasks.test-statements]
 description = "Test `statements` pallet. This is using `makers test` to run"
-command = "makers"
-args = ["test", "-p", "statements", "${@}"]
+command     = "makers"
+args        = ["test", "-p", "statements", "${@}"]
 
 [tasks.test-workflows]
 description = "Test `workflows` pallet. This is using `makers test` to run"
-command = "makers"
-args = ["test", "-p", "workflows", "${@}"]
+command     = "makers"
+args        = ["test", "-p", "workflows", "${@}"]
 
 [tasks.test-anagolay-support]
 description = "Test `anagolay-support` pallet. This is using `makers test` to run"
-command = "makers"
-args = ["test", "-p", "anagolay-support", "${@}"]
+command     = "makers"
+args        = ["test", "-p", "anagolay-support", "${@}"]
 
 ## Run the tests with benchmarking turned on
 [tasks.test-benchmarking]
 description = "Execute unit and integration tests of a anagolay node with flags enabled for testing benchmarks."
-category = "anagolay"
-command = "makers"
-args = ["test", "--features", "runtime-benchmarks", "benchmarking", "${@}"]
+category    = "anagolay"
+command     = "makers"
+args        = ["test", "--features", "runtime-benchmarks", "benchmarking", "${@}"]
 
 
 ##########################
 
 
 [tasks.clean-anagolay]
-category = "anagolay"
+category    = "anagolay"
 description = "Remove generated artifact `anagolay`."
-command = "cargo"
-args = ["clean", "-p", "anagolay"]
+command     = "cargo"
+args        = ["clean", "-p", "anagolay"]
 
 [tasks.clean-all]
-category = "anagolay"
+category    = "anagolay"
 description = "Remove generated artifacts."
-command = "cargo"
-args = ["clean"]
+command     = "cargo"
+args        = ["clean"]
 
 [tasks.build]
-category = "anagolay"
+category    = "anagolay"
 description = "Compile the Anagolay runtime in debug mode. Accepts any valid build arguments."
-command = "cargo"
-args = ["build", "${@}"]
+command     = "cargo"
+args        = ["build", "${@}"]
 
 [tasks.build-production]
-condition = { profiles = ["production"] }
-category = "anagolay"
+condition   = { profiles = ["production"] }
+category    = "anagolay"
 description = "Compile the Anagolay runtime in release mode with  option and custom profile `production`. Accepts any valid build arguments."
-command = "cargo"
-args = ["build", "--locked", "--profile", "production", "${@}"]
+command     = "cargo"
+args        = ["build", "--locked", "--profile", "production", "${@}"]
 
 ## Build release with feature runtime-benchmarks
 [tasks.build-release-benchmarks]
-condition = { profiles = ["production"] }
-category = "anagolay"
+condition   = { profiles = ["production"] }
+category    = "anagolay"
 description = "Compile the Anagolay runtime in release mode with feature flag for benchmarks. "
-command = "cargo"
-args = ["build", "--locked", "--release", "--features", "runtime-benchmarks"]
+command     = "cargo"
+args        = ["build", "--locked", "--release", "--features", "runtime-benchmarks"]
 
 
 [tasks.chain-dev-purge]
-category = "anagolay"
+category    = "anagolay"
 description = "Purge the local chain database for debug build."
-command = "./target/debug/anagolay"
-args = ["purge-chain", "-y", "--dev"]
+command     = "./target/debug/anagolay"
+args        = ["purge-chain", "-y", "--dev"]
 
 [tasks.chain-dev-start]
 category = "anagolay"
@@ -117,13 +117,15 @@ args = [
   "error,runtime,info",
   "--rpc-external",
   "--unsafe-ws-external",
+  "--enable-offchain-indexing",
+  "/tmp",
 ]
 dependencies = ["build"]
 
 
 # Gitlab CI flow
 [tasks.ci-flow-light]
-category = "anagolay"
-description = "Experimental ci-flow which runs the checks in single run instead many."
-args = ["--release"]
+category     = "anagolay"
+description  = "Experimental ci-flow which runs the checks in single run instead many."
+args         = ["--release"]
 dependencies = ["check-format-flow", "test-with-release"]

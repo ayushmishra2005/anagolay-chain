@@ -510,16 +510,5 @@ pub enum WasmArtifactSubType {
   /// More info is on the
   /// [wasm-pack doc website](https://rustwasm.github.io/docs/wasm-bindgen/reference/deployment.html#without-a-bundler)
   /// and [wasm-bindgen](https://rustwasm.github.io/docs/wasm-bindgen/reference/browser-support.html)
-  /// # Example in Javascript
-  ///
-  /// ```javascript
-  /// import init, { execute } from './op-file'
-  /// async function main() {
-  ///   await init() //initialize wasm
-  ///   const e = execute([new Uint8Array(7)], new Map())
-  ///   console.log(e.decode());
-  /// }
-  /// main().catch(console.error)
-  /// ```
   Web,
 }

@@ -55,8 +55,8 @@ pub use sp_runtime::{Perbill, Permill};
 
 /// Constant values used within the runtime.
 pub mod constants;
-use constants::currency::*;
 pub use constants::*;
+use constants::{currency::*, time::*};
 
 /// Weights used in the runtime.
 pub mod weights;
@@ -64,20 +64,20 @@ pub mod weights;
 #[cfg(test)]
 mod tests;
 
-/// Importing a anagolay pallet
+/// Importing anagolay pallet
 pub use anagolay_support;
 
-/// Importing a operations pallet
+/// Importing operations pallet
 pub use operations;
 
-/// Importing a statements pallet
+/// Importing statements pallet
 pub use statements;
 
 /// Importing workflows pallet
 pub use workflows;
 
 use crate::constants::currency;
-/// Importing a poe pallet
+/// Importing poe pallet
 pub use poe;
 
 /// An index to a block.
@@ -138,29 +138,12 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
   //   `spec_version`, and `authoring_version` are the same between Wasm and native.
   // This value is set to 100 to notify Polkadot-JS App (https://polkadot.js.org/apps) to use
   //   the compatible custom types.
-  spec_version: 103,
+  spec_version: 106,
   impl_version: 1,
   apis: RUNTIME_API_VERSIONS,
   transaction_version: 1,
   state_version: 1,
 };
-
-/// This determines the average expected block time that we are targeting.
-/// Blocks will be produced at a minimum duration defined by `SLOT_DURATION`.
-/// `SLOT_DURATION` is picked up by `pallet_timestamp` which is in turn picked
-/// up by `pallet_aura` to implement `fn slot_duration()`.
-///
-/// Change this to adjust the block time.
-pub const MILLISECS_PER_BLOCK: u64 = 6000;
-
-// NOTE: Currently it is not possible to change the slot duration after the chain has started.
-//       Attempting to do so will brick block production.
-pub const SLOT_DURATION: u64 = MILLISECS_PER_BLOCK;
-
-// Time is measured by number of blocks.
-pub const MINUTES: BlockNumber = 60_000 / (MILLISECS_PER_BLOCK as BlockNumber);
-pub const HOURS: BlockNumber = MINUTES * 60;
-pub const DAYS: BlockNumber = HOURS * 24;
 
 /// The version information used to identify this runtime when compiled natively.
 #[cfg(feature = "std")]
@@ -282,7 +265,7 @@ impl pallet_balances::Config for Runtime {
   /// The ubiquitous event type.
   type Event = Event;
   type DustRemoval = ();
-  type ExistentialDeposit = ConstU128<500>;
+  type ExistentialDeposit = ConstU128<{ 10 * MILLI }>;
   type AccountStore = System;
   type WeightInfo = pallet_balances::weights::SubstrateWeight<Runtime>;
 }
@@ -496,6 +479,30 @@ impl workflows::Config for Runtime {
 impl poe::Config for Runtime {
   type Event = Event;
   type WeightInfo = poe::weights::AnagolayWeight<Runtime>;
+
+  const MAX_PROOFS_PER_WORKFLOW: u32 = 1;
+}
+
+impl verification::Config for Runtime {
+  type Event = Event;
+  type VerificationKeyGenerator = poe::types::PoeVerificationKeyGenerator<Runtime>;
+  type WeightInfo = verification::weights::AnagolayWeight<Runtime>;
+  type Currency = Balances;
+
+  const REGISTRATION_FEE: u128 = 1 * UNITS;
+}
+
+impl frame_system::offchain::SigningTypes for Runtime {
+  type Public = <Signature as sp_runtime::traits::Verify>::Signer;
+  type Signature = Signature;
+}
+
+impl<C> frame_system::offchain::SendTransactionTypes<C> for Runtime
+where
+  Call: From<C>,
+{
+  type OverarchingCall = Call;
+  type Extrinsic = UncheckedExtrinsic;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
@@ -529,6 +536,8 @@ construct_runtime!(
     Statements: statements::{Pallet, Call, Storage, Event<T>} = 16,
     Workflows: workflows::{Pallet, Call, Storage, Event<T>, Config<T>} = 17,
 
+    // Verification and Tipping
+    Verification: verification::{Pallet, Call, Storage, Event<T>, ValidateUnsigned} = 18,
   }
 );
 
@@ -575,6 +584,7 @@ mod benches {
     [poe, Poe]
     [statements, Statements]
     [workflows, Workflows]
+    [verification, Verification]
   );
 }
 

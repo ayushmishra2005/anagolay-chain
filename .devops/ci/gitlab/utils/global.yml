@@ -41,9 +41,13 @@
     - unset AWS_SECRET_ACCESS_KEY
     - mkdir -p .sccache
     - mkdir -p .cargo
+    - sccache --show-stats
     - DEBIAN_FRONTEND=noninteractive apt install -y tree zip unzip
     - bash .devops/ci/cachier/setup-cache.sh
     - bash .devops/ci/cachier/download-cache.sh
+    - sccache --stop-server &> /dev/null
+    - sccache --start-server &> /dev/null
+    - sccache --show-stats
   after_script:
     # - ""
     - bash .devops/ci/cachier/upload-cache.sh
@@ -77,6 +81,6 @@
     when: on_success
     expire_in: 2 hours
     paths:
-      - artifacts/
+      - ./artifacts/
   before_script:
     - mkdir -p ./artifacts

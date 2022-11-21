@@ -23,11 +23,54 @@ use super::*;
 use anagolay_support::{AnagolayStructureData, Characters};
 use core::convert::TryInto;
 use frame_benchmarking::{benchmarks, impl_benchmark_test_suite, whitelisted_caller};
+use frame_support::{sp_std::vec, BoundedVec};
 use frame_system::RawOrigin;
+use poe::{
+  constants::*,
+  types::{ProofId, *},
+};
 use types::*;
+use verification::types::*;
 
 #[allow(unused)]
 use crate::Pallet as Statements;
+
+fn mock_verification_context<T>(account: &T::AccountId, proof_id: ProofId) -> VerificationContext
+where
+  T: frame_system::Config + verification::Config + poe::Config,
+{
+  let context = VerificationContext::UrlForDomain("https://anagolay.network".into(), "anagolay.network".into());
+  let action = VerificationAction::DnsTxtRecord;
+  let request = VerificationRequest::<T> {
+    context: context.clone(),
+    action: action.clone(),
+    holder: account.clone(),
+    status: VerificationStatus::Success,
+    key: "anagolay-domain-verification=test".into(),
+    id: None,
+  };
+  let proof_record = ProofRecord::<T> {
+    account_id: account.clone(),
+    record: Proof {
+      id: proof_id.clone(),
+      data: ProofData {
+        context: context.clone(),
+        ..ProofData::default()
+      },
+      ..Proof::default()
+    },
+    block_number: T::BlockNumber::default(),
+  };
+  poe::pallet::ProofByProofIdAndAccountId::insert(proof_id.clone(), account.clone(), proof_record);
+  let proof_ids: BoundedVec<ProofId, MaxProofsPerWorkflowGet<T>> = vec![proof_id.clone()].try_into().unwrap();
+  poe::pallet::ProofIdsByVerificationContext::insert(context.clone(), proof_ids);
+  verification::pallet::VerificationRequestByAccountIdAndVerificationContext::insert(
+    account.clone(),
+    context.clone(),
+    request,
+  );
+  context
+}
 
 benchmarks! {
   create_copyright{
@@ -41,6 +84,8 @@ benchmarks! {
   create_ownership{
     //Initializing benchmark for Ownership Extrinsic
     let caller: T::AccountId = whitelisted_caller();
+    let _context = mock_verification_context::<T>(&caller, ProofId::default());
+
     let mut ownership_statement = StatementData::default();
     ownership_statement.claim.claim_type = ClaimType::Ownership;
     ownership_statement.signatures.holder.sig = frame_support::sp_std::vec![4, 162, 137, 242, 15, 129, 216, 106, 125, 59, 141, 17, 134, 176, 229, 224, 108, 11, 244, 151, 218, 201, 30, 104, 192, 84, 61, 109, 206, 151, 222, 63, 140, 244, 153, 184, 240, 163, 40, 0, 169, 52, 44, 42, 52, 254, 75, 210, 159, 237, 237, 98, 64, 129, 170, 176, 32, 36, 140, 231, 32, 128, 72, 140].try_into().unwrap();

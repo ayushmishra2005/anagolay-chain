@@ -1,5 +1,5 @@
 [package]
-authors      = ['did:substrate:GHm6gp6khjcxQvnbnSsHdYejsFK1nNVxcGyGAsbDfsymtLr']
+authors      = ['did:substrate:5Fn9SNUE8LihCm7Lq5dpPgBebGy5D7ZKWESDsWbdjsfV37d4']
 repository   = 'https://gitlab.com/anagolay/anagolay/'
 homepage     = 'https://anagolay.network/pallet/statements'
 edition      = '2018'
@@ -24,8 +24,10 @@ frame-benchmarking = { default-features = false, version = "4.0.0-dev", git = "h
 anagolay-support = { path = '../anagolay-support', default-features = false }
 poe              = { path = "../poe", default-features = false }
 workflows        = { path = "../workflows", default-features = false }
-serde            = { version = '1.0', features = ['derive'], optional = true }
-hex              = { version = '0.4.3', features = ["alloc"], default-features = false }
+verification     = { path = '../verification', default-features = false }
+
+serde = { version = '1.0', features = ['derive'], optional = true }
+hex   = { version = '0.4.3', features = ["alloc"], default-features = false }
 
 sp-core    = { default-features = false, version = "6.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
 sp-runtime = { default-features = false, version = "6.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }

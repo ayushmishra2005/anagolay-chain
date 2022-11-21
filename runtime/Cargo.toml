@@ -2,7 +2,7 @@
 name         = 'anagolay-runtime'
 version      = "4.0.0-dev"
 description  = "A substrate-based runtime for Anagolay Network"
-authors      = ['did:substrate:GHm6gp6khjcxQvnbnSsHdYejsFK1nNVxcGyGAsbDfsymtLr']
+authors      = ['did:substrate:5Fn9SNUE8LihCm7Lq5dpPgBebGy5D7ZKWESDsWbdjsfV37d4']
 homepage     = 'https://anagolay.network'
 edition      = '2021'
 license-file = "./LICENSE"
@@ -69,6 +69,8 @@ workflows        = { path = '../pallets/workflows', default-features = false }
 statements       = { path = '../pallets/statements', default-features = false }
 poe              = { path = '../pallets/poe', default-features = false }
 
+verification = { path = '../pallets/verification', default-features = false }
+
 [build-dependencies]
 substrate-wasm-builder = { version = "5.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
 
@@ -116,6 +118,7 @@ std = [
   'statements/std',
   'poe/std',
   'workflows/std',
+  'verification/std',
 ]
 runtime-benchmarks = [
   "frame-benchmarking/runtime-benchmarks",
@@ -134,6 +137,7 @@ runtime-benchmarks = [
   'poe/runtime-benchmarks',
   'workflows/runtime-benchmarks',
   'statements/runtime-benchmarks',
+  'verification/runtime-benchmarks',
 ]
 try-runtime = [
   "frame-executive/try-runtime",
@@ -153,4 +157,5 @@ try-runtime = [
   'poe/try-runtime',
   'workflows/try-runtime',
   'statements/try-runtime',
+  'verification/try-runtime',
 ]

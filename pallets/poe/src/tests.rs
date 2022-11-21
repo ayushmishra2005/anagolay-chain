@@ -20,10 +20,11 @@
 
 #![cfg(test)]
 use super::{mock::*, *};
-use crate::types::{ProofData, ProofId};
+use crate::types::{PoeVerificationKeyGenerator, ProofData, ProofId};
 use anagolay_support::{AnagolayArtifactStructure, AnagolayStructureData, ArtifactId};
 use core::convert::TryInto;
 use frame_support::{assert_noop, assert_ok, traits::UnixTime};
+use verification::types::{VerificationContext, VerificationKeyGenerator};
 use workflows::types::{
   Workflow, WorkflowArtifactType, WorkflowData, WorkflowId, WorkflowVersion, WorkflowVersionData, WorkflowVersionExtra,
   WorkflowVersionId,
@@ -31,7 +32,7 @@ use workflows::types::{
 
 const PERCEPTUAL_HASH: &[u8] = b"0x30303030303030303031313030303030303030303030303030303031313130303031313131313030313131313131313031313131313131313131313131313130303031313130303030303030303030303131313131313130303030303030303031313131313131313130303030303030313131313131313131313131313030303131313131313131313131313031313131313131313131313130313030313130313131303030303030303130303030303030303030303031303030303030303031313131313131313131313131313131313131313131313130303030303030303131313130303030303030303030303031313131303030303030303030303030";
 
-pub fn mock_request() -> (Workflow, WorkflowVersion) {
+fn mock_request() -> (Workflow, WorkflowVersion) {
   let wf = Workflow {
     id: WorkflowId::from("bafkr4ih2xmsije6aa6yfwjdfmztnnkbb6ip56g3ojfcyfgjx6jsh6bogoe"),
     data: WorkflowData {
@@ -81,6 +82,40 @@ fn proof_create_default() {
     assert_ok!(res);
   });
 }
+
+#[test]
+fn proof_create_for_verification_context() {
+  new_test_ext().execute_with(|| {
+    let holder = 1u64;
+    let context = VerificationContext::UrlForDomain("https://anagolay.network".into(), "anagolay.network".into());
+    let identifier = "//Aliceanagolay.network";
+
+    let key = PoeVerificationKeyGenerator::<Test>::generate(&holder, &context, identifier.as_bytes().to_vec()).unwrap();
+
+    let (proof_id, _account_id, proof_record) = ProofByProofIdAndAccountId::<Test>::iter().next().unwrap();
+    assert_eq!(
+      key,
+      proof_record
+        .record
+        .data
+        .params
+        .iter()
+        .next()
+        .unwrap()
+        .as_bytes()
+        .to_vec(),
+      "Proof key does not correspond to the generated one"
+    );
+
+    let proofs_by_context = ProofIdsByVerificationContext::<Test>::get(context).unwrap();
+    assert_eq!(
+      proofs_by_context.into_iter().next().unwrap(),
+      proof_id,
+      "Proof id was not associated to the VerificationContext"
+    );
+  });
+}
+
 #[test]
 fn proof_error_on_duplicate() {
   new_test_ext().execute_with(|| {
