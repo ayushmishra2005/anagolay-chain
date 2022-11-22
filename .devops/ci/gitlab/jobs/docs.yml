@@ -12,6 +12,7 @@ build-docs-upload-to-ipfs:
   before_script:
     - !reference [.with-local-cachier, before_script]
     - !reference [.with-ipfs-cli, before_script]
+    - !reference [.info-compiler, before_script]
   cache:
     policy: pull
   script:
@@ -21,7 +22,7 @@ build-docs-upload-to-ipfs:
     - time makers docs-flow
 
     - echo "Uploading to IPFS ..."
-    - ipfsCli add --pin --onlyCid docs/api  > ANAGOLAY_DOCS_CID
+    - ./ipfsCli add --pin --onlyCid docs/api  > ANAGOLAY_DOCS_CID
     - echo "Published with the CID - $(cat ANAGOLAY_DOCS_CID)"
     - echo "https://$(cat ANAGOLAY_DOCS_CID).ipfs.anagolay.network/anagolay/index.html"
     - sccache --show-stats
