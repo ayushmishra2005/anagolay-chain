@@ -1,18 +1,20 @@
 ## Definition
 
+Up-to-date docs are on https://anagolay.dev/docs/anagolay/verification/
+
 This pallet’s responsibility is to keep records of the verified items and their proofs to know how to handle different types of verification processes and how to store them. There can be any number of Strategies implemented to handle several different verification scenarios. In the following description, we’ll speak of DNS verification, but the same procedure applies similarly to other verification strategies as well.
 
-Alice, the verification holder, requests the verification providing the appropriate context (domain, subdomain…) and action (update DNS TXT record, well-known ACME challenge...), and the request is stored on the chain with `Waiting` status. A registration fee is also reserved on Alice's account: she can claim it back later updating the verification status to `Failed` when the identity ownership is revoked, or else this will be the bounty that other users can claim if, at any point in time, they verify that Alice’s domain no longer contains the correct DNS TXT and she neglected to update the verification status herself. Meanwhile, Alice has received the instructions for the verification challenge, for example: putting a specific key in a DNS TXT record and being sure it stays there as long as the verification needs to be valid.
+Alice, the verification holder, requests the verification providing the appropriate context (domain, subdomain…) and action (update DNS TXT record, well-known ACME challenge...), and the request is stored on the chain with `Waiting` status. A registration fee is also reserved on Alice's account: she can claim it back later by updating the verification status to `Failed` when the identity ownership is revoked, or else this will be the bounty that other users can claim if, at any point in time, they verify that Alice’s domain no longer contains the correct DNS TXT and she neglected to update the verification status herself. Meanwhile, Alice has received the instructions for the verification challenge, for example: putting a specific key in a DNS TXT record and being sure it stays there as long as the verification needs to be valid.
 
-Having done so, due to DNS propagation, the process can halt and DoH (DNS over HTTPS) queries can be performed off-chain before the `perform_verification` extrinsic is called, because this call will incur transaction costs. When the DNS propagation happened, process can resume. Other verification strategies may be more or less immediate.
+Having done so, due to DNS propagation, the process can halt and DoH (DNS over HTTPS) queries can be performed off-chain before the `perform_verification` extrinsic is called because this call will incur transaction costs. When the DNS propagation happened, the process can resume. Other verification strategies may be more or less immediate.
 
 Any verifier account, even different from the holder, can call `perform_verification` at any time to update the state of the request to `Pending`, signaling to the off-chain worker that, on its next execution, the challenge must be verified. If the verification status is already `Failed`, however, the call to perform verification will result in an error since the verification must be requested again from the holder in order to pay the registration fee.
 
-At execution of the off-chain worker, the appropriate verification strategy is instantiated, `DNSVerificationStrategy` in our case. It performs a call to the DNS resolve provider to verify the presence and the exactness of the aforementioned key. The `VerificationRequest` is then updated on chain with the call to a local unsigned extrinsic to store the appropriate status; `Success` or `Failure`. If the verification fails, the registration fee is attributed to the verifier account, which is the origin of the call to perform verification, in appreciation of the behavior of external actors that validate that `VerificationRequest` validity is not expired, or for the holder to claim back the registration fee.
+At an execution of the off-chain worker, the appropriate verification strategy is instantiated, `DNSVerificationStrategy` in our case. It performs a call to the DNS resolve provider to verify the presence and the exactness of the aforementioned key. The `VerificationRequest` is then updated on a chain with the call to a local unsigned extrinsic to store the appropriate status; `Success` or `Failure`. If the verification fails, the registration fee is attributed to the verifier account, which is the origin of the call to perform verification, in appreciation of the behavior of external actors that validate that `VerificationRequest` validity is not expired, or for the holder to claim back the registration fee.
 
 **Configuration**
 
-The runtime need to configure the verification pallet as follows:
+The runtime needs to configure the verification pallet as follows:
 
 ```rust
   impl verification::Config for Runtime {
@@ -30,7 +32,7 @@ The runtime need to configure the verification pallet as follows:
   }
 ```
 
-Also, the standard definitions to allow unsigned local transactions from off-chain worker must be present:
+Also, the standard definitions to allow unsigned local transactions from off-chain workers must be present:
 
 ```rust
 

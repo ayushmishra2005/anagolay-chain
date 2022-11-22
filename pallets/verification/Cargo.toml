@@ -4,11 +4,11 @@ authors = [
   'did:substrate:5EHkcDMhHgwW7V4GR4Us4dhkPkP9f2k71kdSVbzzzpNsHsYo',
 ]
 repository = 'https://gitlab.com/anagolay/anagolay/'
-homepage = 'https://anagolay.network/pallet/operations'
+homepage = 'https://anagolay.network/pallet/verification'
 edition = '2018'
 license-file = "./LICENSE"
 name = 'verification'
-version = '0.3.0'
+version = '0.1.0'
 
 [package.metadata.docs.rs]
 targets = ["x86_64-unknown-linux-gnu"]
@@ -28,9 +28,9 @@ sp-core    = { default-features = false, version = "6.0.0", git = "https://githu
 sp-io      = { default-features = false, version = "6.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
 sp-runtime = { default-features = false, version = "6.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
 
-serde               = { version = '1.0', features = ['derive'], optional = true }
-lite-json           = { version = "0.1", default-features = false }
-hex = { version = "0.4.3", default-features = false}
+serde     = { version = '1.0', features = ['derive'], optional = true }
+lite-json = { version = "0.1", default-features = false }
+hex       = { version = "0.4.3", default-features = false }
 
 [dev-dependencies]
 pallet-balances = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }

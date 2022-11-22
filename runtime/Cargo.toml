@@ -1,6 +1,6 @@
 [package]
 name         = 'anagolay-runtime'
-version      = "4.0.0-dev"
+version      = "0.3.0"
 description  = "A substrate-based runtime for Anagolay Network"
 authors      = ['did:substrate:5Fn9SNUE8LihCm7Lq5dpPgBebGy5D7ZKWESDsWbdjsfV37d4']
 homepage     = 'https://anagolay.network'
