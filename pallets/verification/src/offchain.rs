@@ -10,7 +10,7 @@ use frame_system::offchain::SubmitTransaction;
 /// Internal implementation of the verification pallet, this module is grouping the off-chain
 /// functionality
 impl<T: Config> Pallet<T> {
-  /// Offchain process of [`VerificationIndexData`]. Runs only for `Pending` requests and
+  /// Offchain process of `VerificationIndexData`. Runs only for `Pending` requests and
   /// invokes the appropriate verification strategy
   ///
   /// # Arguments

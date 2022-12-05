@@ -134,6 +134,10 @@ pub mod pallet {
     /// The key generator used to produce the verification key
     type VerificationKeyGenerator: VerificationKeyGenerator<Self>;
 
+    /// The callback that allows to perform some operation when a verification turns out to be no
+    /// longer valid
+    type VerificationInvalidator: VerificationInvalidator<Self>;
+
     /// Currency that allows to lock the registration fee
     type Currency: ReservableCurrency<Self::AccountId>;
 
@@ -172,6 +176,13 @@ pub mod pallet {
     }
   }
 
+  /// The map of verification contexts indexed by the account id of the holder of the
+  /// correspondent verification request
+  #[pallet::storage]
+  #[pallet::getter(fn verification_context_by_account_id)]
+  pub type VerificationContextByAccountId<T: Config> =
+    StorageMap<_, Blake2_128Concat, VerificationContext, T::AccountId, OptionQuery>;
+
   /// The map of verification requests indexed by the account id of the holder and the
   /// associated verification context
   #[pallet::storage]
@@ -182,7 +193,7 @@ pub mod pallet {
     T::AccountId,
     Twox64Concat,
     VerificationContext,
-    VerificationRequest<T>,
+    VerificationRequest<T::AccountId>,
     OptionQuery,
   >;
 
@@ -195,6 +206,8 @@ pub mod pallet {
     CannotReserveRegistrationFee,
     /// The verification key generation failed
     VerificationKeyGenerationError,
+    /// The verification invalidation callback failed
+    VerificationInvalidationError,
     /// No registered [`VerificationStrategy'] could match the request
     NoMatchingVerificationStrategy,
     /// The [`VerificationRequest'] is expected to be stored for the given [`VerificationContext`]
@@ -212,12 +225,12 @@ pub mod pallet {
   pub enum Event<T: Config> {
     /// Produced upon newly requested verification to communicate to the holder the key to use for
     /// the agreed action or that the verification is ongoing
-    VerificationRequested(T::AccountId, VerificationRequest<T>),
+    VerificationRequested(T::AccountId, VerificationRequest<T::AccountId>),
     /// Produced upon successful verification
-    VerificationSuccessful(T::AccountId, VerificationRequest<T>),
+    VerificationSuccessful(T::AccountId, VerificationRequest<T::AccountId>),
     /// Produced upon failed verification, intended to be received by both the verifier and the
     /// holder, also provides a textual explaination of what went wrong
-    VerificationFailed(T::AccountId, T::AccountId, VerificationRequest<T>, Bytes),
+    VerificationFailed(T::AccountId, T::AccountId, VerificationRequest<T::AccountId>, Bytes),
   }
 
   #[pallet::call]
@@ -271,7 +284,12 @@ pub mod pallet {
 
       // Use the strategy to create a new pending request
       let request = strategy.new_request(holder.clone(), context.clone(), action)?;
-      VerificationRequestByAccountIdAndVerificationContext::<T>::insert(holder.clone(), context, request.clone());
+      VerificationRequestByAccountIdAndVerificationContext::<T>::insert(
+        holder.clone(),
+        context.clone(),
+        request.clone(),
+      );
+      VerificationContextByAccountId::<T>::insert(context, holder.clone());
 
       // Emit an event that the verification request is awaiting action
       Self::deposit_event(Event::VerificationRequested(holder, request));
@@ -305,7 +323,10 @@ pub mod pallet {
     /// # Return
     /// `DispatchResultWithPostInfo` containing Unit type
     #[pallet::weight(<T as Config>::WeightInfo::perform_verification())]
-    pub fn perform_verification(origin: OriginFor<T>, request: VerificationRequest<T>) -> DispatchResultWithPostInfo {
+    pub fn perform_verification(
+      origin: OriginFor<T>,
+      request: VerificationRequest<T::AccountId>,
+    ) -> DispatchResultWithPostInfo {
       let verifier = ensure_signed(origin)?;
       let current_block = <frame_system::Pallet<T>>::block_number();
 
@@ -334,7 +355,7 @@ pub mod pallet {
       // Insert the request in the off-chain indexed database for further processing by the off-chain
       // worker
       let key = derived_key::<T>(current_block);
-      let data = VerificationIndexingData {
+      let data = VerificationIndexingData::<T> {
         verifier: verifier.clone(),
         request: stored_request.clone(),
       };
@@ -417,6 +438,9 @@ pub mod pallet {
               },
             )?;
           }
+
+          // Callback to the generator in order to notify the invalidation of the key
+          T::VerificationInvalidator::invalidate(&stored_request)?;
 
           // Emit an event that the verification is failed
           Self::deposit_event(Event::VerificationFailed(

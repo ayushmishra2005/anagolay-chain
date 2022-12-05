@@ -29,11 +29,11 @@ fn mock_request<T>(
   holder: T::AccountId,
   context: VerificationContext,
   action: VerificationAction,
-) -> VerificationRequest<T>
+) -> VerificationRequest<T::AccountId>
 where
   T: crate::Config,
 {
-  VerificationRequest::<T> {
+  VerificationRequest::<T::AccountId> {
     context,
     action,
     holder,
@@ -51,7 +51,8 @@ fn request_verification_error_on_context_submitted_twice() {
 
     let context = VerificationContext::UrlForDomain("https://anagolay.network".into(), "anagolay.network".into());
     let action = VerificationAction::DnsTxtRecord;
-    let request: VerificationRequest<Test> = mock_request::<Test>(holder.clone(), context.clone(), action.clone());
+    let request: VerificationRequest<<Test as frame_system::Config>::AccountId> =
+      mock_request::<Test>(holder.clone(), context.clone(), action.clone());
 
     VerificationRequestByAccountIdAndVerificationContext::<Test>::insert(holder, context.clone(), request);
 
@@ -170,7 +171,8 @@ fn perform_verification_error_no_such_verification_request() {
 
     let context = VerificationContext::UrlForDomain("https://anagolay.network".into(), "anagolay.network".into());
     let action = VerificationAction::DnsTxtRecord;
-    let request: VerificationRequest<Test> = mock_request::<Test>(holder.clone(), context.clone(), action.clone());
+    let request: VerificationRequest<<Test as frame_system::Config>::AccountId> =
+      mock_request::<Test>(holder.clone(), context.clone(), action.clone());
 
     let res = VerificationTest::perform_verification(origin, request);
     assert_noop!(res, Error::<Test>::NoSuchVerificationRequest);
@@ -185,7 +187,8 @@ fn perform_verification_error_invalid_verification_status() {
 
     let context = VerificationContext::UrlForDomain("https://anagolay.network".into(), "anagolay.network".into());
     let action = VerificationAction::DnsTxtRecord;
-    let mut request: VerificationRequest<Test> = mock_request::<Test>(holder.clone(), context.clone(), action.clone());
+    let mut request: VerificationRequest<<Test as frame_system::Config>::AccountId> =
+      mock_request::<Test>(holder.clone(), context.clone(), action.clone());
     request.status = VerificationStatus::Failure("anything".into());
     VerificationRequestByAccountIdAndVerificationContext::<Test>::insert(holder, context.clone(), request.clone());
 
@@ -207,7 +210,8 @@ fn perform_verification_domain_verification_from_non_holder() {
     let context = VerificationContext::UrlForDomain("https://anagolay.network".into(), "anagolay.network".into());
     let action = VerificationAction::DnsTxtRecord;
 
-    let mut request: VerificationRequest<Test> = mock_request::<Test>(holder.clone(), context.clone(), action.clone());
+    let mut request: VerificationRequest<<Test as frame_system::Config>::AccountId> =
+      mock_request::<Test>(holder.clone(), context.clone(), action.clone());
     VerificationRequestByAccountIdAndVerificationContext::<Test>::insert(holder, context.clone(), request.clone());
 
     request.id = Some("not used".into());
@@ -289,7 +293,8 @@ fn perform_verification_domain_offchain_process() {
     let context = VerificationContext::UrlForDomain("https://anagolay.network".into(), "anagolay.network".into());
     let action = VerificationAction::DnsTxtRecord;
 
-    let mut request: VerificationRequest<Test> = mock_request::<Test>(holder.clone(), context.clone(), action.clone());
+    let mut request: VerificationRequest<<Test as frame_system::Config>::AccountId> =
+      mock_request::<Test>(holder.clone(), context.clone(), action.clone());
     request.status = VerificationStatus::Pending;
 
     let data = VerificationIndexingData {
@@ -336,7 +341,8 @@ fn perform_submit_verification_status_failure_from_non_holder() {
     let context = VerificationContext::UrlForDomain("https://anagolay.network".into(), "anagolay.network".into());
     let action = VerificationAction::DnsTxtRecord;
 
-    let request: VerificationRequest<Test> = mock_request::<Test>(holder.clone(), context.clone(), action.clone());
+    let request: VerificationRequest<<Test as frame_system::Config>::AccountId> =
+      mock_request::<Test>(holder.clone(), context.clone(), action.clone());
     VerificationRequestByAccountIdAndVerificationContext::<Test>::insert(holder, context.clone(), request.clone());
 
     let data = VerificationIndexingData {

@@ -3,6 +3,7 @@
 // Copyright (C) 2019-2022 Anagolay Network.
 
 use codec::{Decode, Encode};
+use core::fmt::Debug;
 use frame_support::{pallet_prelude::*, sp_runtime::RuntimeDebug, sp_std::vec::Vec};
 /// Module containing types used for off-chain processing
 pub mod offchain {
@@ -20,7 +21,7 @@ pub mod offchain {
     /// The caller of perform verification extrinsic
     pub verifier: T::AccountId,
     /// The [`VerificationRequest`] to process
-    pub request: VerificationRequest<T>,
+    pub request: VerificationRequest<T::AccountId>,
   }
 }
 
@@ -83,13 +84,13 @@ pub enum VerificationContext {
   /// No context to verify
   #[default]
   Unbounded,
-  /// URL, Domain - e.g: https://anagolay.network
+  /// URL, Domain - e.g: <https://anagolay.network>
   UrlForDomain(Bytes, Bytes),
-  /// URL, Domain, Username - e.g: https://github.com/anagolay/
+  /// URL, Domain, Username - e.g: <https://github.com/anagolay>
   UrlForDomainWithUsername(Bytes, Bytes, Bytes),
-  /// URL, Domain, Subdomain - e.g: https://app.anagolay.network
+  /// URL, Domain, Subdomain - e.g: <https://app.anagolay.network>
   UrlForDomainWithSubdomain(Bytes, Bytes, Bytes),
-  /// URL, Domain, Username, Repository - e.g: https://github.com/anagolay/anagolay-chain
+  /// URL, Domain, Username, Repository - e.g: <https://github.com/anagolay/anagolay-chain>
   UrlForDomainWithUsernameAndRepository(Bytes, Bytes, Bytes, Bytes),
 }
 
@@ -106,11 +107,11 @@ pub enum VerificationAction {
 /// state of a verification request.
 ///
 /// # Type arguments
-/// - T: the runtime `Config`
+/// - AccountId: the `AccountId` type from the runtime `Config`
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebugNoBound, MaxEncodedLen, TypeInfo)]
 #[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
-#[scale_info(skip_type_params(T))]
-pub struct VerificationRequest<T: frame_system::Config> {
+#[scale_info(skip_type_params(AccountId))]
+pub struct VerificationRequest<AccountId: Debug> {
   /// The context of the verification, for instance a domain
   pub context: VerificationContext,
   /// An indication of the action that the holder must perform to pass verification
@@ -118,7 +119,7 @@ pub struct VerificationRequest<T: frame_system::Config> {
   /// The current state of the request
   pub status: VerificationStatus,
   /// The holder of the verification
-  pub holder: T::AccountId,
+  pub holder: AccountId,
   /// Contains a challenge string. This is in complete control of the invoked Strategy
   pub key: Bytes,
   /// The feedback from the holder pointing at the exact place where the verification should happen
@@ -141,7 +142,8 @@ impl<T: crate::Config> VerificationKeyGenerator<T> for NaiveVerificationKeyGener
   /// * identifier - The identifier to use for the hakey generationsh
   ///
   /// # Return
-  /// The hex encoded identifier in the form of a collection of utf8 bytes
+  /// Result having hex encoded identifier in the form of a collection of utf8 bytes if ok, an Error
+  /// otherwise
   fn generate(
     _holder: &T::AccountId,
     _context: &VerificationContext,
@@ -155,14 +157,34 @@ impl<T: crate::Config> VerificationKeyGenerator<T> for NaiveVerificationKeyGener
   }
 }
 
+/// Default implementation for the verification invalidator
+#[derive(Clone)]
+pub struct NaiveVerificationInvalidator<T: crate::Config> {
+  _marker: PhantomData<T>,
+}
+
+impl<T: crate::Config> VerificationInvalidator<T> for NaiveVerificationInvalidator<T> {
+  /// Called when a verification request turns out to be no longer valid
+  ///
+  /// # Arguments
+  /// * request - The verification request
+  ///
+  /// # Return
+  /// Result having the unit type if ok, an Error otherwise
+  fn invalidate(_request: &VerificationRequest<T::AccountId>) -> Result<(), crate::Error<T>> {
+    Ok(())
+  }
+}
+
 /// A trait that mimics the behavior of verification strategies on a VerificationContext trait,
 /// providing the common methods
 ///
 /// # Type arguments
 /// - Config: the runtime `Config`
+/// - VerificationError: the type of error that can arise in verification
 pub trait VerificationStrategy: Clone {
   type Config: frame_system::Config;
-  type VerificationError: core::fmt::Debug;
+  type VerificationError: Debug;
 
   /// Creates a new [`VerificationRequest`]
   ///
@@ -178,7 +200,7 @@ pub trait VerificationStrategy: Clone {
     holder: <Self::Config as frame_system::Config>::AccountId,
     context: VerificationContext,
     action: VerificationAction,
-  ) -> Result<VerificationRequest<Self::Config>, crate::Error<Self::Config>>;
+  ) -> Result<VerificationRequest<<Self::Config as frame_system::Config>::AccountId>, crate::Error<Self::Config>>;
 
   /// Defines whether a [`VerificationContext`] is supported or not
   ///
@@ -197,12 +219,14 @@ pub trait VerificationStrategy: Clone {
   ///
   /// # Return
   /// A `VerificationStatus` resulting from the verification
-  fn verify(&self, request: &VerificationRequest<Self::Config>) -> Result<VerificationStatus, Self::VerificationError>;
+  fn verify(
+    &self,
+    request: &VerificationRequest<<Self::Config as frame_system::Config>::AccountId>,
+  ) -> Result<VerificationStatus, Self::VerificationError>;
 }
 
-/// A trait that mimics the behavior of a key generator. The default implementation uses an
-/// Anagolay workflow to generate a cid out of an identifier (usually the concatenation of some
-/// strategy-related information and the verification holder account). However, the pallet
+/// A trait that mimics the behavior of a key generator. The default implementation
+/// [`NaiveVerificationKeyGenerator`] produces an hexadecimal 2 characters key. However, the pallet
 /// configuration allow to define another implementation of this trait so that the key generation
 /// can be tweaked.
 ///
@@ -223,4 +247,22 @@ pub trait VerificationKeyGenerator<T: frame_system::Config>: Clone {
     context: &VerificationContext,
     identifier: Vec<u8>,
   ) -> Result<Vec<u8>, crate::Error<T>>;
+}
+
+/// A trait that allows to define a callback whenever a [`VerificationRequest`] is invalidated.
+/// The default implementation [`NaiveVerificationInvalidator`] performs no operation. However, the
+/// pallet configuration allow to define another implementation of this trait so that invalidation
+/// can be tweaked.
+///
+/// # Type arguments
+/// - T: the runtime `Config`
+pub trait VerificationInvalidator<T: frame_system::Config>: Clone {
+  /// Called when a verification request turns out to be no longer valid
+  ///
+  /// # Arguments
+  /// * request - The verification request
+  ///
+  /// # Return
+  /// Result having the unit type if ok, an Error otherwise
+  fn invalidate(request: &VerificationRequest<T::AccountId>) -> Result<(), crate::Error<T>>;
 }

@@ -32,6 +32,7 @@ use std::{
   convert::{TryFrom, TryInto},
   time::Duration,
 };
+use verification::types::NaiveVerificationInvalidator;
 
 type Extrinsic = TestXt<Call, ()>;
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
@@ -86,6 +87,7 @@ impl frame_system::Config for Test {
 impl verification::Config for Test {
   type Event = ();
   type VerificationKeyGenerator = PoeVerificationKeyGenerator<Self>;
+  type VerificationInvalidator = NaiveVerificationInvalidator<Self>;
   type WeightInfo = ();
   type Currency = ();
 

@@ -83,6 +83,7 @@ impl pallet_balances::Config for Test {
 impl Config for Test {
   type Event = Event;
   type VerificationKeyGenerator = NaiveVerificationKeyGenerator<Self>;
+  type VerificationInvalidator = NaiveVerificationInvalidator<Self>;
   type WeightInfo = ();
   type Currency = Balances;
 

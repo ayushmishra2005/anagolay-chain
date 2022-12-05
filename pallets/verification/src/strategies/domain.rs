@@ -137,16 +137,18 @@ impl<T: crate::Config> VerificationStrategy for DnsVerificationStrategy<T> {
     holder: <Self::Config as frame_system::Config>::AccountId,
     context: VerificationContext,
     action: VerificationAction,
-  ) -> Result<VerificationRequest<Self::Config>, crate::Error<T>> {
+  ) -> Result<VerificationRequest<<Self::Config as frame_system::Config>::AccountId>, crate::Error<T>> {
     let key = self.produce_key(&holder, &context)?;
-    Ok(VerificationRequest::<Self::Config> {
-      context,
-      action,
-      holder,
-      status: VerificationStatus::Waiting,
-      key,
-      id: None,
-    })
+    Ok(
+      VerificationRequest::<<Self::Config as frame_system::Config>::AccountId> {
+        context,
+        action,
+        holder,
+        status: VerificationStatus::Waiting,
+        key,
+        id: None,
+      },
+    )
   }
 
   /// Defines whether a [`VerificationContext`] is supported or not
@@ -174,7 +176,10 @@ impl<T: crate::Config> VerificationStrategy for DnsVerificationStrategy<T> {
   ///
   /// # Return
   /// A `VerificationStatus` resulting from the verification
-  fn verify(&self, request: &VerificationRequest<Self::Config>) -> Result<VerificationStatus, Self::VerificationError> {
+  fn verify(
+    &self,
+    request: &VerificationRequest<<Self::Config as frame_system::Config>::AccountId>,
+  ) -> Result<VerificationStatus, Self::VerificationError> {
     // Perform a DNS over HTTPS resolution to retrieve the TXT records of the domain
     let get = match &request.context {
       VerificationContext::UrlForDomain(_, domain) | VerificationContext::UrlForDomainWithSubdomain(_, domain, _) => {

@@ -486,6 +486,7 @@ impl poe::Config for Runtime {
 impl verification::Config for Runtime {
   type Event = Event;
   type VerificationKeyGenerator = poe::types::PoeVerificationKeyGenerator<Runtime>;
+  type VerificationInvalidator = statements::types::StatementsVerificationInvalidator<Runtime>;
   type WeightInfo = verification::weights::AnagolayWeight<Runtime>;
   type Currency = Balances;
 
@@ -750,6 +751,17 @@ impl_runtime_apis! {
       limit: u16,
     ) -> Vec<workflows::types::WorkflowVersion> {
       Workflows::get_workflow_versions_by_ids(workflow_version_ids, offset, limit)
+    }
+  }
+
+  impl verification_rpc_runtime_api::VerificationApi<Block, AccountId> for Runtime {
+    fn get_requests(
+      contexts: Vec<verification::types::VerificationContext>,
+      status: Option<verification::types::VerificationStatus>,
+      offset: u64,
+      limit: u16,
+    ) -> Vec<verification::types::VerificationRequest<AccountId>> {
+      Verification::get_requests(contexts, status, offset, limit)
     }
   }
 
