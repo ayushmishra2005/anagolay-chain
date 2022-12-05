@@ -21,7 +21,7 @@
 #![cfg(test)]
 
 use crate as statements;
-use crate::Config;
+use crate::{types::StatementsVerificationInvalidator, Config};
 use frame_support::parameter_types;
 use sp_core::{sr25519, H256};
 use sp_runtime::{
@@ -87,6 +87,7 @@ impl frame_system::Config for Test {
 impl verification::Config for Test {
   type Event = ();
   type VerificationKeyGenerator = NaiveVerificationKeyGenerator<Self>;
+  type VerificationInvalidator = StatementsVerificationInvalidator<Self>;
   type WeightInfo = ();
   type Currency = ();
 

@@ -21,7 +21,7 @@
 #![cfg(test)]
 
 use super::{mock::*, *};
-use crate::types::{Claim, ClaimType, StatementData, StatementId};
+use crate::types::{Claim, ClaimType, StatementData, StatementId, StatementsVerificationInvalidator};
 use anagolay_support::{AnagolayStructureData, Characters};
 use codec::Encode;
 use core::convert::TryInto;
@@ -29,6 +29,7 @@ use frame_support::{assert_noop, assert_ok, sp_std::vec, BoundedVec};
 use poe::{
   constants::*,
   types::{ProofId, *},
+  ProofIdsByVerificationContext,
 };
 use sp_core::{sr25519, Pair};
 use verification::types::*;
@@ -38,7 +39,7 @@ fn mock_account(ss58: &str) -> sr25519::Public {
   pair.public()
 }
 
-fn mock_verification_context<T>(proof_id: ProofId) -> VerificationContext
+fn mock_verification_request<T>(proof_id: ProofId) -> VerificationRequest<T::AccountId>
 where
   T: frame_system::Config<AccountId = sp_core::sr25519::Public, Origin = Origin, BlockNumber = u64>
     + verification::Config
@@ -47,7 +48,7 @@ where
   let account = mock_account("//Alice");
   let context = VerificationContext::UrlForDomain("https://anagolay.network".into(), "anagolay.network".into());
   let action = VerificationAction::DnsTxtRecord;
-  let request = VerificationRequest::<T> {
+  let request = VerificationRequest::<T::AccountId> {
     context: context.clone(),
     action: action.clone(),
     holder: account,
@@ -70,8 +71,13 @@ where
   poe::pallet::ProofByProofIdAndAccountId::insert(proof_id.clone(), account, proof_record);
   let proof_ids: BoundedVec<ProofId, MaxProofsPerWorkflowGet<T>> = vec![proof_id.clone()].try_into().unwrap();
   poe::pallet::ProofIdsByVerificationContext::insert(context.clone(), proof_ids);
-  verification::pallet::VerificationRequestByAccountIdAndVerificationContext::insert(account, context.clone(), request);
-  context
+  verification::pallet::VerificationRequestByAccountIdAndVerificationContext::<T>::insert(
+    account,
+    context.clone(),
+    request.clone(),
+  );
+  verification::pallet::VerificationContextByAccountId::<T>::insert(context.clone(), account);
+  request
 }
 
 fn sign_statement(statement_data: &mut StatementData) {
@@ -92,7 +98,7 @@ fn sign_statement(statement_data: &mut StatementData) {
 fn statements_create_ownership() {
   new_test_ext().execute_with(|| {
     let account = mock_account("//Alice");
-    let _context = mock_verification_context::<Test>(ProofId::default());
+    let _request = mock_verification_request::<Test>(ProofId::default());
     let mut r = StatementData::default();
     r.claim.claim_type = ClaimType::Ownership;
     sign_statement(&mut r);
@@ -105,7 +111,7 @@ fn statements_create_ownership() {
 fn statements_create_ownership_error_on_duplicate() {
   new_test_ext().execute_with(|| {
     let account = mock_account("//Alice");
-    let _context = mock_verification_context::<Test>(ProofId::default());
+    let _request = mock_verification_request::<Test>(ProofId::default());
     let mut r = StatementData::default();
     r.claim.claim_type = ClaimType::Ownership;
     sign_statement(&mut r);
@@ -121,7 +127,7 @@ fn statements_create_ownership_error_on_duplicate() {
 fn statements_create_ownership_wrong_claim_type() {
   new_test_ext().execute_with(|| {
     let account = mock_account("//Alice");
-    let _context = mock_verification_context::<Test>(ProofId::default());
+    let _request = mock_verification_request::<Test>(ProofId::default());
     let mut r = StatementData::default();
     sign_statement(&mut r);
 
@@ -158,7 +164,7 @@ fn copyright_create_child() {
 fn ownership_create_child() {
   new_test_ext().execute_with(|| {
     let account = mock_account("//Alice");
-    let _context = mock_verification_context::<Test>(ProofId::default());
+    let _request = mock_verification_request::<Test>(ProofId::default());
     let mut r = StatementData::default();
     r.claim.prev_id = Some(StatementId::from("my-fake-vec-id"));
     r.claim.claim_type = ClaimType::Ownership;
@@ -199,7 +205,7 @@ fn statements_create_error_on_proof_has_statements() {
     let res_first = TestStatements::create_copyright(mock::Origin::signed(account), r.clone());
     assert_ok!(res_first);
 
-    let _context = mock_verification_context::<Test>(ProofId::from("my-fake-proof-id"));
+    let _request = mock_verification_request::<Test>(ProofId::from("my-fake-proof-id"));
     let s = StatementData {
       claim: Claim {
         poe_id: ProofId::from("my-fake-proof-id"),
@@ -285,6 +291,39 @@ fn statements_revoke_statement_has_child_statements() {
     let res = TestStatements::revoke(mock::Origin::signed(account), s_id);
 
     assert_noop!(res, Error::<Test>::StatementHasChildStatement);
+  });
+}
+
+#[test]
+fn statements_revoke_for_verification_context_invalid() {
+  new_test_ext().execute_with(|| {
+    let holder = mock_account("//Alice");
+    let proof_id = ProofId::default();
+    let request = mock_verification_request::<Test>(proof_id.clone());
+    let mut r = StatementData::default();
+    r.claim.claim_type = ClaimType::Ownership;
+    sign_statement(&mut r);
+
+    let res = TestStatements::create_ownership(mock::Origin::signed(holder), r.clone());
+    assert_ok!(res);
+
+    let statement_ids = StatementIdsByProofId::<Test>::get(&proof_id.clone());
+    assert_eq!(
+      statement_ids.into_iter().next().unwrap(),
+      r.to_cid(),
+      "Statement was not associated to the Proof of the VerificationContext"
+    );
+
+    StatementsVerificationInvalidator::<Test>::invalidate(&request).unwrap();
+
+    let proofs_by_context = ProofIdsByVerificationContext::<Test>::get(request.context).unwrap();
+    assert_eq!(
+      proofs_by_context.into_iter().next().unwrap(),
+      proof_id.clone(),
+      "Proof id was not associated to the VerificationContext"
+    );
+    let statement_ids = StatementIdsByProofId::<Test>::get(&proof_id);
+    assert_eq!(statement_ids.len(), 0, "Statement must have been revoked");
   });
 }
 

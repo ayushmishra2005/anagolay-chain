@@ -41,7 +41,7 @@ where
 {
   let context = VerificationContext::UrlForDomain("https://anagolay.network".into(), "anagolay.network".into());
   let action = VerificationAction::DnsTxtRecord;
-  let request = VerificationRequest::<T> {
+  let request = VerificationRequest::<T::AccountId> {
     context: context.clone(),
     action: action.clone(),
     holder: account.clone(),
@@ -64,7 +64,7 @@ where
   poe::pallet::ProofByProofIdAndAccountId::insert(proof_id.clone(), account.clone(), proof_record);
   let proof_ids: BoundedVec<ProofId, MaxProofsPerWorkflowGet<T>> = vec![proof_id.clone()].try_into().unwrap();
   poe::pallet::ProofIdsByVerificationContext::insert(context.clone(), proof_ids);
-  verification::pallet::VerificationRequestByAccountIdAndVerificationContext::insert(
+  verification::pallet::VerificationRequestByAccountIdAndVerificationContext::<T>::insert(
     account.clone(),
     context.clone(),
     request,

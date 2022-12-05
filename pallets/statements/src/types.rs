@@ -24,6 +24,7 @@ use frame_support::{
   sp_std::{clone::Clone, default::Default},
 };
 use poe::types::ProofId;
+use verification::types::{VerificationInvalidator, VerificationRequest};
 
 getter_for_hardcoded_constant!(MaxSignatureLen, u32, 256);
 
@@ -170,3 +171,32 @@ anagolay_structure!(Statement, StatementId, StatementData, StatementExtra);
 
 // This produces `StatementRecord<T>`, the Storage record of the Statement.
 anagolay_record!(Statement);
+
+/// Implementation for the verification invalidator that revokes the statement associated to
+/// the verification
+#[derive(Clone)]
+pub struct StatementsVerificationInvalidator<T: crate::Config> {
+  _marker: PhantomData<T>,
+}
+
+impl<T: crate::Config> VerificationInvalidator<T> for StatementsVerificationInvalidator<T> {
+  /// Called when a verification request turns out to be no longer valid
+  ///
+  /// # Arguments
+  /// * request - The verification request
+  ///
+  /// # Return
+  /// Result having the unit type if ok, an Error otherwise
+  fn invalidate(request: &VerificationRequest<T::AccountId>) -> Result<(), verification::Error<T>> {
+    let proof_ids = poe::Pallet::<T>::proof_ids_by_verification_context(request.context.clone())
+      .ok_or(verification::Error::<T>::VerificationInvalidationError)?;
+    for proof_id in proof_ids {
+      let statement_ids = <crate::Pallet<T>>::statement_ids_by_proof_id(proof_id.clone());
+      for statement_id in statement_ids {
+        <crate::Pallet<T>>::remove_statement(statement_id.clone(), &request.holder)
+          .map_err(|_| verification::Error::<T>::VerificationInvalidationError)?;
+      }
+    }
+    Ok(())
+  }
+}

@@ -1,13 +1,16 @@
 [package]
-name         = 'anagolay-runtime'
-version      = "0.3.0"
-description  = "A substrate-based runtime for Anagolay Network"
-authors      = ['did:substrate:5Fn9SNUE8LihCm7Lq5dpPgBebGy5D7ZKWESDsWbdjsfV37d4']
-homepage     = 'https://anagolay.network'
-edition      = '2021'
+name = 'anagolay-runtime'
+version = "0.3.0"
+description = "A substrate-based runtime for Anagolay Network"
+authors = [
+  'did:substrate:5Fn9SNUE8LihCm7Lq5dpPgBebGy5D7ZKWESDsWbdjsfV37d4',
+  'did:substrate:5EHkcDMhHgwW7V4GR4Us4dhkPkP9f2k71kdSVbzzzpNsHsYo',
+]
+homepage = 'https://anagolay.network'
+edition = '2021'
 license-file = "./LICENSE"
-publish      = false
-repository   = 'https://gitlab.com/anagolay/anagolay/'
+publish = false
+repository = 'https://gitlab.com/anagolay/anagolay/'
 
 [package.metadata.docs.rs]
 targets = ["x86_64-unknown-linux-gnu"]
@@ -53,6 +56,7 @@ frame-system-rpc-runtime-api               = { version = "4.0.0-dev", default-fe
 pallet-transaction-payment-rpc-runtime-api = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
 operations-rpc-runtime-api                 = { path = '../pallets/operations/rpc/runtime-api', default-features = false }
 workflows-rpc-runtime-api                  = { path = '../pallets/workflows/rpc/runtime-api', default-features = false }
+verification-rpc-runtime-api               = { path = '../pallets/verification/rpc/runtime-api', default-features = false }
 
 # Used for runtime benchmarking
 frame-benchmarking        = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26", optional = true }
@@ -118,7 +122,9 @@ std = [
   'statements/std',
   'poe/std',
   'workflows/std',
+  'workflows-rpc-runtime-api/std',
   'verification/std',
+  'verification-rpc-runtime-api/std',
 ]
 runtime-benchmarks = [
   "frame-benchmarking/runtime-benchmarks",

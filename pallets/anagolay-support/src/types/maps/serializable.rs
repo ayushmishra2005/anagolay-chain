@@ -60,7 +60,7 @@ where
     MaybeSerializableBoundedBTreeMap(BoundedBTreeMap::<K, V, S>::new())
   }
 
-  /// Exactly the same semantics as [`BTreeMap::insert`], but returns an `Err` (and is a noop) if
+  /// Exactly the same semantics as `BTreeMap::insert`, but returns an `Err` (and is a noop) if
   /// the new length of the map exceeds `S`.
   ///
   /// In the `Err` case, returns the inserted pair so it can be further used without cloning.

@@ -30,7 +30,7 @@ benchmarks! {
     let context = VerificationContext::UrlForDomain("https://anagolay.network".into(), "anagolay.network".into());
     let action = VerificationAction::DnsTxtRecord;
 
-    let request = VerificationRequest::<T> {
+    let request = VerificationRequest::<T::AccountId> {
         context: context.clone(),
         action,
         holder: caller.clone(),

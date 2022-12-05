@@ -36,12 +36,14 @@ where
   C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>,
   C::Api: operations_rpc::OperationsRuntimeApi<Block>,
   C::Api: workflows_rpc::WorkflowsRuntimeApi<Block>,
+  C::Api: verification_rpc::VerificationRuntimeApi<Block, AccountId>,
   C::Api: BlockBuilder<Block>,
   P: TransactionPool + 'static,
 {
   use operations_rpc::{Operations, OperationsApiServer};
   use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApiServer};
   use substrate_frame_rpc_system::{System, SystemApiServer};
+  use verification_rpc::{Verification, VerificationApiServer};
   use workflows_rpc::{Workflows, WorkflowsApiServer};
 
   let mut module = RpcModule::new(());
@@ -59,7 +61,8 @@ where
   // to call into the runtime.
   // `module.merge(YourRpcTrait::into_rpc(YourRpcStruct::new(ReferenceToClient, ...)))?;`
   module.merge(Operations::new(client.clone()).into_rpc())?;
-  module.merge(Workflows::new(client).into_rpc())?;
+  module.merge(Workflows::new(client.clone()).into_rpc())?;
+  module.merge(Verification::new(client).into_rpc())?;
 
   Ok(module)
 }

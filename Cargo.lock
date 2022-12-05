@@ -144,6 +144,7 @@ dependencies = [
  "substrate-frame-rpc-system",
  "tracing-core",
  "try-runtime-cli",
+ "verification-rpc",
  "workflows-rpc",
 ]
 
@@ -195,6 +196,7 @@ dependencies = [
  "statements",
  "substrate-wasm-builder",
  "verification",
+ "verification-rpc-runtime-api",
  "workflows",
  "workflows-rpc-runtime-api",
 ]
@@ -8149,6 +8151,34 @@ dependencies = [
 ]
 
 [[package]]
+name = "verification-rpc"
+version = "0.1.0"
+dependencies = [
+ "frame-support",
+ "jsonrpsee",
+ "parity-scale-codec",
+ "sp-api",
+ "sp-blockchain",
+ "sp-core",
+ "sp-rpc",
+ "sp-runtime",
+ "verification",
+ "verification-rpc-runtime-api",
+]
+
+[[package]]
+name = "verification-rpc-runtime-api"
+version = "0.1.0"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "parity-scale-codec",
+ "sp-api",
+ "sp-runtime",
+ "verification",
+]
+
+[[package]]
 name = "version_check"
 version = "0.9.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -8720,7 +8750,7 @@ dependencies = [
 
 [[package]]
 name = "workflows-rpc"
-version = "0.3.0"
+version = "0.1.0"
 dependencies = [
  "anagolay-support",
  "frame-support",
@@ -8737,7 +8767,7 @@ dependencies = [
 
 [[package]]
 name = "workflows-rpc-runtime-api"
-version = "0.3.0"
+version = "0.1.0"
 dependencies = [
  "anagolay-support",
  "frame-support",
