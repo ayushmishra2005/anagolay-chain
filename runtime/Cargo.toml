@@ -57,6 +57,7 @@ pallet-transaction-payment-rpc-runtime-api = { version = "4.0.0-dev", default-fe
 operations-rpc-runtime-api                 = { path = '../pallets/operations/rpc/runtime-api', default-features = false }
 workflows-rpc-runtime-api                  = { path = '../pallets/workflows/rpc/runtime-api', default-features = false }
 verification-rpc-runtime-api               = { path = '../pallets/verification/rpc/runtime-api', default-features = false }
+tipping-rpc-runtime-api                    = { path = '../pallets/tipping/rpc/runtime-api', default-features = false }
 
 # Used for runtime benchmarking
 frame-benchmarking        = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26", optional = true }
@@ -72,8 +73,8 @@ operations       = { path = '../pallets/operations', default-features = false }
 workflows        = { path = '../pallets/workflows', default-features = false }
 statements       = { path = '../pallets/statements', default-features = false }
 poe              = { path = '../pallets/poe', default-features = false }
-
-verification = { path = '../pallets/verification', default-features = false }
+verification     = { path = '../pallets/verification', default-features = false }
+tipping          = { path = '../pallets/tipping', default-features = false }
 
 [build-dependencies]
 substrate-wasm-builder = { version = "5.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
@@ -125,6 +126,8 @@ std = [
   'workflows-rpc-runtime-api/std',
   'verification/std',
   'verification-rpc-runtime-api/std',
+  'tipping/std',
+  'tipping-rpc-runtime-api/std',
 ]
 runtime-benchmarks = [
   "frame-benchmarking/runtime-benchmarks",
@@ -144,6 +147,7 @@ runtime-benchmarks = [
   'workflows/runtime-benchmarks',
   'statements/runtime-benchmarks',
   'verification/runtime-benchmarks',
+  'tipping/runtime-benchmarks',
 ]
 try-runtime = [
   "frame-executive/try-runtime",
@@ -164,4 +168,5 @@ try-runtime = [
   'workflows/try-runtime',
   'statements/try-runtime',
   'verification/try-runtime',
+  'tipping/try-runtime',
 ]

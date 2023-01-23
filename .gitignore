@@ -21,3 +21,6 @@ artifacts/
 
 # git merges
 **/*.orig
+
+## where our chain data lives
+data

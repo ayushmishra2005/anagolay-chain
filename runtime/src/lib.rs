@@ -138,7 +138,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
   //   `spec_version`, and `authoring_version` are the same between Wasm and native.
   // This value is set to 100 to notify Polkadot-JS App (https://polkadot.js.org/apps) to use
   //   the compatible custom types.
-  spec_version: 106,
+  spec_version: 115,
   impl_version: 1,
   apis: RUNTIME_API_VERSIONS,
   transaction_version: 1,
@@ -491,6 +491,7 @@ impl verification::Config for Runtime {
   type Currency = Balances;
 
   const REGISTRATION_FEE: u128 = 1 * UNITS;
+  const MAX_REQUESTS_PER_CONTEXT: u32 = 1000;
 }
 
 impl frame_system::offchain::SigningTypes for Runtime {
@@ -504,6 +505,15 @@ where
 {
   type OverarchingCall = Call;
   type Extrinsic = UncheckedExtrinsic;
+}
+
+impl tipping::Config for Runtime {
+  type Event = Event;
+  type Currency = Balances;
+  type TimeProvider = pallet_timestamp::Pallet<Runtime>;
+  type WeightInfo = tipping::weights::AnagolayWeight<Runtime>;
+
+  const MAX_TIPS_PER_VERIFICATION_CONTEXT: u32 = 10000;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
@@ -539,6 +549,7 @@ construct_runtime!(
 
     // Verification and Tipping
     Verification: verification::{Pallet, Call, Storage, Event<T>, ValidateUnsigned} = 18,
+    Tipping: tipping::{Pallet, Call, Storage, Event<T>} = 19,
   }
 );
 
@@ -586,6 +597,7 @@ mod benches {
     [statements, Statements]
     [workflows, Workflows]
     [verification, Verification]
+    [tipping, Tipping]
   );
 }
 
@@ -761,7 +773,32 @@ impl_runtime_apis! {
       offset: u64,
       limit: u16,
     ) -> Vec<verification::types::VerificationRequest<AccountId>> {
-      Verification::get_requests(contexts, status, offset, limit)
+      Verification::get_requests(contexts, status, None, offset, limit)
+    }
+    fn get_requests_for_account(
+      account: AccountId,
+      status: Option<verification::types::VerificationStatus>,
+      offset: u64,
+      limit: u16,
+    ) -> Vec<verification::types::VerificationRequest<AccountId>> {
+      Verification::get_requests(vec![], status, Some(account), offset, limit)
+    }
+  }
+
+  impl tipping_rpc_runtime_api::TippingApi<Block, Balance, AccountId, BlockNumber> for Runtime {
+    fn total_received(account_id: AccountId, verification_context: verification::types::VerificationContext) -> Balance {
+      Tipping::total_received(account_id, verification_context)
+    }
+    fn total(account_id: AccountId, verification_context: verification::types::VerificationContext) -> u64 {
+      Tipping::total(account_id, verification_context)
+    }
+    fn get_tips (
+      account_id: AccountId,
+      verification_context: verification::types::VerificationContext,
+      offset: u64,
+      limit: u16,
+    ) -> Vec<tipping::types::Tip<Balance, AccountId, BlockNumber>> {
+      Tipping::get_tips(account_id, verification_context, offset, limit)
     }
   }
 

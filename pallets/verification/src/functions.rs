@@ -1,6 +1,6 @@
 // This file is part of Anagolay Network.
 
-// Copyright (C) 2019-2022 Anagolay Network.
+// Copyright (C) 2019-2023 Anagolay Network.
 
 use super::*;
 use crate::{
@@ -33,12 +33,14 @@ impl<T: Config> Pallet<T> {
   }
 
   /// Get a subset of [`VerificationRequest`] representing a page, given the full set of the
-  /// [`VerificationContext`] to paginate, a filter on the request status and the pagination
-  /// information
+  /// [`VerificationContext`] to paginate, a filter on the request status and on the holder
+  /// account and the pagination information
   ///
   /// # Arguments
   ///  * request_contexts - The full set of [`VerificationContext`]. If empty, all
   ///    [`VerificationRequest`] will be considered
+  ///  * status - Additional filter on the status of the requests
+  ///  * account - Additional filter on the holder account
   ///  * offset - The index, inside the ids set, of the first Operation on the page
   ///  * limit - The count of Operations on the page
   ///
@@ -47,33 +49,63 @@ impl<T: Config> Pallet<T> {
   pub fn get_requests(
     request_contexts: Vec<VerificationContext>,
     status: Option<VerificationStatus>,
+    account: Option<T::AccountId>,
     offset: u64,
     limit: u16,
   ) -> Vec<VerificationRequest<T::AccountId>> {
     let mut requests = Vec::new();
 
+    // Retrieve the contexts matching the filters. If an account filter is specified filter out
+    // immediately the requerst not held by such account for better performance
     let request_contexts = if request_contexts.is_empty() {
       let mut contexts = Vec::new();
-      VerificationRequestByAccountIdAndVerificationContext::<T>::iter_keys().for_each(|(_, k2)| contexts.push(k2));
+      VerificationRequestByAccountIdAndVerificationContext::<T>::iter_keys().for_each(|(k1, k2)| {
+        let matches = match account.clone() {
+          Some(account) => k1 == account,
+          _ => true,
+        };
+        if matches {
+          contexts.push(k2)
+        };
+      });
       contexts
     } else {
       request_contexts
     };
 
+    // Pagination offset
     let (_, request_contexts) = request_contexts.split_at(offset as usize);
 
     for request_context in request_contexts.iter() {
+      // Pagination limit
       if requests.len() >= limit as usize {
         break;
       }
 
-      if let Some(holder) = VerificationContextByAccountId::<T>::get(request_context) {
+      // A request may be attempted by several accounts altoghether. Add those that match the filter
+      let holders = AccountIdsByVerificationContext::<T>::get(request_context);
+      for holder in holders {
         let request: Option<VerificationRequest<T::AccountId>> =
           VerificationRequestByAccountIdAndVerificationContext::<T>::get(holder, request_context);
-        match (request, status.clone()) {
-          (Some(request), None) => requests.push(request),
-          (Some(request), Some(status)) => {
-            if request.status == status {
+
+        match (request, status.clone(), account.clone()) {
+          (Some(request), None, None) => {
+            if !requests.contains(&request) {
+              requests.push(request)
+            }
+          }
+          (Some(request), Some(status), None) => {
+            if !requests.contains(&request) && request.status == status {
+              requests.push(request)
+            }
+          }
+          (Some(request), None, Some(account)) => {
+            if !requests.contains(&request) && request.holder == account {
+              requests.push(request)
+            }
+          }
+          (Some(request), Some(status), Some(account)) => {
+            if !requests.contains(&request) && request.status == status && request.holder == account {
               requests.push(request)
             }
           }

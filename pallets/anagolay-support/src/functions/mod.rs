@@ -1,6 +1,6 @@
-// This file is part of Anagolay Foundation.
+// This file is part of Anagolay Network.
 
-// Copyright (C) 2019-2022 Anagolay Foundation.
+// Copyright (C) 2019-2023 Anagolay Network.
 // SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 
 // This program is free software: you can redistribute it and/or modify
@@ -34,9 +34,7 @@ impl<T: Config> Pallet<T> {
   /// Produces a CID v1 out of some bytes using an Anagolay workflow
   ///
   /// # Arguments
-  /// * holder - The verification holder (unused)
-  /// * context - The verification context (unused)
-  /// * identifier - The identifier to use to compute the CID
+  /// * bytes - Input data
   ///
   /// # Return
   /// The CID string ("bafk...") in the form of a collection of bytes

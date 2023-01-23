@@ -1,5 +1,5 @@
-// This file is part of Anagolay Foundation.
-// Copyright (C) 2019-2022 Anagolay Foundation.
+// This file is part of Anagolay Network.
+// Copyright (C) 2019-2023 Anagolay Network.
 // SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 
 // This program is free software: you can redistribute it and/or modify
@@ -17,7 +17,7 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use codec::Decode;
+use codec::{Decode, Encode};
 use core::fmt::Debug;
 use frame_support::sp_std::vec::Vec;
 use verification::types::*;
@@ -27,12 +27,13 @@ sp_api::decl_runtime_apis! {
     ///
     /// # Type arguments
     /// - AccountId: the `AccountId` from the runtime `Config`
-    pub trait VerificationApi<AccountId: Debug + Decode> {
+    pub trait VerificationApi<AccountId: Debug + Decode + Encode> {
         /// Get a subset of [`VerificationRequest`] representing a page, given the full set of the [`VerificationContext`] to paginate,
         /// a filter on the request status and the pagination information
         ///
         /// # Arguments
         ///  * contexts - The full set of [`VerificationContext`]. If empty, all [`VerificationRequest`] will be considered
+        ///  * status - Additional filter on the status of the requests
         ///  * offset - The index, inside the ids set, of the first Operation on the page
         ///  * limit - The count of Operations on the page
         ///
@@ -40,6 +41,23 @@ sp_api::decl_runtime_apis! {
         /// Collection of [`VerificationRequest`]
         fn get_requests (
             contexts: Vec<VerificationContext>,
+            status: Option<VerificationStatus>,
+            offset: u64,
+            limit: u16,
+        ) -> Vec<VerificationRequest<AccountId>>;
+
+        /// Get a subset of [`VerificationRequest`] representing a page, given the holder account
+        ///
+        /// # Arguments
+        ///  * account - The holder account
+        ///  * status - Additional filter on the status of the requests
+        ///  * offset - The index, inside the ids set, of the first Operation on the page
+        ///  * limit - The count of Operations on the page
+        ///
+        /// # Return
+        /// Collection of [`VerificationRequest`]
+        fn get_requests_for_account (
+            account: AccountId,
             status: Option<VerificationStatus>,
             offset: u64,
             limit: u16,

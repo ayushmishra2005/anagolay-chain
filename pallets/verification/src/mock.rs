@@ -1,6 +1,6 @@
 // This file is part of Anagolay Network.
 
-// Copyright (C) 2019-2022 Anagolay Network.
+// Copyright (C) 2019-2023 Anagolay Network.
 
 //! Test utilities
 
@@ -88,6 +88,7 @@ impl Config for Test {
   type Currency = Balances;
 
   const REGISTRATION_FEE: u64 = 10;
+  const MAX_REQUESTS_PER_CONTEXT: u32 = 2;
 }
 
 impl<LocalCall> frame_system::offchain::SendTransactionTypes<LocalCall> for Test

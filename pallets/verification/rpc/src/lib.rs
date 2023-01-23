@@ -1,5 +1,5 @@
-// This file is part of Anagolay Foundation.
-// Copyright (C) 2019-2022 Anagolay Foundation.
+// This file is part of Anagolay Network.
+// Copyright (C) 2019-2023 Anagolay Network.
 // SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 
 // This program is free software: you can redistribute it and/or modify
@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use codec::Decode;
+use codec::{Decode, Encode};
 use core::fmt::Debug;
 use frame_support::sp_std::vec::Vec;
 use sp_api::{ApiError, ProvideRuntimeApi};
@@ -49,11 +49,21 @@ impl From<Error> for i32 {
 }
 
 #[rpc(client, server)]
-pub trait VerificationApi<BlockHash, AccountId: Debug + Decode> {
+pub trait VerificationApi<BlockHash, AccountId: Debug + Decode + Encode> {
   #[method(name = "verification_getRequests")]
   fn get_requests(
     &self,
     contexts: Vec<VerificationContext>,
+    status: Option<VerificationStatus>,
+    offset: u64,
+    limit: u16,
+    at: Option<BlockHash>,
+  ) -> RpcResult<Vec<VerificationRequest<AccountId>>>;
+
+  #[method(name = "verification_getRequestsForAccount")]
+  fn get_requests_for_account(
+    &self,
+    account: AccountId,
     status: Option<VerificationStatus>,
     offset: u64,
     limit: u16,
@@ -97,7 +107,7 @@ fn map_jsonrpc_err(e: ApiError) -> jsonrpsee::core::Error {
 impl<C, Block, AccountId> VerificationApiServer<<Block as BlockT>::Hash, AccountId> for Verification<C, Block>
 where
   Block: BlockT,
-  AccountId: Debug + Decode,
+  AccountId: Debug + Decode + Encode,
   C: Send + Sync + 'static,
   C: ProvideRuntimeApi<Block>,
   C: HeaderBackend<Block>,
@@ -116,6 +126,22 @@ where
 
     api
       .get_requests(&at, contexts, status, offset, limit)
+      .map_err(map_jsonrpc_err)
+  }
+
+  fn get_requests_for_account(
+    &self,
+    account: AccountId,
+    status: Option<VerificationStatus>,
+    offset: u64,
+    limit: u16,
+    at: Option<Block::Hash>,
+  ) -> RpcResult<Vec<VerificationRequest<AccountId>>> {
+    let api = self.client.runtime_api();
+    let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
+
+    api
+      .get_requests_for_account(&at, account, status, offset, limit)
       .map_err(map_jsonrpc_err)
   }
 }

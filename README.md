@@ -33,17 +33,44 @@ Audit the code using the [Cargo Audit](https://github.com/RustSec/cargo-audit):
 cargo audit
 ```
 
-Build Code coverage:
+## Code coverage
 
+`grcov` produces the correct output in either HTML or GitLab compatible format.
+Total process takes around 40 min on Gitpod - roughly 20 for instrumentation, 10 for tests, 10 for report generation:
+
+**Instrumentation**
 ```sh
-cargo tarpaulin --output-dir coverage --out html
+rustup component add llvm-tools-preview
+cargo install grcov
+
+export LLVM_PROFILE_FILE="anagolay-%p-%m.profraw"
+export RUSTFLAGS="-Cinstrument-coverage"
+export SKIP_WASM_BUILD=true
+
+cargo build $CARGO_OPTIONS
+makers test -- $CARGO_OPTIONS
 ```
 
-Trivy docker conatiner scaning
+**HTML report generation**
+
+This will generate a static website in a folder (`./coverage`), including badges:
 
 ```sh
-docker pull aquasec/trivy:0.16.0
-docker run --rm -v /tmp/trivy/:/root/.cache/ aquasec/trivy:0.16.0  anagolay/node:0.2.1-dev
+grcov . -s . -t html --binary-path ./target/debug --llvm --branch --ignore-not-existing --ignore "/*" -o ./coverage
+```
+
+**Cobertura report generation**
+
+This will generate an XML file (`./coverage.xml`) suitable by GitLab pipelines:
+
+```sh
+grcov . -s . -t cobertura --binary-path ./target/debug --llvm --branch --ignore-not-existing --ignore "/*" -o ./coverage.xml
+```
+
+**Cleanup**
+
+```sh
+find . \( -name "anagolay*.profraw" \) -delete
 ```
 
 ## Running in dev mode

@@ -1,14 +1,13 @@
 {
   "editor.formatOnSave": true,
   "editor.wrappingStrategy": "advanced",
-  "editor.rulers": [
-    140
-  ],
+  "editor.rulers": [140],
   "editor.wordWrapColumn": 140,
   "editor.wordWrap": "bounded",
   "files.associations": {
-    ".devops/docker/compose/*.yml": "dockercompose",
+    ".devops/docker/compose/*.yml": "dockercompose"
   },
+  "terminal.integrated.defaultProfile.linux": "zsh",
   "cSpell.words": [
     "SPDX",
     "clippy",
@@ -33,8 +32,8 @@
   "evenBetterToml.formatter.alignEntries": true,
   "[toml]": {
     // "editor.wordWrapColumn": 300,
-    "editor.wordWrap": "off",
+    "editor.wordWrap": "off"
   },
   "rust-analyzer.cargo.allFeatures": true,
-  "editor.stickyScroll.enabled": true,
+  "editor.stickyScroll.enabled": true
 }

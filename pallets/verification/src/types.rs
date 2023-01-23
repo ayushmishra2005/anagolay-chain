@@ -1,6 +1,6 @@
 // This file is part of Anagolay Network.
 
-// Copyright (C) 2019-2022 Anagolay Network.
+// Copyright (C) 2019-2023 Anagolay Network.
 
 use codec::{Decode, Encode};
 use core::fmt::Debug;
@@ -40,7 +40,7 @@ impl Get<u32> for MaxBytesLenGet {
 
 /// Newtype around BoundedVec<u8, MaxBytesLenGet>
 #[derive(codec::Encode, codec::Decode, Clone, Default, PartialEq, Eq, RuntimeDebug, MaxEncodedLen, TypeInfo)]
-#[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "std", derive(serde::Serialize))]
 pub struct Bytes(BoundedVec<u8, MaxBytesLenGet>);
 
 /// Delegation of the inner type methods
@@ -56,6 +56,24 @@ impl From<&str> for Bytes {
   }
 }
 
+#[cfg(feature = "std")]
+impl<'de> serde::Deserialize<'de> for Bytes {
+  fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+  where
+    D: serde::Deserializer<'de>,
+  {
+    let deserialized = String::deserialize(deserializer).map_err(|e| serde::de::Error::custom(format!("{:?}", e)))?;
+    let start = if deserialized.starts_with("0x") { 2 } else { 0 };
+    let bytes: Result<Vec<u8>, D::Error> = (start..deserialized.len())
+      .step_by(2)
+      .map(|i| {
+        u8::from_str_radix(&deserialized[i..i + 2], 16).map_err(|e| serde::de::Error::custom(format!("{:?}", e)))
+      })
+      .collect();
+    Ok(bytes.unwrap_or_default().into())
+  }
+}
+
 impl From<Vec<u8>> for Bytes {
   fn from(vec: Vec<u8>) -> Bytes {
     use core::convert::TryInto;
@@ -64,8 +82,9 @@ impl From<Vec<u8>> for Bytes {
 }
 
 /// Enumeration representing the possible outcomes of a verification
-#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, MaxEncodedLen, TypeInfo)]
+#[derive(Encode, Decode, Clone, Eq, RuntimeDebug, MaxEncodedLen, TypeInfo)]
 #[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "std", serde(rename_all(deserialize = "camelCase")))]
 pub enum VerificationStatus {
   /// The verification strategy is waiting for an external action prior to starting the challenge
   Waiting,
@@ -76,10 +95,22 @@ pub enum VerificationStatus {
   /// The verification challende is successful
   Success,
 }
+impl PartialEq for VerificationStatus {
+  fn eq(&self, other: &VerificationStatus) -> bool {
+    matches!(
+      (self, other),
+      (&VerificationStatus::Waiting, &VerificationStatus::Waiting) |
+        (&VerificationStatus::Pending, &VerificationStatus::Pending) |
+        (&VerificationStatus::Failure(_), &VerificationStatus::Failure(_)) |
+        (&VerificationStatus::Success, &VerificationStatus::Success)
+    )
+  }
+}
 
 /// An enumeration providing the switch to verify a context (full URL + breakdown)
 #[derive(Encode, Decode, Clone, Default, PartialEq, Eq, RuntimeDebug, MaxEncodedLen, TypeInfo)]
 #[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "std", serde(rename_all(deserialize = "camelCase")))]
 pub enum VerificationContext {
   /// No context to verify
   #[default]
@@ -97,6 +128,7 @@ pub enum VerificationContext {
 /// An enumeration providing the instructions of an action to perform in order to verify a context
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, MaxEncodedLen, TypeInfo)]
 #[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "std", serde(rename_all(deserialize = "camelCase")))]
 pub enum VerificationAction {
   /// Instruct the verification holder to update the DNS TXT record
   DnsTxtRecord,
