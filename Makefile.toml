@@ -103,7 +103,7 @@ args        = ["build", "--locked", "--release", "--features", "runtime-benchmar
 category    = "anagolay"
 description = "Purge the local chain database for debug build."
 command     = "./target/debug/anagolay"
-args        = ["purge-chain", "-y", "--dev"]
+args        = ["purge-chain", "-y", "--dev", "--base-path", "./data"]
 
 [tasks.chain-dev-start]
 category = "anagolay"
@@ -117,8 +117,11 @@ args = [
   "error,runtime,info",
   "--rpc-external",
   "--unsafe-ws-external",
+  "--no-telemetry",
   "--enable-offchain-indexing",
   "/tmp",
+  "--base-path",
+  "./data",
 ]
 dependencies = ["build"]
 

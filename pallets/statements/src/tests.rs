@@ -1,6 +1,6 @@
-// This file is part of Anagolay Foundation.
+// This file is part of Anagolay Network.
 
-// Copyright (C) 2019-2022 Anagolay Foundation.
+// Copyright (C) 2019-2023 Anagolay Network.
 // SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 
 // This program is free software: you can redistribute it and/or modify
@@ -32,7 +32,7 @@ use poe::{
   ProofIdsByVerificationContext,
 };
 use sp_core::{sr25519, Pair};
-use verification::types::*;
+use verification::{consts::MaxVerificationRequestsPerContextGet, types::*};
 
 fn mock_account(ss58: &str) -> sr25519::Public {
   let (pair, _) = sr25519::Pair::from_string_with_seed(ss58, None).unwrap();
@@ -76,7 +76,9 @@ where
     context.clone(),
     request.clone(),
   );
-  verification::pallet::VerificationContextByAccountId::<T>::insert(context.clone(), account);
+  let accounts: BoundedVec<T::AccountId, MaxVerificationRequestsPerContextGet<T>> =
+    vec![account.clone()].try_into().unwrap();
+  verification::pallet::AccountIdsByVerificationContext::<T>::insert(context.clone(), accounts);
   request
 }
 

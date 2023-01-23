@@ -1,6 +1,6 @@
-// This file is part of Anagolay Foundation.
+// This file is part of Anagolay Network.
 
-// Copyright (C) 2019-2022 Anagolay Foundation.
+// Copyright (C) 2019-2023 Anagolay Network.
 // SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 
 // This program is free software: you can redistribute it and/or modify
@@ -34,7 +34,7 @@ use frame_support::{pallet_prelude::*, sp_std::vec::Vec, BoundedVec};
 /// assert_eq!("hello2world", chars.concat_u8(2u8).concat("world").as_str());
 /// ```
 #[derive(Encode, Decode, Clone, PartialEq, Eq, Ord, PartialOrd, Debug, MaxEncodedLen, TypeInfo)]
-#[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "std", derive(serde::Serialize))]
 pub struct Characters(BoundedVec<u8, MaxCharactersLenGet>);
 
 impl From<Characters> for BoundedVec<u8, MaxCharactersLenGet> {
@@ -87,6 +87,24 @@ impl Default for Characters {
     let bounded_vec: BoundedVec<u8, MaxCharactersLenGet> =
       BoundedVec::with_bounded_capacity(MAX_CHARACTERS_LEN as usize);
     Characters(bounded_vec)
+  }
+}
+
+#[cfg(feature = "std")]
+impl<'de> serde::Deserialize<'de> for Characters {
+  fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+  where
+    D: serde::Deserializer<'de>,
+  {
+    let deserialized = String::deserialize(deserializer).map_err(|e| serde::de::Error::custom(format!("{:?}", e)))?;
+    let start = if deserialized.starts_with("0x") { 2 } else { 0 };
+    let bytes: Result<Vec<u8>, D::Error> = (start..deserialized.len())
+      .step_by(2)
+      .map(|i| {
+        u8::from_str_radix(&deserialized[i..i + 2], 16).map_err(|e| serde::de::Error::custom(format!("{:?}", e)))
+      })
+      .collect();
+    Ok(bytes.unwrap_or_default().as_slice().into())
   }
 }
 

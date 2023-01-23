@@ -1,6 +1,6 @@
 // This file is part of Anagolay Network.
 
-// Copyright (C) 2019-2022 Anagolay Network.
+// Copyright (C) 2019-2023 Anagolay Network.
 
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
@@ -52,6 +52,26 @@ pub use pallet::*;
 
 const ONCHAIN_TX_KEY: &[u8] = b"verification::strategy::worker";
 
+pub mod consts {
+  /// Getter for the configurable constant MAX_REQUESTS_PER_CONTEXT
+  #[derive(
+    codec::Encode,
+    codec::Decode,
+    Clone,
+    PartialEq,
+    Eq,
+    frame_support::sp_runtime::RuntimeDebug,
+    frame_support::pallet_prelude::TypeInfo,
+  )]
+  pub struct MaxVerificationRequestsPerContextGet<T>(frame_support::pallet_prelude::PhantomData<T>);
+  /// Implementation of the ['Get'] trait for the getter of MAX_REQUESTS_PER_CONTEXT
+  impl<T: crate::pallet::Config> frame_support::pallet_prelude::Get<u32> for MaxVerificationRequestsPerContextGet<T> {
+    fn get() -> u32 {
+      T::MAX_REQUESTS_PER_CONTEXT
+    }
+  }
+}
+
 #[frame_support::pallet]
 pub mod pallet {
   use crate::{
@@ -66,6 +86,7 @@ pub mod pallet {
     traits::{Currency, ReservableCurrency},
   };
 
+  use crate::consts::*;
   use frame_support::traits::tokens::BalanceStatus;
   use frame_system::{offchain::SendTransactionTypes, pallet_prelude::*};
   use sp_io::offchain_index;
@@ -143,6 +164,9 @@ pub mod pallet {
 
     /// The amount to pay in order to issue a verification
     const REGISTRATION_FEE: BalanceOf<Self>;
+
+    /// The maximum number of accounts requesting verification of the same context
+    const MAX_REQUESTS_PER_CONTEXT: u32;
   }
 
   #[pallet::extra_constants]
@@ -156,6 +180,13 @@ pub mod pallet {
     fn registration_fee() -> BalanceOf<T> {
       T::REGISTRATION_FEE
     }
+    /// The maximum number of accounts requesting verification for the same context. It should be
+    /// high enough to prevent a malicious actor controlling several accounts to lock the
+    /// verification of a given context to failed status
+    #[pallet::constant_name(MaxRequestsPerContext)]
+    fn max_requests_per_context() -> u32 {
+      T::MAX_REQUESTS_PER_CONTEXT
+    }
   }
 
   #[pallet::hooks]
@@ -164,6 +195,10 @@ pub mod pallet {
       assert!(
         T::REGISTRATION_FEE > 0u32.into(),
         "`RegistrationFee` must be greater than 0"
+      );
+      assert!(
+        T::MAX_REQUESTS_PER_CONTEXT > 0,
+        "`MaxRequestsPerContext` must be greater than 0"
       );
     }
     fn offchain_worker(block_number: T::BlockNumber) {
@@ -176,12 +211,17 @@ pub mod pallet {
     }
   }
 
-  /// The map of verification contexts indexed by the account id of the holder of the
+  /// The map of account id of the holder indexed by the verification contexts of the
   /// correspondent verification request
   #[pallet::storage]
-  #[pallet::getter(fn verification_context_by_account_id)]
-  pub type VerificationContextByAccountId<T: Config> =
-    StorageMap<_, Blake2_128Concat, VerificationContext, T::AccountId, OptionQuery>;
+  #[pallet::getter(fn account_ids_by_verification_context)]
+  pub type AccountIdsByVerificationContext<T: Config> = StorageMap<
+    _,
+    Blake2_128Concat,
+    VerificationContext,
+    BoundedVec<T::AccountId, MaxVerificationRequestsPerContextGet<T>>,
+    ValueQuery,
+  >;
 
   /// The map of verification requests indexed by the account id of the holder and the
   /// associated verification context
@@ -217,6 +257,9 @@ pub mod pallet {
     OffChainVerificationError,
     /// Some processing was attempted on a ['VerificationRequest`] which has an inappropriate status
     InvalidVerificationStatus,
+    /// There are already a number of accounts attempting to verify the same context and no more
+    /// will be accepted
+    MaxVerificationRequestsPerContextLimitReached,
   }
 
   /// Events of the Poe pallet
@@ -256,6 +299,8 @@ pub mod pallet {
     ///   required registration fee
     /// * `NoMatchingVerificationStrategy` - if none of the registered verification strategies is
     ///   suitable to respond to the request
+    /// * `MaxVerificationRequestsPerContextLimitReached` - if the maximum number of verification
+    ///   requests has already been submitted for this context
     ///
     /// # Events
     /// * `VerificationRequested` - having `Waiting` status and providing further verification
@@ -271,9 +316,11 @@ pub mod pallet {
     ) -> DispatchResultWithPostInfo {
       let holder = ensure_signed(origin)?;
 
-      // Ensure the same context is not contained in storage
+      // Ensure a verification request for same context and holder is not contained in storage, or it is
+      // failed
+      let existing = VerificationRequestByAccountIdAndVerificationContext::<T>::get(holder.clone(), context.clone());
       ensure!(
-        !VerificationRequestByAccountIdAndVerificationContext::<T>::iter_keys().any(|(_k1, k2)| k2 == context),
+        existing.is_none() || matches!(existing.unwrap().status, VerificationStatus::Failure(_)),
         Error::<T>::VerificationAlreadyIssued
       );
 
@@ -289,7 +336,16 @@ pub mod pallet {
         context.clone(),
         request.clone(),
       );
-      VerificationContextByAccountId::<T>::insert(context, holder.clone());
+      AccountIdsByVerificationContext::<T>::try_mutate(context, |stored_accounts| {
+        // Insert the account of the holder only once even if a failed request is resubmitted
+        if !stored_accounts.iter().any(|stored_account| *stored_account == holder) {
+          stored_accounts
+            .try_push(holder.clone())
+            .map_err(|_err| Error::<T>::MaxVerificationRequestsPerContextLimitReached)
+        } else {
+          Ok(())
+        }
+      })?;
 
       // Emit an event that the verification request is awaiting action
       Self::deposit_event(Event::VerificationRequested(holder, request));

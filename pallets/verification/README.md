@@ -6,7 +6,7 @@ This pallet’s responsibility is to keep records of the verified items and thei
 
 Alice, the verification holder, requests the verification providing the appropriate context (domain, subdomain…) and action (update DNS TXT record, well-known ACME challenge...), and the request is stored on the chain with `Waiting` status. A registration fee is also reserved on Alice's account: she can claim it back later by updating the verification status to `Failed` when the identity ownership is revoked, or else this will be the bounty that other users can claim if, at any point in time, they verify that Alice’s domain no longer contains the correct DNS TXT and she neglected to update the verification status herself. Meanwhile, Alice has received the instructions for the verification challenge, for example: putting a specific key in a DNS TXT record and being sure it stays there as long as the verification needs to be valid.
 
-Having done so, due to DNS propagation, the process can halt and DoH (DNS over HTTPS) queries can be performed off-chain before the `perform_verification` extrinsic is called because this call will incur transaction costs. When the DNS propagation happened, the process can resume. Other verification strategies may be more or less immediate.
+Having done so, due to DNS propagation, the process can halt and DoH queries can be performed off-chain before the `perform_verification` extrinsic is called because this call will incur transaction costs. When the DNS propagation happened, the process can resume. Other verification strategies may be more or less immediate.
 
 Any verifier account, even different from the holder, can call `perform_verification` at any time to update the state of the request to `Pending`, signaling to the off-chain worker that, on its next execution, the challenge must be verified. If the verification status is already `Failed`, however, the call to perform verification will result in an error since the verification must be requested again from the holder in order to pay the registration fee.
 
@@ -29,6 +29,8 @@ The runtime needs to configure the verification pallet as follows:
 
     // The amount to reserve as registration fee
     const REGISTRATION_FEE: u128 = 1 * UNITS;
+    // The maximum number of accounts requesting verification of the same context
+    const MAX_REQUESTS_PER_CONTEXT: u32 = 1000;
   }
 ```
 

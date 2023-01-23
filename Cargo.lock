@@ -142,6 +142,7 @@ dependencies = [
  "sp-timestamp",
  "substrate-build-script-utils",
  "substrate-frame-rpc-system",
+ "tipping-rpc",
  "tracing-core",
  "try-runtime-cli",
  "verification-rpc",
@@ -195,6 +196,8 @@ dependencies = [
  "sp-version",
  "statements",
  "substrate-wasm-builder",
+ "tipping",
+ "tipping-rpc-runtime-api",
  "verification",
  "verification-rpc-runtime-api",
  "workflows",
@@ -7710,6 +7713,54 @@ name = "tinyvec_macros"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cda74da7e1a664f795bb1f8a87ec406fb89a02522cf6e50620d016add6dbbf5c"
+
+[[package]]
+name = "tipping"
+version = "0.1.0"
+dependencies = [
+ "anagolay-support",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "pallet-balances",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "verification",
+]
+
+[[package]]
+name = "tipping-rpc"
+version = "0.1.0"
+dependencies = [
+ "frame-support",
+ "jsonrpsee",
+ "parity-scale-codec",
+ "sp-api",
+ "sp-blockchain",
+ "sp-core",
+ "sp-rpc",
+ "sp-runtime",
+ "tipping",
+ "tipping-rpc-runtime-api",
+ "verification",
+]
+
+[[package]]
+name = "tipping-rpc-runtime-api"
+version = "0.1.0"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "parity-scale-codec",
+ "sp-api",
+ "sp-runtime",
+ "tipping",
+ "verification",
+]
 
 [[package]]
 name = "tokio"

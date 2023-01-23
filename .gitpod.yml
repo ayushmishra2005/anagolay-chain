@@ -10,16 +10,16 @@ ports:
     visibility: private
     onOpen: ignore
   - port: 30333
-    visibility: private
+    visibility: public
     onOpen: ignore
   - port: 9933
-    visibility: private
+    visibility: public
     onOpen: ignore
   - port: 9944
-    visibility: private
+    visibility: public
     onOpen: ignore
   - port: 9615
-    visibility: private
+    visibility: public
     onOpen: ignore
 
 vscode:

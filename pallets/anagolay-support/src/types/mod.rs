@@ -1,6 +1,6 @@
-// This file is part of Anagolay Foundation.
+// This file is part of Anagolay Network.
 
-// Copyright (C) 2019-2022 Anagolay Foundation.
+// Copyright (C) 2019-2023 Anagolay Network.
 // SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 
 // This program is free software: you can redistribute it and/or modify
@@ -245,6 +245,7 @@ macro_rules! anagolay_version_data {
       ///
       /// #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, MaxEncodedLen, TypeInfo)]
       /// #[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
+      /// #[cfg_attr(feature = "std", serde(rename_all(deserialize = "camelCase")))]
       /// pub enum OperationArtifactType {
       ///   Wasm, Docs, Git
       /// }
@@ -491,6 +492,7 @@ pub struct AnagolayArtifactStructure<T: ArtifactType> {
 /// ```
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, MaxEncodedLen, TypeInfo)]
 #[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "std", serde(rename_all(deserialize = "camelCase")))]
 pub enum WasmArtifactSubType {
   /// CommonJS module for the direct use in the nodejs env which doesn't have the ESM support. When
   /// Nodejs has native ESM support this should be used only for the legacy versions. Check

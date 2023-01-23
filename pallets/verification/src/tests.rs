@@ -1,6 +1,6 @@
 // This file is part of Anagolay Network.
 
-// Copyright (C) 2019-2022 Anagolay Network.
+// Copyright (C) 2019-2023 Anagolay Network.
 
 //! Tests for the module.
 
@@ -8,7 +8,10 @@ use super::{
   mock::{Call, *},
   *,
 };
-use crate::types::{offchain::*, *};
+use crate::{
+  consts::MaxVerificationRequestsPerContextGet,
+  types::{offchain::*, *},
+};
 use codec::Decode;
 use core::convert::TryInto;
 use frame_support::{traits::ReservableCurrency, *};
@@ -58,6 +61,42 @@ fn request_verification_error_on_context_submitted_twice() {
 
     let res = VerificationTest::request_verification(origin, context, action);
     assert_noop!(res, Error::<Test>::VerificationAlreadyIssued);
+  });
+}
+
+#[test]
+fn request_verification_allow_resubmit_failed_request() {
+  let holder = mock_account("//Alice");
+  new_test_ext(vec![(holder, 100)]).execute_with(|| {
+    let origin = mock::Origin::signed(holder);
+
+    let context = VerificationContext::UrlForDomain("https://anagolay.network".into(), "anagolay.network".into());
+    let action = VerificationAction::DnsTxtRecord;
+    let mut request: VerificationRequest<<Test as frame_system::Config>::AccountId> =
+      mock_request::<Test>(holder.clone(), context.clone(), action.clone());
+    request.status = VerificationStatus::Failure("an error description".into());
+
+    VerificationRequestByAccountIdAndVerificationContext::<Test>::insert(
+      holder.clone(),
+      context.clone(),
+      request.clone(),
+    );
+
+    let res = VerificationTest::request_verification(origin.clone(), context.clone(), action.clone());
+    assert_ok!(res);
+    assert_eq!(
+      AccountIdsByVerificationContext::<Test>::get(context.clone()),
+      vec![holder.clone()]
+    );
+
+    VerificationRequestByAccountIdAndVerificationContext::<Test>::insert(holder.clone(), context.clone(), request);
+
+    let res = VerificationTest::request_verification(origin, context.clone(), action.clone());
+    assert_ok!(res);
+    assert_eq!(
+      AccountIdsByVerificationContext::<Test>::get(context.clone()),
+      vec![holder.clone()]
+    );
   });
 }
 
@@ -189,7 +228,7 @@ fn perform_verification_error_invalid_verification_status() {
     let action = VerificationAction::DnsTxtRecord;
     let mut request: VerificationRequest<<Test as frame_system::Config>::AccountId> =
       mock_request::<Test>(holder.clone(), context.clone(), action.clone());
-    request.status = VerificationStatus::Failure("anything".into());
+    request.status = VerificationStatus::Failure("an error description".into());
     VerificationRequestByAccountIdAndVerificationContext::<Test>::insert(holder, context.clone(), request.clone());
 
     let res = VerificationTest::perform_verification(origin, request);
@@ -379,5 +418,69 @@ fn perform_submit_verification_status_failure_from_non_holder() {
     assert_eq!(Balances::free_balance(&holder), 100 - Test::REGISTRATION_FEE);
     assert_eq!(Balances::reserved_balance(&verifier), 0);
     assert_eq!(Balances::free_balance(&verifier), 10 + Test::REGISTRATION_FEE);
+  });
+}
+
+#[test]
+fn rpc_get_request_pagination() {
+  new_test_ext(Vec::new()).execute_with(|| {
+    let holder1 = mock_account("//Alice");
+    let holder2 = mock_account("//Bob");
+
+    let context1 = VerificationContext::UrlForDomain("https://anagolay.network".into(), "anagolay.network".into());
+    let context2 = VerificationContext::UrlForDomain("https://kelp.digital".into(), "kelp.digital".into());
+    let action = VerificationAction::DnsTxtRecord;
+
+    let mut request1: VerificationRequest<<Test as frame_system::Config>::AccountId> =
+      mock_request::<Test>(holder1.clone(), context1.clone(), action.clone());
+    request1.status = VerificationStatus::Failure("an error description".into());
+    VerificationRequestByAccountIdAndVerificationContext::<Test>::insert(holder1, context1.clone(), request1.clone());
+
+    let mut request2: VerificationRequest<<Test as frame_system::Config>::AccountId> =
+      mock_request::<Test>(holder1.clone(), context2.clone(), action.clone());
+    request2.status = VerificationStatus::Success;
+    VerificationRequestByAccountIdAndVerificationContext::<Test>::insert(holder1, context2.clone(), request2.clone());
+
+    let mut request3: VerificationRequest<<Test as frame_system::Config>::AccountId> =
+      mock_request::<Test>(holder2.clone(), context1.clone(), action.clone());
+    request3.status = VerificationStatus::Failure("an error description".into());
+    VerificationRequestByAccountIdAndVerificationContext::<Test>::insert(holder2, context1.clone(), request3.clone());
+
+    let mut request4: VerificationRequest<<Test as frame_system::Config>::AccountId> =
+      mock_request::<Test>(holder2.clone(), context2.clone(), action.clone());
+    request4.status = VerificationStatus::Failure("an error description".into());
+    VerificationRequestByAccountIdAndVerificationContext::<Test>::insert(holder2, context2.clone(), request4.clone());
+
+    let holders: BoundedVec<<Test as frame_system::Config>::AccountId, MaxVerificationRequestsPerContextGet<Test>> =
+      vec![holder1.clone(), holder2.clone()].try_into().unwrap();
+    AccountIdsByVerificationContext::<Test>::insert(context1.clone(), holders.clone());
+    AccountIdsByVerificationContext::<Test>::insert(context2.clone(), holders);
+
+    let res = VerificationTest::get_requests(vec![], None, None, 0, 10);
+    assert_eq!(res.len(), 4);
+    let res = VerificationTest::get_requests(vec![context1.clone()], None, None, 0, 10);
+    assert_eq!(res.len(), 2);
+    let res = VerificationTest::get_requests(vec![context1.clone(), context2.clone()], None, None, 0, 10);
+    assert_eq!(res.len(), 4);
+    let res = VerificationTest::get_requests(vec![], Some(VerificationStatus::Success), None, 0, 10);
+    assert_eq!(res.len(), 1);
+    let res = VerificationTest::get_requests(
+      vec![],
+      Some(VerificationStatus::Failure("anything".into())),
+      None,
+      0,
+      10,
+    );
+    assert_eq!(res.len(), 3);
+    let res = VerificationTest::get_requests(
+      vec![],
+      Some(VerificationStatus::Failure("anything".into())),
+      Some(holder1),
+      0,
+      10,
+    );
+    assert_eq!(res.len(), 1);
+    let res = VerificationTest::get_requests(vec![], None, Some(holder2), 1, 10);
+    assert_eq!(res.len(), 1);
   });
 }

@@ -7,7 +7,7 @@
 
 use std::sync::Arc;
 
-use anagolay_runtime::{opaque::Block, AccountId, Balance, Index};
+use anagolay_runtime::{opaque::Block, AccountId, Balance, BlockNumber, Index};
 use jsonrpsee::RpcModule;
 use sc_transaction_pool_api::TransactionPool;
 use sp_api::ProvideRuntimeApi;
@@ -37,12 +37,14 @@ where
   C::Api: operations_rpc::OperationsRuntimeApi<Block>,
   C::Api: workflows_rpc::WorkflowsRuntimeApi<Block>,
   C::Api: verification_rpc::VerificationRuntimeApi<Block, AccountId>,
+  C::Api: tipping_rpc::TippingRuntimeApi<Block, Balance, AccountId, BlockNumber>,
   C::Api: BlockBuilder<Block>,
   P: TransactionPool + 'static,
 {
   use operations_rpc::{Operations, OperationsApiServer};
   use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApiServer};
   use substrate_frame_rpc_system::{System, SystemApiServer};
+  use tipping_rpc::{Tipping, TippingApiServer};
   use verification_rpc::{Verification, VerificationApiServer};
   use workflows_rpc::{Workflows, WorkflowsApiServer};
 
@@ -62,7 +64,8 @@ where
   // `module.merge(YourRpcTrait::into_rpc(YourRpcStruct::new(ReferenceToClient, ...)))?;`
   module.merge(Operations::new(client.clone()).into_rpc())?;
   module.merge(Workflows::new(client.clone()).into_rpc())?;
-  module.merge(Verification::new(client).into_rpc())?;
+  module.merge(Verification::new(client.clone()).into_rpc())?;
+  module.merge(Tipping::new(client).into_rpc())?;
 
   Ok(module)
 }
