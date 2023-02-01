@@ -116,6 +116,7 @@ args = [
   "-l",
   "error,runtime,info",
   "--rpc-external",
+  "--rpc-methods=Unsafe",
   "--unsafe-ws-external",
   "--no-telemetry",
   "--enable-offchain-indexing",

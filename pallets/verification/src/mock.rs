@@ -9,11 +9,14 @@ use crate::{types::*, Config};
 use core::convert::{TryFrom, TryInto};
 use frame_support::parameter_types;
 use pallet_balances::AccountData;
-use sp_core::{sr25519, H256};
+use sp_core::{sr25519, sr25519::Signature, H256};
+use sp_keystore::{testing::KeyStore, KeystoreExt, SyncCryptoStore};
 use sp_runtime::{
   testing::{Header, TestXt},
   traits::{BlakeTwo256, IdentityLookup},
+  RuntimeAppPublic,
 };
+use std::sync::Arc;
 
 type Extrinsic = TestXt<Call, ()>;
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
@@ -81,6 +84,7 @@ impl pallet_balances::Config for Test {
 }
 
 impl Config for Test {
+  type AuthorityId = crate::crypto::VerificationAuthId;
   type Event = Event;
   type VerificationKeyGenerator = NaiveVerificationKeyGenerator<Self>;
   type VerificationInvalidator = NaiveVerificationInvalidator<Self>;
@@ -99,12 +103,33 @@ where
   type Extrinsic = Extrinsic;
 }
 
+impl frame_system::offchain::SigningTypes for Test {
+  type Public = <Signature as sp_runtime::traits::Verify>::Signer;
+  type Signature = Signature;
+}
+
 // Build genesis storage according to the mock runtime.
 pub fn new_test_ext(balances: Vec<(sr25519::Public, u64)>) -> sp_io::TestExternalities {
   let mut ext = frame_system::GenesisConfig::default().build_storage::<Test>().unwrap();
   pallet_balances::GenesisConfig::<Test> { balances }
     .assimilate_storage(&mut ext)
     .unwrap();
+  let mut ext: sp_io::TestExternalities = ext.into();
 
-  ext.into()
+  const PHRASE: &str = "news slush supreme milk chapter athlete soap sausage put clutch what kitten";
+  let keystore = KeyStore::new();
+
+  SyncCryptoStore::sr25519_generate_new(
+    &keystore,
+    crate::crypto::Public::ID,
+    Some(&format!("{}/hunter1", PHRASE)),
+  )
+  .unwrap();
+
+  let _public_key = *SyncCryptoStore::sr25519_public_keys(&keystore, crate::crypto::Public::ID)
+    .get(0)
+    .unwrap();
+  ext.register_extension(KeystoreExt(Arc::new(keystore)));
+
+  ext
 }

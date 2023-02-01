@@ -52,3 +52,25 @@ where
 }
 
 ```
+**Off-chain security**
+
+Since the off-chain worker submits unsigned transactions with signed payload, a local account using the verification pallet account key type (`ver!`) must be inserted into production environment either through chain specification or else. 
+This local account must be whitelisted as only reliable signer, so a good choice is to use a validator (or collator) account.
+In the example below Alice account is inserted in the keystore in order to sign verification pallet unsigned transactions. 
+For more information, refer to the [off-chain worker  
+how-to guide](https://docs.substrate.io/reference/how-to-guides/offchain-workers/offchain-transactions/#give-you-pallet-the-ability-to-make-transactions). 
+ 
+```shell
+
+curl --location --request POST 'http://localhost:9933' \
+--header 'Content-Type: application/json' \
+--data-raw '{
+"jsonrpc": "2.0",
+"method": "author_insertKey",
+"params": ["ver!","clip organ olive upper oak void inject side suit toilet stick narrow","0xb48004c6e1625282313b07d1c9950935e86894a2e4f21fb1ffee9854d180c781"],
+"id": 1
+}'
+```
+
+Please note that in dev environment Alice may be inserted in the keystore through configuration of the `service.rs` in order not to repeat this
+step at every execution, as suggested in the off-chain worker how-to guide.

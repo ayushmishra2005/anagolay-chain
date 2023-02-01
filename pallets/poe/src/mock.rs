@@ -23,7 +23,7 @@
 use crate as poe;
 use crate::{types::PoeVerificationKeyGenerator, Config};
 use frame_support::{parameter_types, traits::UnixTime};
-use sp_core::H256;
+use sp_core::{sr25519, sr25519::Signature, H256};
 use sp_runtime::{
   testing::{Header, TestXt},
   traits::{BlakeTwo256, IdentityLookup},
@@ -67,7 +67,7 @@ impl frame_system::Config for Test {
   type BlockNumber = u64;
   type Hash = H256;
   type Hashing = BlakeTwo256;
-  type AccountId = u64;
+  type AccountId = sr25519::Public;
   type Lookup = IdentityLookup<Self::AccountId>;
   type Header = Header;
   type Event = ();
@@ -85,6 +85,7 @@ impl frame_system::Config for Test {
 }
 
 impl verification::Config for Test {
+  type AuthorityId = verification::crypto::VerificationAuthId;
   type Event = ();
   type VerificationKeyGenerator = PoeVerificationKeyGenerator<Self>;
   type VerificationInvalidator = NaiveVerificationInvalidator<Self>;
@@ -108,6 +109,11 @@ where
 {
   type OverarchingCall = Call;
   type Extrinsic = Extrinsic;
+}
+
+impl frame_system::offchain::SigningTypes for Test {
+  type Public = <Signature as sp_runtime::traits::Verify>::Signer;
+  type Signature = Signature;
 }
 
 pub struct MockTime {}

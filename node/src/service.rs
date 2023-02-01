@@ -196,8 +196,11 @@ pub fn new_full(mut config: Configuration) -> Result<TaskManager, ServiceError> 
     warp_sync: Some(warp_sync),
   })?;
 
+  let keystore = keystore_container.sync_keystore();
   if config.offchain_worker.enabled {
     sc_service::build_offchain_workers(&config, task_manager.spawn_handle(), client.clone(), network.clone());
+    sp_keystore::SyncCryptoStore::sr25519_generate_new(&*keystore, sp_runtime::KeyTypeId(*b"ver!"), Some("//Alice"))
+      .expect("Creating verification key with local account Alice should work");
   }
 
   let role = config.role.clone();
@@ -224,7 +227,7 @@ pub fn new_full(mut config: Configuration) -> Result<TaskManager, ServiceError> 
   let _rpc_handlers = sc_service::spawn_tasks(sc_service::SpawnTasksParams {
     network: network.clone(),
     client: client.clone(),
-    keystore: keystore_container.sync_keystore(),
+    keystore,
     task_manager: &mut task_manager,
     transaction_pool: transaction_pool.clone(),
     rpc_builder: rpc_extensions_builder,

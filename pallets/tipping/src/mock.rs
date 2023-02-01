@@ -12,7 +12,7 @@ use core::{
 };
 use frame_support::{parameter_types, traits::UnixTime};
 use pallet_balances::AccountData;
-use sp_core::{sr25519, H256};
+use sp_core::{sr25519, sr25519::Signature, H256};
 use sp_runtime::{
   testing::{Header, TestXt},
   traits::{BlakeTwo256, IdentityLookup},
@@ -86,6 +86,7 @@ impl pallet_balances::Config for Test {
 }
 
 impl verification::Config for Test {
+  type AuthorityId = verification::crypto::VerificationAuthId;
   type Event = Event;
   type VerificationKeyGenerator = NaiveVerificationKeyGenerator<Self>;
   type VerificationInvalidator = NaiveVerificationInvalidator<Self>;
@@ -102,6 +103,11 @@ where
 {
   type OverarchingCall = Call;
   type Extrinsic = Extrinsic;
+}
+
+impl frame_system::offchain::SigningTypes for Test {
+  type Public = <Signature as sp_runtime::traits::Verify>::Signer;
+  type Signature = Signature;
 }
 
 pub struct MockTime {}

@@ -24,6 +24,7 @@ use crate::types::{PoeVerificationKeyGenerator, ProofData, ProofId};
 use anagolay_support::{AnagolayArtifactStructure, AnagolayStructureData, ArtifactId};
 use core::convert::TryInto;
 use frame_support::{assert_noop, assert_ok, traits::UnixTime};
+use sp_core::{sr25519, Pair};
 use verification::types::{VerificationContext, VerificationKeyGenerator};
 use workflows::types::{
   Workflow, WorkflowArtifactType, WorkflowData, WorkflowId, WorkflowVersion, WorkflowVersionData, WorkflowVersionExtra,
@@ -31,6 +32,11 @@ use workflows::types::{
 };
 
 const PERCEPTUAL_HASH: &[u8] = b"0x30303030303030303031313030303030303030303030303030303031313130303031313131313030313131313131313031313131313131313131313131313130303031313130303030303030303030303131313131313130303030303030303031313131313131313130303030303030313131313131313131313131313030303131313131313131313131313031313131313131313131313130313030313130313131303030303030303130303030303030303030303031303030303030303031313131313131313131313131313131313131313131313130303030303030303131313130303030303030303030303031313131303030303030303030303030";
+
+fn mock_account(ss58: &str) -> sr25519::Public {
+  let (pair, _) = sr25519::Pair::from_string_with_seed(ss58, None).unwrap();
+  pair.public()
+}
 
 fn mock_request() -> (Workflow, WorkflowVersion) {
   let wf = Workflow {
@@ -72,13 +78,14 @@ pub fn build_default_proof_data(workflow_id: WorkflowId) -> ProofData {
 #[test]
 fn proof_create_default() {
   new_test_ext().execute_with(|| {
-    let origin = mock::Origin::signed(1);
+    let account = mock_account("//Alice");
+    let origin = mock::Origin::signed(account);
     let (wf, wf_ver) = mock_request();
     let wf_id = wf.data.clone().to_cid();
-    Workflows::create(origin, wf.data, wf_ver.data).unwrap();
+    Workflows::create(origin.clone(), wf.data, wf_ver.data).unwrap();
 
     let pd = build_default_proof_data(wf_id);
-    let res = TestPoe::create_proof(mock::Origin::signed(1), pd.clone());
+    let res = TestPoe::create_proof(origin, pd.clone());
     assert_ok!(res);
   });
 }
@@ -86,7 +93,7 @@ fn proof_create_default() {
 #[test]
 fn proof_create_for_verification_context() {
   new_test_ext().execute_with(|| {
-    let holder = 1u64;
+    let holder = mock_account("//Alice");
     let context = VerificationContext::UrlForDomain("https://anagolay.network".into(), "anagolay.network".into());
     let identifier = "//Aliceanagolay.network";
 
@@ -119,19 +126,20 @@ fn proof_create_for_verification_context() {
 #[test]
 fn proof_error_on_duplicate() {
   new_test_ext().execute_with(|| {
-    let origin = mock::Origin::signed(1);
+    let account = mock_account("//Alice");
+    let origin = mock::Origin::signed(account);
     let (wf, wf_ver) = mock_request();
     let wf_id = wf.data.clone().to_cid();
-    Workflows::create(origin, wf.data, wf_ver.data).unwrap();
+    Workflows::create(origin.clone(), wf.data, wf_ver.data).unwrap();
 
     // create the proof
     let pd = build_default_proof_data(wf_id);
-    let res1 = TestPoe::create_proof(mock::Origin::signed(1), pd.clone());
+    let res1 = TestPoe::create_proof(origin.clone(), pd.clone());
 
     assert_ok!(res1);
 
     // create the proof AGAIN
-    let res2 = TestPoe::create_proof(mock::Origin::signed(1), pd.clone());
+    let res2 = TestPoe::create_proof(origin.clone(), pd.clone());
 
     assert_noop!(res2, Error::<Test>::ProofAlreadyClaimed);
   });
@@ -140,13 +148,14 @@ fn proof_error_on_duplicate() {
 #[test]
 fn phash_save_phash() {
   new_test_ext().execute_with(|| {
-    let origin = mock::Origin::signed(1);
+    let account = mock_account("//Alice");
+    let origin = mock::Origin::signed(account);
     let (wf, wf_ver) = mock_request();
     let wf_id = wf.data.clone().to_cid();
-    Workflows::create(origin, wf.data, wf_ver.data).unwrap();
+    Workflows::create(origin.clone(), wf.data, wf_ver.data).unwrap();
 
     let pd = build_default_proof_data(wf_id);
-    let res = TestPoe::create_proof(mock::Origin::signed(1), pd.clone());
+    let res = TestPoe::create_proof(origin.clone(), pd.clone());
     assert_ok!(res);
 
     let phash = PERCEPTUAL_HASH.to_vec();
@@ -155,20 +164,21 @@ fn phash_save_phash() {
       proof_id: pd.to_cid(),
     };
 
-    let res = TestPoe::save_phash(mock::Origin::signed(1), p_hash_payload);
+    let res = TestPoe::save_phash(origin, p_hash_payload);
     assert_ok!(res);
   });
 }
 #[test]
 fn phash_save_phash_error_on_duplicate() {
   new_test_ext().execute_with(|| {
-    let origin = mock::Origin::signed(1);
+    let account = mock_account("//Alice");
+    let origin = mock::Origin::signed(account);
     let (wf, wf_ver) = mock_request();
     let wf_id = wf.data.clone().to_cid();
-    Workflows::create(origin, wf.data, wf_ver.data).unwrap();
+    Workflows::create(origin.clone(), wf.data, wf_ver.data).unwrap();
 
     let pd = build_default_proof_data(wf_id);
-    let res = TestPoe::create_proof(mock::Origin::signed(1), pd.clone());
+    let res = TestPoe::create_proof(origin.clone(), pd.clone());
     assert_ok!(res);
 
     let phash = PERCEPTUAL_HASH.to_vec();
@@ -178,27 +188,28 @@ fn phash_save_phash_error_on_duplicate() {
       proof_id: pd.to_cid(),
     };
 
-    let res = TestPoe::save_phash(mock::Origin::signed(1), p_hash_payload.clone());
+    let res = TestPoe::save_phash(origin.clone(), p_hash_payload.clone());
     assert_ok!(res);
 
-    let res2 = TestPoe::save_phash(mock::Origin::signed(1), p_hash_payload.clone());
+    let res2 = TestPoe::save_phash(origin.clone(), p_hash_payload.clone());
     assert_noop!(res2, Error::<Test>::PHashAndProofIdComboAlreadyExist);
   });
 }
 #[test]
 fn phash_save_phash_error_no_proof() {
   new_test_ext().execute_with(|| {
-        let phash = PERCEPTUAL_HASH.to_vec();
+      let account = mock_account("//Alice");
+      let phash = PERCEPTUAL_HASH.to_vec();
 
-        let proof_id = ProofId::from("0x6261666b32627a616365616d6c6e766678726c717175743274686f6b6c6a76726b68726f7a787562696a78746f3476743566646f776c6162747733686177");
+      let proof_id = ProofId::from("0x6261666b32627a616365616d6c6e766678726c717175743274686f6b6c6a76726b68726f7a787562696a78746f3476743566646f776c6162747733686177");
 
-        let p_hash_payload = PhashInfo {
-        p_hash: phash.clone().try_into().unwrap(),
-        proof_id: proof_id.clone(),
-        };
+      let p_hash_payload = PhashInfo {
+      p_hash: phash.clone().try_into().unwrap(),
+      proof_id: proof_id.clone(),
+      };
 
-        let res = TestPoe::save_phash(mock::Origin::signed(1), p_hash_payload);
-        assert_noop!(res, Error::<Test>::NoSuchProof);
+      let res = TestPoe::save_phash(mock::Origin::signed(account), p_hash_payload);
+      assert_noop!(res, Error::<Test>::NoSuchProof);
     });
 }
 

@@ -47,6 +47,7 @@ sp-runtime = { version = "6.0.0", git = "https://github.com/paritytech/substrate
 sp-timestamp = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
 sp-inherents = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
 sp-keyring = { version = "6.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
+sp-keystore = { version = "0.12.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
 frame-system = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
 pallet-transaction-payment = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
 
@@ -70,8 +71,8 @@ anagolay-runtime = { path = '../runtime' }
 operations-rpc   = { path = "../pallets/operations/rpc" }
 workflows-rpc    = { path = "../pallets/workflows/rpc" }
 
-verification-rpc    = { path = "../pallets/verification/rpc" }
-tipping-rpc    = { path = "../pallets/tipping/rpc" }
+verification-rpc = { path = "../pallets/verification/rpc" }
+tipping-rpc      = { path = "../pallets/tipping/rpc" }
 
 # CLI-specific dependencies
 try-runtime-cli = { version = "0.10.0-dev", optional = true, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }

@@ -10,18 +10,38 @@ pub mod offchain {
   use super::*;
   use codec::{Decode, Encode};
   use frame_support::sp_std::clone::Clone;
+  use frame_system::offchain::*;
 
   /// Structure used in the offchain indexing to signal that there is a
-  /// [`VerificationRequest`] to process. This same type is submitted back to the runtime
+  /// [`VerificationRequest`] to process.
+  #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebugNoBound, TypeInfo)]
+  #[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
+  #[scale_info(skip_type_params(AccountId))]
+  pub struct VerificationIndexingInputData<AccountId: Debug> {
+    /// The caller of perform verification extrinsic
+    pub verifier: AccountId,
+    /// The [`VerificationRequest`] to process
+    pub request: VerificationRequest<AccountId>,
+  }
+
+  /// Structure used in the offchain indexing, submitted back to the runtime
   /// to update the status of the [`VerificationRequest`] on-chain
   #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebugNoBound, TypeInfo)]
   #[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
-  #[scale_info(skip_type_params(T))]
-  pub struct VerificationIndexingData<T: frame_system::Config> {
+  #[scale_info(skip_type_params(AccountId, Public))]
+  pub struct VerificationIndexingOutputData<AccountId: Debug, Public: Debug> {
     /// The caller of perform verification extrinsic
-    pub verifier: T::AccountId,
+    pub verifier: AccountId,
     /// The [`VerificationRequest`] to process
-    pub request: VerificationRequest<T::AccountId>,
+    pub request: VerificationRequest<AccountId>,
+    /// The public key used to sign the payload
+    pub public: Public,
+  }
+
+  impl<T: SigningTypes> SignedPayload<T> for VerificationIndexingOutputData<T::AccountId, T::Public> {
+    fn public(&self) -> T::Public {
+      self.public.clone()
+    }
   }
 }
 
