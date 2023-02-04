@@ -87,8 +87,6 @@ impl AnagolayStructureData for WorkflowData {
       Err("WorkflowData.name: length must be between 8 and 128 characters".into())
     } else if self.description.len() < 8 || self.description.len() > MaxCharactersLenGet::get() as usize {
       Err("WorkflowData.description: length must be between 4 and MaxCharactersLenGet characters".into())
-    } else if self.name.len() < 8 || self.name.len() > 128 {
-      Err("WorkflowData.name: length must be between 4 and 128 characters".into())
     } else if self.creators.len() != MaxCreatorsPerWorkflowGet::get() as usize {
       Err(
         "WorkflowData.creators: only Workflows with MaxCreatorsPerWorkflow creators are supported at the moment".into(),

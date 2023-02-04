@@ -1,4 +1,4 @@
-test-flow:
+test_flow:
   stage: test
   tags:
     - rust
@@ -24,7 +24,7 @@ test-flow:
 clippy:
   stage: test
   allow_failure: true
-  needs: ["test-flow"]
+  needs: ["test_flow"]
   cache:
     policy: pull
   tags:

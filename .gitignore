@@ -24,3 +24,5 @@ artifacts/
 
 ## where our chain data lives
 data
+coverage.xml
+coverage/

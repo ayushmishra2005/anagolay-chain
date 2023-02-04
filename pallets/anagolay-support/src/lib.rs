@@ -52,7 +52,7 @@
 //! * Identifiers - Every entity has their own (`OperationId`, `WorkflowId`, etc.) but they are all
 //! aliases of a private struct `GenericId` that deals with validation and (de)serialization
 //! * Characters - Offers an interface to deal with strings in nostd
-//! * anagolay_structure! -  Macro that produces a pattern struct with an id, some data nad an
+//! * anagolay_structure! -  Macro that produces a pattern struct with an id, some data and an
 //!   optional extra. The id is guaranteed to be computed from the data.
 //! * anagolay_version_data!, anagolay_version_extra! - Other macros to produce pattern structs used
 //!   by all entity to deal with their published artifacts and incremental versions on the

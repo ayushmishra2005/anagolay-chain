@@ -1,8 +1,8 @@
-build:
+build_prod:
   extends:
     - .with-artifacts-short-2-hours
   stage: build
-  needs: ["test-flow"]
+  needs: ["test_flow"]
   tags:
     - rust
   # rules:

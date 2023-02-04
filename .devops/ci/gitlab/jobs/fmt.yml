@@ -5,7 +5,7 @@ fmt:
   rules:
     - !reference [.rule-friendly-word, rules]
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-  cache: []
+  cache: {}
   before_script:
     - !reference [.info-compiler, before_script]
   script:

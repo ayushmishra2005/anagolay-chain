@@ -256,10 +256,15 @@ fn statements_revoke() {
     sign_statement(&mut s);
     let s_id = s.to_cid();
 
-    let res1 = TestStatements::create_copyright(mock::Origin::signed(account), s.clone());
-    assert_ok!(res1);
-    let res2 = TestStatements::revoke(mock::Origin::signed(account), s_id);
-    assert_ok!(res2);
+    assert_ok!(TestStatements::create_copyright(
+      mock::Origin::signed(account),
+      s.clone()
+    ));
+    assert_ok!(TestStatements::revoke(mock::Origin::signed(account), s_id.clone()));
+    assert_noop!(
+      TestStatements::revoke(mock::Origin::signed(account), s_id),
+      Error::<Test>::NoSuchStatement
+    );
   });
 }
 
