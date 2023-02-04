@@ -4,17 +4,36 @@ Anagolay is a next-generation framework for ownerships, copyrights and digital l
 
 ## Local Development
 
-The installation assumes your development environment is a [devcontainer](https://code.visualstudio.com/docs/remote/containers).
-For your convenience we provide the settings, recommended extensions and devcontainer. Feel free to use it and report any issues you face.
+Here is the list of currently available tasks `makers --list-category-steps anagolay` which you can run by `makers TASK_NAME`.
 
-You'll need to provide a `.env` file in the root of the project that will be used to initialize the container environment.
-It can be copied and edited from the provided `sample.env`.
+```txt
+❯ makers --list-category-steps anagolay
+[cargo-make] INFO - makers 0.35.15
+[cargo-make] INFO - Build File: Makefile.toml
+[cargo-make] INFO - Task: default
+[cargo-make] INFO - Profile: development
+anagolay
+----------
+build - Compile the Anagolay runtime in debug mode. Accepts any valid build arguments.
+build-production - Compile the Anagolay runtime in release mode with  option and custom profile `production`. Accepts any valid build arguments.
+build-release-benchmarks - Compile the Anagolay runtime in release mode with feature flag for benchmarks.
+chain-dev-purge - Purge the local chain database for debug build.
+chain-dev-start - Starts the chain in dev mode with sane default flags.
+ci-flow-light - Experimental ci-flow which runs the checks in single run instead many.
+clean-all - Remove generated artifacts.
+clean-anagolay - Remove generated artifact `anagolay`.
+test-benchmarking - Execute unit and integration tests of a anagolay node with flags enabled for testing benchmarks.
+```
 
-### Testing, building and available commands
+### Building
+
+```sh
+makers build
+```
+
+### Testing and available commands
 
 We are using the [makers](https://github.com/sagiegurari/cargo-make) crate to automate scripts and make them easier to maintain and execute. All scripts are semantically named and `makers` top level commands are the same.
-
-Here is the list of currently available tasks `makers --list-category-steps anagolay` which you can run by `makers TASK_NAME`.
 
 ## Security and code quality
 
@@ -31,46 +50,6 @@ Audit the code using the [Cargo Audit](https://github.com/RustSec/cargo-audit):
 ```sh
 # check the security
 cargo audit
-```
-
-## Code coverage
-
-`grcov` produces the correct output in either HTML or GitLab compatible format.
-Total process takes around 40 min on Gitpod - roughly 20 for instrumentation, 10 for tests, 10 for report generation:
-
-**Instrumentation**
-```sh
-rustup component add llvm-tools-preview
-cargo install grcov
-
-export LLVM_PROFILE_FILE="anagolay-%p-%m.profraw"
-export RUSTFLAGS="-Cinstrument-coverage"
-export SKIP_WASM_BUILD=true
-
-cargo build $CARGO_OPTIONS
-makers test -- $CARGO_OPTIONS
-```
-
-**HTML report generation**
-
-This will generate a static website in a folder (`./coverage`), including badges:
-
-```sh
-grcov . -s . -t html --binary-path ./target/debug --llvm --branch --ignore-not-existing --ignore "/*" -o ./coverage
-```
-
-**Cobertura report generation**
-
-This will generate an XML file (`./coverage.xml`) suitable by GitLab pipelines:
-
-```sh
-grcov . -s . -t cobertura --binary-path ./target/debug --llvm --branch --ignore-not-existing --ignore "/*" -o ./coverage.xml
-```
-
-**Cleanup**
-
-```sh
-find . \( -name "anagolay*.profraw" \) -delete
 ```
 
 ## Running in dev mode

@@ -184,15 +184,21 @@ pub mod pallet {
           // Avoid misconfigured tipping settings - default to holder if no account is configured
           let _ = setting.account.get_or_insert(holder.clone());
 
-          // Allow the caller to update the settings only if the status of the verification request related to the context is success
-          if let Some(request) = verification::Pallet::<T>::verification_request_by_account_id_and_verification_context(holder.clone(), setting.context.clone()) && request.status == VerificationStatus::Success {
-            TippingSettingsByAccountIdAndVerificationContext::<T>::insert(
-              caller.clone(),
-              setting.context.clone(),
-              setting.clone(),
-            );
+          // Allow the caller to update the settings only if the status of the verification request related to
+          // the context is success
+          if let Some(request) = verification::Pallet::<T>::verification_request_by_account_id_and_verification_context(
+            holder.clone(),
+            setting.context.clone(),
+          ) {
+            if request.status == VerificationStatus::Success {
+              TippingSettingsByAccountIdAndVerificationContext::<T>::insert(
+                caller.clone(),
+                setting.context.clone(),
+                setting.clone(),
+              );
 
-            updated_settings.push(setting.clone());
+              updated_settings.push(setting.clone());
+            }
           }
         }
       });

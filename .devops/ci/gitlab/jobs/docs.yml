@@ -1,6 +1,6 @@
 # build the docs and publish them
 build-docs-upload-to-ipfs:
-  needs: ["build"]
+  needs: ["build_prod"]
   stage: publish
   tags:
     - rust

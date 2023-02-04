@@ -1,4 +1,5 @@
-FROM docker.io/rust:1-bullseye as prebase
+FROM docker.io/rust:1-bullseye 
+
 
 ARG AWS_ACCESS_KEY_ID=
 ARG AWS_SECRET_ACCESS_KEY=
@@ -15,10 +16,12 @@ ENV SCCACHE_S3_KEY_PREFIX=$SCCACHE_S3_KEY_PREFIX
 ENV RUST_BACKTRACE=1 \
   CARGO_INCREMENTAL=1
 
-WORKDIR /chef_build
-
-RUN rustup default nightly-2022-05-28 \
-  && rustup target add wasm32-unknown-unknown --toolchain nightly-2022-05-28
+RUN wget https://github.com/mozilla/grcov/releases/download/v0.8.13/grcov-x86_64-unknown-linux-musl.tar.bz2 -O /tmp/grcov.tar.bz2 \
+&& tar xvfj /tmp/grcov.tar.bz2 \
+&& mv /tmp/grcov /usr/local/bin/grcov \
+&& chmod +x /usr/local/bin/grcov \
+&& rm -rf /tmp/grcov \
+&& grcov --version
 
 
 # Install Doppler CLI
@@ -45,7 +48,19 @@ RUN apt-get update \
   tree \
   zip \
   unzip \
-  dnsutils
+  dnsutils \ 
+  lcov \
+  python3 \
+  python3-pip 
+
+
+RUN pip3 install lcov_cobertura
+
+RUN rustup default nightly-2023-02-02 \
+  && rustup target add wasm32-unknown-unknown --toolchain nightly-2023-02-02 \
+  && rustup target add x86_64-unknown-linux-gnu --toolchain nightly-2023-02-02 \
+  && rustup component  add llvm-tools-preview --toolchain nightly-2023-02-02
+
 
 # 0.3.0 with new s3 backend custom built
 RUN wget -q  https://ipfs.anagolay.network/ipfs/bafybeifxewkbkt3ympmsjheirjrqr56znhvfjlfd3vaculn2mrdmub3cwu -O /usr/local/bin/sccache \
@@ -57,12 +72,14 @@ ENV RUSTC_WRAPPER=/usr/local/bin/sccache
 RUN cargo install $EXTRA_ARGS \
   cargo-make \
   taplo-cli \
-  cargo-nextest
+  cargo-nextest \
+  cargo-audit 
 #   wasm-bindgen-cli \
 #   wasm-pack \
 #   cargo-chef \
-#   cargo-audit \
 #   cargo-tarpaulin \
+
+
 
 
 ENV AWS_ACCESS_KEY_ID=
@@ -70,24 +87,4 @@ ENV AWS_SECRET_ACCESS_KEY=
 ENV SCCACHE_BUCKET=
 ENV SCCACHE_REGION=
 ENV SCCACHE_S3_KEY_PREFIX=
-
-
-
-# # planing is good
-# FROM prebase as planner
-# WORKDIR /chef_build
-# COPY . .
-# RUN cargo chef prepare --recipe-path recipe.json
-
-# # compiling is better
-# FROM prebase as cacher
-# WORKDIR /chef_build
-# COPY --from=planner /build/recipe.json recipe.json
-# RUN cargo chef cook --release --recipe-path recipe.json
-
-# ENV AWS_ACCESS_KEY_ID=
-# ENV AWS_SECRET_ACCESS_KEY=
-# ENV SCCACHE_BUCKET=
-# ENV SCCACHE_REGION=
-# ENV SCCACHE_S3_KEY_PREFIX=
 

@@ -1,6 +1,6 @@
 # must see before chaning https://rust-lang.github.io/rustup-components-history/
 [toolchain]
-channel = "nightly-2022-05-28"
+channel = "nightly-2023-02-02"
 components = [
   "rustfmt",
   "rustc-dev",

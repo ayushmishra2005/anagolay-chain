@@ -25,7 +25,7 @@ use crate::types::{
   Workflow, WorkflowArtifactType, WorkflowData, WorkflowId, WorkflowRecord, WorkflowVersion, WorkflowVersionData,
   WorkflowVersionExtra, WorkflowVersionId, WorkflowVersionRecord,
 };
-use anagolay_support::{AnagolayArtifactStructure, AnagolayStructureData, ArtifactId};
+use anagolay_support::{AnagolayArtifactStructure, AnagolayStructureData, ArtifactId, Characters};
 use core::convert::TryInto;
 use frame_support::{assert_noop, assert_ok, sp_std::vec, traits::UnixTime};
 
@@ -137,6 +137,20 @@ fn workflows_create_workflow() {
 
     let workflow_total = Total::<Test>::get();
     assert_eq!(1, workflow_total);
+
+    // workflowVersionId -> workflowVersion[]
+    let wf_versions = WorkflowTest::get_workflow_versions_by_ids(workflow_version_ids.to_vec(), 0, 1);
+    assert_eq!(wf_versions.len(), 1);
+    assert_eq!(wf_versions[0].data, wf_ver.data);
+
+    assert_eq!(WorkflowTest::get_workflow_versions_by_ids(vec![], 0, 0).len(), 0);
+
+    // workflowId -> workflow[]
+    let workflows = WorkflowTest::get_workflows_by_ids([wf.data.to_cid()].to_vec(), 0, 1);
+    assert_eq!(workflows.len(), 1);
+    assert_eq!(workflows[0].data, wf.data);
+
+    assert_eq!(WorkflowTest::get_workflows_by_ids(vec![], 0, 0).len(), 0);
   });
 }
 
@@ -205,6 +219,41 @@ fn workflows_create_workflow_error_bad_request() {
     let res = WorkflowTest::create(mock::Origin::signed(1), wf.data.clone(), wf_ver.data.clone());
     assert_noop!(res, Error::<Test>::BadRequest);
   });
+}
+
+#[test]
+fn workflow_data_validate() {
+  let invalid_name: Result<(), Characters> = Err(Characters::from(
+    "WorkflowData.name: length must be between 8 and 128 characters",
+  ));
+  let invalid_description: Result<(), Characters> = Err(Characters::from(
+    "WorkflowData.description: length must be between 4 and MaxCharactersLenGet characters",
+  ));
+  let invalid_creators: Result<(), Characters> = Err(Characters::from(
+    "WorkflowData.creators: only Workflows with MaxCreatorsPerWorkflow creators are supported at the moment",
+  ));
+
+  let mut wf = WorkflowData::default();
+
+  // name is too short
+  assert_eq!(wf.validate(), invalid_name.clone());
+
+  wf.name = str::repeat("a", 129).as_str().into();
+  // name is too long
+  assert_eq!(wf.validate(), invalid_name);
+
+  wf.name = "workflow_test".into();
+
+  // description is too short
+  assert_eq!(wf.validate(), invalid_description.clone());
+
+  wf.description = "description ok".into();
+
+  // `creators` is empty
+  assert_eq!(wf.validate(), invalid_creators.clone());
+
+  wf.creators = vec!["tester".into()].try_into().unwrap();
+  assert_ok!(wf.validate());
 }
 
 #[test]

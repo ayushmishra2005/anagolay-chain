@@ -1,17 +1,6 @@
 # For Developers among us
 
-Start the release chain
-```
-mkdir -p resources
-./target/production/anagolay --base-path ./target/data --chain local --no-telemetry --rpc-methods Unsafe --rpc-cors all --unsafe-rpc-external
-./target/production/anagolay build-spec --base-path ./target/data --disable-default-bootnode --chain local > ./resources/idiyanale/spec.json
-./target/production/anagolay build-spec --chain=./resources/idiyanale/spec.json  --raw --disable-default-bootnode > ./resources/idiyanale/genesis.json
-
-
-```
-
-
-## commits
+## CI commit messages
 
 The gitlab job [`test`](./.devops/ci/gitlab/jobs/test.yml) is configured to run with the [`.rules-run-if-source-code-is-changed`](./.devops/ci/gitlab/utils/rules.yml#20) rule which triggers it in one of two cases:
 
@@ -45,3 +34,11 @@ SCCACHE_START_SERVER=1 SCCACHE_NO_DAEMON=1 RUST_LOG=sccache=trace SCCACHE_LOG=de
 
 sccache --stop-server && SCCACHE_START_SERVER=1 SCCACHE_NO_DAEMON=1 RUST_LOG=sccache=trace SCCACHE_LOG=debug sccache
 ```
+
+## Troubleshooting
+
+If you happen to see the `profraw` files they are used to instrument your code. Here is what you can do:
+
+1. check the RUSTFLAGS with `echo $RUSTFLAGS`, this should not contain the `-C instrument-coverage`
+2. completely unset the RUSTFLAGS with `unset RUSTFLAGS`
+3. remove all the `profraw` files using this `find . \( -name "*.profraw" \) -delete`

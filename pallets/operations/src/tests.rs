@@ -23,7 +23,7 @@ use crate::types::{
   Operation, OperationArtifactType, OperationData, OperationId, OperationRecord, OperationVersion,
   OperationVersionData, OperationVersionExtra, OperationVersionId, OperationVersionRecord,
 };
-use anagolay_support::{AnagolayArtifactStructure, AnagolayStructureData, ArtifactId};
+use anagolay_support::{AnagolayArtifactStructure, AnagolayStructureData, ArtifactId, Characters};
 use core::convert::TryInto;
 use frame_support::{assert_noop, assert_ok, sp_std::vec, traits::UnixTime};
 
@@ -110,19 +110,24 @@ fn operations_test_genesis() {
 fn operations_create_operation() {
   new_test_ext(None).execute_with(|| {
     let (op, mut op_ver) = mock_request();
-    let origin = mock::Origin::signed(1);
-    let res = OperationTest::create(origin, op.data.clone(), op_ver.data.clone());
 
-    assert_ok!(res);
+    // create an operation
+    assert_ok!(OperationTest::create(
+      mock::Origin::signed(1),
+      op.data.clone(),
+      op_ver.data.clone()
+    ));
 
     let op_id = &op.data.to_cid();
     op_ver.data.entity_id = Some(op_id.clone());
     let op_ver_id = &op_ver.data.to_cid();
 
+    // (operationId, accountId) -> opeartion
     let operation = OperationByOperationIdAndAccountId::<Test>::get(op_id, 1).unwrap();
     assert_eq!(operation.record.data, op.data);
     assert_eq!(operation.record.extra, op.extra);
 
+    // operationId -> operationVersionId[]
     let operation_version_ids = VersionIdsByOperationId::<Test>::get(op_id);
     assert_eq!(1, operation_version_ids.len());
     assert_eq!(op_ver_id, operation_version_ids.get(0).unwrap());
@@ -131,9 +136,30 @@ fn operations_create_operation() {
     assert_eq!(1, artifacts.len());
     assert_eq!(op_ver.data.artifacts[0].ipfs_cid, *artifacts.get(0).unwrap());
 
+    // operationVersionId -> version
     let version = VersionByVersionId::<Test>::get(op_ver_id).unwrap();
     assert_eq!(version.record.data, op_ver.data);
     assert!(version.record.extra.is_some());
+
+    // operationId -> operation[]
+    let operations = OperationTest::get_operations_by_ids([op.data.to_cid()].to_vec(), 0, 1);
+    assert_eq!(operations.len(), 1);
+    assert_eq!(operations[0].data, op.data);
+
+    assert_eq!(OperationTest::get_operations_by_ids(vec![], 0, 0).len(), 0);
+
+    // operationVersionId -> operationVersion[]
+    let operation_versions = OperationTest::get_operation_versions_by_ids(operation_version_ids.to_vec(), 0, 1);
+    assert_eq!(operation_versions.len(), 1);
+    assert_eq!(operation_versions[0].data, op_ver.data);
+
+    assert_eq!(OperationTest::get_operation_versions_by_ids(vec![], 0, 0).len(), 0);
+
+    // version_approve
+    assert_ok!(OperationTest::version_approve(
+      mock::Origin::signed(1),
+      op.data.to_cid()
+    ));
 
     let operation_total = Total::<Test>::get();
     assert_eq!(1, operation_total);
@@ -229,6 +255,64 @@ fn operations_create_operation_with_config() {
     let mut op_keys = op.data.config.into_keys();
     assert_eq!(stored_op_keys.next().unwrap(), op_keys.next().unwrap());
   });
+}
+
+#[test]
+fn operatation_data_validate() {
+  let str_4: Characters = "aaaa".into();
+  let str_128: Characters = str::repeat("a", 128).as_str().into();
+  let str_129: Characters = str::repeat("a", 129).as_str().into();
+  let str_1024: Characters = str::repeat("a", 1024).as_str().into();
+  let str_1025: Characters = str::repeat("a", 1025).as_str().into();
+
+  let invalid_name: Result<(), Characters> = Err(Characters::from(
+    "OperationData.name: length must be between 4 and 128 characters",
+  ));
+  let invalid_description: Result<(), Characters> = Err(Characters::from(
+    "OperationData.description: length must be between 4 and 1024 characters",
+  ));
+  let invalid_repository: Result<(), Characters> = Err(Characters::from(
+    "OperationData.repository: length must be between 4 and MaxCharactersLen characters",
+  ));
+  let invalid_license: Result<(), Characters> = Err(Characters::from(
+    "OperationData.license: length must be between 4 and 128 characters",
+  ));
+
+  let mut op_data = OperationData::default();
+
+  // name is too short
+  assert_eq!(op_data.validate(), invalid_name.clone());
+
+  op_data.name = str_129.clone();
+  // name is too long
+  assert_eq!(op_data.validate(), invalid_name.clone());
+
+  // name is valid
+  op_data.name = str_128.clone();
+
+  // description is too short
+  assert_eq!(op_data.validate(), invalid_description.clone());
+
+  op_data.description = str_1025.clone();
+  // description is too long
+  assert_eq!(op_data.validate(), invalid_description.clone());
+
+  op_data.description = str_1024.clone();
+
+  // repository is too short
+  assert_eq!(op_data.validate(), invalid_repository.clone());
+
+  op_data.repository = str_1024.clone();
+
+  // license is too short
+  assert_eq!(op_data.validate(), invalid_license.clone());
+
+  op_data.license = str_129;
+  // license is too long
+  assert_eq!(op_data.validate(), invalid_license.clone());
+
+  op_data.license = str_4;
+  assert_ok!(op_data.validate());
 }
 
 #[test]

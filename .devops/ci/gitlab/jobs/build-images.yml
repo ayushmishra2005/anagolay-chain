@@ -13,7 +13,7 @@ build-idiyanale-main-image-with-artifact:
     - .base-image-build
   stage: build-images
   needs:
-    - job: build
+    - job: build_prod
       artifacts: true
   cache: {}
   # rules:
@@ -22,7 +22,7 @@ build-idiyanale-main-image-with-artifact:
   variables:
     IMAGE_DOCKERFILE_PATH: Dockerfile
     IMAGE_NAME: "${CI_REGISTRY}/${CI_PROJECT_PATH}/idiyanale:${CI_COMMIT_SHORT_SHA}"
-    AN_CI_LINUX_TAG: "19816159"
+    AN_CI_LINUX_TAG: "038b630a"
     KANIKO_CONTEXT: "$CI_PROJECT_DIR/artifacts"
     GIT_STRATEGY: none
     GIT_LAST_REVISION: $CI_COMMIT_SHA
@@ -43,12 +43,12 @@ build-main-image-latest:
   #   - !reference [.rules-build, rules]
   #   - !reference [.rule-friendly-word, rules]
   needs:
-    - job: build
+    - job: build_prod
       artifacts: true
   variables:
     IMAGE_DOCKERFILE_PATH: "${CI_PROJECT_DIR}/.devops/docker/prod/anagolay.dockerfile"
     IMAGE_NAME: "${CI_REGISTRY}/${CI_PROJECT_PATH}:latest"
-    AN_CI_LINUX_TAG: "19816159"
+    AN_CI_LINUX_TAG: "038b630a"
     GIT_LAST_REVISION: $CI_COMMIT_SHORT_SHA
 
   script:
@@ -65,6 +65,8 @@ build-ci-image:
   variables:
     IMAGE_DOCKERFILE_PATH: "${CI_PROJECT_DIR}/.devops/docker/prod/ci-linux.dockerfile"
     IMAGE_NAME: "${CI_REGISTRY}/${CI_PROJECT_PATH}/ci-linux:${CI_COMMIT_SHORT_SHA}"
+    KANIKO_CONTEXT: "$CI_PROJECT_DIR"
+    GIT_LAST_REVISION: $CI_COMMIT_SHA
   script:
     - echo $IMAGE_NAME
     # docs  https://docs.gitlab.com/ee/ci/yaml/yaml_optimization.html#reference-tags
