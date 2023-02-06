@@ -23,7 +23,7 @@
 use crate as statements;
 use crate::{types::StatementsVerificationInvalidator, Config};
 use frame_support::parameter_types;
-use sp_core::{sr25519, H256};
+use sp_core::{sr25519, sr25519::Signature, H256};
 use sp_runtime::{
   testing::{Header, TestXt},
   traits::{BlakeTwo256, IdentityLookup},
@@ -85,6 +85,7 @@ impl frame_system::Config for Test {
 }
 
 impl verification::Config for Test {
+  type AuthorityId = verification::crypto::VerificationAuthId;
   type Event = ();
   type VerificationKeyGenerator = NaiveVerificationKeyGenerator<Self>;
   type VerificationInvalidator = StatementsVerificationInvalidator<Self>;
@@ -101,6 +102,11 @@ where
 {
   type OverarchingCall = Call;
   type Extrinsic = Extrinsic;
+}
+
+impl frame_system::offchain::SigningTypes for Test {
+  type Public = <Signature as sp_runtime::traits::Verify>::Signer;
+  type Signature = Signature;
 }
 
 impl poe::Config for Test {

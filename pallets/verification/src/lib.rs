@@ -49,6 +49,7 @@ mod mock;
 mod tests;
 
 pub use pallet::*;
+use sp_runtime::KeyTypeId;
 
 const ONCHAIN_TX_KEY: &[u8] = b"verification::strategy::worker";
 
@@ -72,8 +73,48 @@ pub mod consts {
   }
 }
 
+/// Defines application identifier for crypto keys of this module.
+///
+/// Every module that deals with signatures needs to declare its unique identifier for
+/// its crypto keys.
+/// When offchain worker is signing transactions it's going to request keys of type
+/// `KeyTypeId` from the keystore and use the ones it finds to sign the transaction.
+/// The keys can be inserted manually via RPC (see `author_insertKey`).
+pub const KEY_TYPE: KeyTypeId = KeyTypeId(*b"ver!");
+
+/// Based on the above `KeyTypeId` we need to generate a pallet-specific crypto type wrappers.
+/// We can use from supported crypto kinds (`sr25519`, `ed25519` and `ecdsa`) and augment
+/// the types with this pallet-specific identifier.
+pub mod crypto {
+  use super::KEY_TYPE;
+  use core::convert::TryFrom;
+  use sp_core::sr25519::Signature as Sr25519Signature;
+  use sp_runtime::{
+    app_crypto::{app_crypto, sr25519},
+    traits::Verify,
+    MultiSignature, MultiSigner,
+  };
+  app_crypto!(sr25519, KEY_TYPE);
+
+  pub struct VerificationAuthId;
+
+  impl frame_system::offchain::AppCrypto<MultiSigner, MultiSignature> for VerificationAuthId {
+    type RuntimeAppPublic = Public;
+    type GenericSignature = sp_core::sr25519::Signature;
+    type GenericPublic = sp_core::sr25519::Public;
+  }
+
+  // implemented for mock runtime in test
+  impl frame_system::offchain::AppCrypto<<Sr25519Signature as Verify>::Signer, Sr25519Signature> for VerificationAuthId {
+    type RuntimeAppPublic = Public;
+    type GenericSignature = sp_core::sr25519::Signature;
+    type GenericPublic = sp_core::sr25519::Public;
+  }
+}
+
 #[frame_support::pallet]
 pub mod pallet {
+  pub use super::KEY_TYPE;
   use crate::{
     types::{offchain::*, *},
     weights::WeightInfo,
@@ -85,6 +126,7 @@ pub mod pallet {
     sp_std::{vec::*, *},
     traits::{Currency, ReservableCurrency},
   };
+  use frame_system::offchain::{AppCrypto, SignedPayload};
 
   use crate::consts::*;
   use frame_support::traits::tokens::BalanceStatus;
@@ -132,7 +174,16 @@ pub mod pallet {
       };
 
       match call {
-        Call::submit_verification_status { verification_data: _ } => valid_tx(b"submit_verification_status".to_vec()),
+        Call::submit_verification_status {
+          verification_data,
+          signature,
+        } => {
+          if !SignedPayload::<T>::verify::<T::AuthorityId>(verification_data, signature.clone()) {
+            InvalidTransaction::BadProof.into()
+          } else {
+            valid_tx(b"submit_verification_status".to_vec())
+          }
+        }
         _ => InvalidTransaction::Call.into(),
       }
     }
@@ -143,7 +194,12 @@ pub mod pallet {
   pub struct Pallet<T>(_);
 
   #[pallet::config]
-  pub trait Config: SendTransactionTypes<Call<Self>> + frame_system::Config {
+  pub trait Config:
+    SendTransactionTypes<Call<Self>> + frame_system::offchain::SigningTypes + frame_system::Config
+  {
+    /// The identifier type for an offchain worker.
+    type AuthorityId: AppCrypto<Self::Public, Self::Signature>;
+
     /// The overarching event type.
     type Event: From<Event<Self>>
       + Into<<Self as frame_system::Config>::Event>
@@ -205,7 +261,7 @@ pub mod pallet {
       let key = derived_key::<T>(block_number);
       let oci_mem = StorageValueRef::persistent(&key);
 
-      if let Ok(Some(indexing_data)) = oci_mem.get::<VerificationIndexingData<T>>() {
+      if let Ok(Some(indexing_data)) = oci_mem.get::<VerificationIndexingInputData<T::AccountId>>() {
         let _res = Self::process_pending_verification(indexing_data);
       }
     }
@@ -411,7 +467,7 @@ pub mod pallet {
       // Insert the request in the off-chain indexed database for further processing by the off-chain
       // worker
       let key = derived_key::<T>(current_block);
-      let data = VerificationIndexingData::<T> {
+      let data = VerificationIndexingInputData::<T::AccountId> {
         verifier: verifier.clone(),
         request: stored_request.clone(),
       };
@@ -423,14 +479,16 @@ pub mod pallet {
       Ok(().into())
     }
 
-    /// Accepts a [`VerificationIndexingData`] from an unsigned local transaction submitted by
+    /// Accepts a [`VerificationIndexingOutputData`] from an unsigned local transaction submitted by
     /// the off-chain worker. This will unreserve the registration fee of the holder, and will try
     /// to transfer it to the verifier if they are not the same account.
     ///
     /// # Arguments
     /// * origin - the None origin
-    /// * verification_data - the [`VerificationIndexingData`] structure updated by the off-chain
-    ///   worker
+    /// * verification_data - the [`VerificationIndexingOutputData`] structure updated by the
+    ///   off-chain worker
+    /// * signature - the signature of the verification data to be checked in order to make sure
+    ///   that the caller was the off-chain worker
     ///
     /// # Errors
     /// * `NoSuchVerificationRequest` - if the request context is not associated to any stored
@@ -445,11 +503,14 @@ pub mod pallet {
     ///
     /// # Return
     /// `DispatchResultWithPostInfo` containing Unit type
-    #[pallet::weight(0)]
+    #[pallet::weight(<T as Config>::WeightInfo::submit_verification_status())]
     pub fn submit_verification_status(
       origin: OriginFor<T>,
-      verification_data: VerificationIndexingData<T>,
+      verification_data: VerificationIndexingOutputData<T::AccountId, T::Public>,
+      _signature: T::Signature,
     ) -> DispatchResultWithPostInfo {
+      // Ensure  unsigned transaction. We don't need to verify the signature here because it has been
+      // verified in `validate_unsigned` function when sending out the unsigned tx
       ensure_none(origin)?;
 
       // Mutate the request in the store with the status obtained from the verification data

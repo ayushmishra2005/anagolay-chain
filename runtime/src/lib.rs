@@ -484,6 +484,7 @@ impl poe::Config for Runtime {
 }
 
 impl verification::Config for Runtime {
+  type AuthorityId = verification::crypto::VerificationAuthId;
   type Event = Event;
   type VerificationKeyGenerator = poe::types::PoeVerificationKeyGenerator<Runtime>;
   type VerificationInvalidator = statements::types::StatementsVerificationInvalidator<Runtime>;
@@ -495,7 +496,7 @@ impl verification::Config for Runtime {
 }
 
 impl frame_system::offchain::SigningTypes for Runtime {
-  type Public = <Signature as sp_runtime::traits::Verify>::Signer;
+  type Public = <Signature as Verify>::Signer;
   type Signature = Signature;
 }
 

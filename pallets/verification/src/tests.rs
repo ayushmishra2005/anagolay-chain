@@ -12,9 +12,10 @@ use crate::{
   consts::MaxVerificationRequestsPerContextGet,
   types::{offchain::*, *},
 };
-use codec::Decode;
+use codec::{Decode, Encode};
 use core::convert::TryInto;
 use frame_support::{traits::ReservableCurrency, *};
+use frame_system::offchain::{SignMessage, SignedPayload, Signer};
 use sp_core::{
   offchain::{testing, OffchainWorkerExt, TransactionPoolExt},
   sr25519, Pair,
@@ -284,6 +285,9 @@ fn perform_verification_domain_verification_from_non_holder() {
 
 #[test]
 fn perform_verification_domain_offchain_process() {
+  let public_key = hex::decode("06c41c243c74294cc515287c118e80bd73a8dbc7979ed008b18369742a11811a").unwrap();
+  let public_key = <Test as frame_system::offchain::SigningTypes>::Public::decode(&mut public_key.as_slice()).unwrap();
+
   let mut t = new_test_ext(Vec::new());
   let (pool, pool_state) = testing::TestTransactionPoolExt::new();
   t.register_extension(TransactionPoolExt::new(pool));
@@ -336,36 +340,54 @@ fn perform_verification_domain_offchain_process() {
       mock_request::<Test>(holder.clone(), context.clone(), action.clone());
     request.status = VerificationStatus::Pending;
 
-    let data = VerificationIndexingData {
+    let in_data = VerificationIndexingInputData {
       verifier: holder.clone(),
       request: request.clone(),
     };
 
+    let out_data = VerificationIndexingOutputData {
+      verifier: holder.clone(),
+      request: VerificationRequest::<<Test as frame_system::Config>::AccountId> {
+        status: VerificationStatus::Success,
+        ..request.clone()
+      },
+      public: public_key,
+    };
+
     // when
-    let res = VerificationTest::process_pending_verification(data.clone());
+    let res = VerificationTest::process_pending_verification(in_data.clone());
     assert_ok!(res);
-    let mut successful_verification = data.clone();
-    successful_verification.request.status = VerificationStatus::Success;
 
     // then
     let tx = pool_state.write().transactions.pop().unwrap();
     assert!(pool_state.read().transactions.is_empty());
     let tx = Extrinsic::decode(&mut &*tx).unwrap();
     assert_eq!(tx.signature, None);
-    assert_eq!(
-      tx.call,
-      Call::VerificationTest(crate::Call::submit_verification_status {
-        verification_data: successful_verification
-      })
-    );
+    if let Call::VerificationTest(crate::Call::submit_verification_status {
+      verification_data: body,
+      signature,
+    }) = tx.call
+    {
+      assert_eq!(body, out_data);
+
+      let signature_valid = SignedPayload::<Test>::verify::<<Test as crate::Config>::AuthorityId>(&out_data, signature);
+
+      assert!(signature_valid);
+    }
   })
 }
 
 #[test]
 fn perform_submit_verification_status_failure_from_non_holder() {
+  let public_key = hex::decode("d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d").unwrap();
+  let public_key = <Test as frame_system::offchain::SigningTypes>::Public::decode(&mut public_key.as_slice()).unwrap();
+
   let holder = mock_account("//Alice");
   let verifier = mock_account("//Bob");
-  new_test_ext(vec![(holder, 100), (verifier, 10)]).execute_with(|| {
+
+  let mut t = new_test_ext(vec![(holder, 100), (verifier, 10)]);
+
+  t.execute_with(|| {
     // To emit events, we need to be past block 0
     System::set_block_number(1);
 
@@ -384,15 +406,19 @@ fn perform_submit_verification_status_failure_from_non_holder() {
       mock_request::<Test>(holder.clone(), context.clone(), action.clone());
     VerificationRequestByAccountIdAndVerificationContext::<Test>::insert(holder, context.clone(), request.clone());
 
-    let data = VerificationIndexingData {
+    let data = VerificationIndexingOutputData {
       verifier: verifier.clone(),
       request: VerificationRequest {
         status: VerificationStatus::Failure("an error description".into()),
         ..request.clone()
       },
+      public: public_key,
     };
 
-    let res = VerificationTest::submit_verification_status(origin, data);
+    let signer = Signer::<Test, <Test as crate::Config>::AuthorityId>::any_account();
+    let signature_data = signer.sign_message(&data.encode()).unwrap();
+
+    let res = VerificationTest::submit_verification_status(origin, data, signature_data.1);
     assert_ok!(res);
 
     let event_record: frame_system::EventRecord<_, _> = System::events().pop().unwrap();
