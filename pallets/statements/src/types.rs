@@ -73,21 +73,16 @@ pub struct Validity {
 }
 
 /// Possible Expiration types
-#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, MaxEncodedLen, TypeInfo)]
+#[derive(Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, MaxEncodedLen, TypeInfo)]
 #[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
 pub enum ExpirationType {
+  #[default]
   Forever,
   Years,
   Months,
   Days,
   Minutes,
   Seconds,
-}
-
-impl Default for ExpirationType {
-  fn default() -> Self {
-    ExpirationType::Forever
-  }
 }
 
 /// Claim Expiration
@@ -101,17 +96,12 @@ pub struct Expiration {
 }
 
 /// Claim types
-#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, MaxEncodedLen, TypeInfo)]
+#[derive(Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, MaxEncodedLen, TypeInfo)]
 #[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
 pub enum ClaimType {
+  #[default]
   Copyright,
   Ownership,
-}
-
-impl Default for ClaimType {
-  fn default() -> Self {
-    ClaimType::Copyright
-  }
 }
 
 /// Generic Claim

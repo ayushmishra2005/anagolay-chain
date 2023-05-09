@@ -1,5 +1,5 @@
 ARG GIT_LATEST_REVISION
-ARG AN_CI_LINUX_TAG="038b630a"
+ARG AN_CI_LINUX_TAG="a42b569b"
 ####### BUILDER image
 FROM registry.gitlab.com/anagolay/anagolay/ci-linux:$AN_CI_LINUX_TAG as builder
 

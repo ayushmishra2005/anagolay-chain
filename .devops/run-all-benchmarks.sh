@@ -25,7 +25,6 @@ for i in $(find runtime/src/weights -type f -name 'pallet_*.rs' | sed -r 's|runt
 done
 echo "Done!"
 
-
 # ./target/release/anagolay benchmark \
 #   --chain="${chain}" \
 #   --steps=50 \

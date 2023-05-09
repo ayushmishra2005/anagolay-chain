@@ -47,10 +47,11 @@ anagolay_generic_id!(Artifact);
 pub type TypeName = Characters;
 
 /// List of equipment that needs workflows generated
-#[derive(Encode, Decode, Clone, PartialEq, Eq, Ord, PartialOrd, RuntimeDebug, MaxEncodedLen, TypeInfo)]
+#[derive(Encode, Decode, Default, Clone, PartialEq, Eq, Ord, PartialOrd, RuntimeDebug, MaxEncodedLen, TypeInfo)]
 #[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
 pub enum ForWhat {
   /// We are creating it For what? This can be a part of the group
+  #[default]
   GENERIC, // 0
   PHOTO,       // 1
   CAMERA,      // 2
@@ -59,12 +60,6 @@ pub enum ForWhat {
   USER,        // 5
   SYS,         // 6
   FLOWCONTROL, // 7
-}
-
-impl Default for ForWhat {
-  fn default() -> Self {
-    ForWhat::GENERIC
-  }
 }
 
 /// This macro produces a record for an entity to be stored on chain. The struct defines the

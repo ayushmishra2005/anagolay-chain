@@ -8,70 +8,46 @@
       "label": "check",
       "command": "makers",
       // "args": ["check", "--verbose"],
-      "args": [
-        "check"
-      ],
-      "problemMatcher": [
-        "$rustc"
-      ],
+      "args": ["check"],
+      "problemMatcher": ["$rustc"],
       "group": "build"
     },
     {
       "type": "shell",
       "label": "test",
       "command": "makers",
-      "args": [
-        "test"
-      ],
-      "problemMatcher": [
-        "$rustc"
-      ],
+      "args": ["test"],
+      "problemMatcher": ["$rustc"],
       "group": "build"
     },
     {
       "type": "shell",
       "label": "build",
       "command": "makers",
-      "args": [
-        "build"
-      ],
-      "problemMatcher": [
-        "$rustc"
-      ],
+      "args": ["build"],
+      "problemMatcher": ["$rustc"],
       "group": "build"
     },
     {
       "label": "purge chain",
       "type": "shell",
       "command": "makers",
-      "args": [
-        "chain-dev-purge"
-      ],
-      "problemMatcher": [
-        "$rustc"
-      ]
+      "args": ["chain-dev-purge"],
+      "problemMatcher": ["$rustc"]
     },
     {
       "label": "start dev",
       "type": "shell",
       "command": "makers",
-      "args": [
-        "chain-dev-start"
-      ],
-      "problemMatcher": [
-        "$rustc"
-      ]
+      "args": ["start"],
+      "problemMatcher": ["$rustc"]
     },
     {
       "type": "shell",
       "label": "fmt check",
       "command": "makers",
-      "args": [
-        "format"
-      ],
-      "problemMatcher": [
-        "$rustc"
-      ],
+      "args": ["format"],
+      "problemMatcher": ["$rustc"],
       "group": "build"
     }
   ]

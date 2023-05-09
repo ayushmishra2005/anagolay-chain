@@ -9,7 +9,7 @@
 //! EXECUTION: None, WASM-EXECUTION: Compiled, CHAIN: Some("dev"), DB CACHE: 1024
 
 // Executed Command:
-// target/release/anagolay
+// ./target/release/anagolay
 // benchmark
 // pallet
 // --chain
@@ -54,22 +54,23 @@ impl<T: frame_system::Config> WeightInfo for AnagolayWeight<T> {
   // Storage: Verification AccountIdsByVerificationContext (r:1 w:1)
   // Storage: Poe ProofByProofIdAndAccountId (r:0 w:1)
   // Storage: Poe ProofIdsByVerificationContext (r:0 w:1)
+  // Storage: Verification AccountIdByVerificationContext (r:0 w:1)
   fn request_verification() -> Weight {
-    (35_400_000 as Weight)
-      .saturating_add(T::DbWeight::get().reads(3 as Weight))
-      .saturating_add(T::DbWeight::get().writes(5 as Weight))
+    Weight::from_ref_time(35_400_000)
+      .saturating_add(T::DbWeight::get().reads(3))
+      .saturating_add(T::DbWeight::get().writes(5))
   }
   // Storage: Verification VerificationRequestByAccountIdAndVerificationContext (r:1 w:1)
   fn submit_verification_status() -> Weight {
-    (19_930_000 as Weight)
-      .saturating_add(T::DbWeight::get().reads(1 as Weight))
-      .saturating_add(T::DbWeight::get().writes(1 as Weight))
+    Weight::from_ref_time(19_930_000)
+      .saturating_add(T::DbWeight::get().reads(1))
+      .saturating_add(T::DbWeight::get().writes(1))
   }
   // Storage: Verification VerificationRequestByAccountIdAndVerificationContext (r:1 w:1)
   fn perform_verification() -> Weight {
-    (16_350_000 as Weight)
-      .saturating_add(T::DbWeight::get().reads(1 as Weight))
-      .saturating_add(T::DbWeight::get().writes(1 as Weight))
+    Weight::from_ref_time(16_350_000)
+      .saturating_add(T::DbWeight::get().reads(1))
+      .saturating_add(T::DbWeight::get().writes(1))
   }
 }
 
@@ -80,21 +81,22 @@ impl WeightInfo for () {
   // Storage: Verification AccountIdsByVerificationContext (r:1 w:1)
   // Storage: Poe ProofByProofIdAndAccountId (r:0 w:1)
   // Storage: Poe ProofIdsByVerificationContext (r:0 w:1)
+  // Storage: Verification AccountIdByVerificationContext (r:0 w:1)
   fn request_verification() -> Weight {
-    (35_400_000 as Weight)
-      .saturating_add(RocksDbWeight::get().reads(3 as Weight))
-      .saturating_add(RocksDbWeight::get().writes(5 as Weight))
+    Weight::from_ref_time(35_400_000)
+      .saturating_add(RocksDbWeight::get().reads(3))
+      .saturating_add(RocksDbWeight::get().writes(5))
   }
   // Storage: Verification VerificationRequestByAccountIdAndVerificationContext (r:1 w:1)
   fn submit_verification_status() -> Weight {
-    (19_930_000 as Weight)
-      .saturating_add(RocksDbWeight::get().reads(1 as Weight))
-      .saturating_add(RocksDbWeight::get().writes(1 as Weight))
+    Weight::from_ref_time(19_930_000)
+      .saturating_add(RocksDbWeight::get().reads(1))
+      .saturating_add(RocksDbWeight::get().writes(1))
   }
   // Storage: Verification VerificationRequestByAccountIdAndVerificationContext (r:1 w:1)
   fn perform_verification() -> Weight {
-    (16_350_000 as Weight)
-      .saturating_add(RocksDbWeight::get().reads(1 as Weight))
-      .saturating_add(RocksDbWeight::get().writes(1 as Weight))
+    Weight::from_ref_time(16_350_000)
+      .saturating_add(RocksDbWeight::get().reads(1))
+      .saturating_add(RocksDbWeight::get().writes(1))
   }
 }

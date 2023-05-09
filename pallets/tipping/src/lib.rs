@@ -59,9 +59,7 @@ pub mod pallet {
   #[pallet::config]
   pub trait Config: frame_system::Config + verification::Config {
     /// The overarching event type.
-    type Event: From<Event<Self>>
-      + Into<<Self as frame_system::Config>::Event>
-      + IsType<<Self as frame_system::Config>::Event>;
+    type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
     /// Currency that allows to verify the available balance for the tipper
     type Currency: ReservableCurrency<Self::AccountId>;

@@ -58,8 +58,8 @@ impl frame_system::Config for Test {
   type BaseCallFilter = frame_support::traits::Everything;
   type BlockWeights = ();
   type BlockLength = ();
-  type Origin = Origin;
-  type Call = Call;
+  type RuntimeOrigin = RuntimeOrigin;
+  type RuntimeCall = RuntimeCall;
   type Index = u64;
   type BlockNumber = u64;
   type Hash = H256;
@@ -67,7 +67,7 @@ impl frame_system::Config for Test {
   type AccountId = u64;
   type Lookup = IdentityLookup<Self::AccountId>;
   type Header = Header;
-  type Event = ();
+  type RuntimeEvent = ();
   type BlockHashCount = BlockHashCount;
   type DbWeight = ();
   type Version = ();
@@ -90,7 +90,7 @@ impl UnixTime for MockTime {
 }
 
 impl Config for Test {
-  type Event = ();
+  type RuntimeEvent = ();
   type WeightInfo = ();
   type TimeProvider = MockTime;
 

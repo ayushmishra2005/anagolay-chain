@@ -96,13 +96,11 @@ impl<'de> serde::Deserialize<'de> for Characters {
   where
     D: serde::Deserializer<'de>,
   {
-    let deserialized = String::deserialize(deserializer).map_err(|e| serde::de::Error::custom(format!("{:?}", e)))?;
+    let deserialized = String::deserialize(deserializer).map_err(|e| serde::de::Error::custom(format!("{e:?}")))?;
     let start = if deserialized.starts_with("0x") { 2 } else { 0 };
     let bytes: Result<Vec<u8>, D::Error> = (start..deserialized.len())
       .step_by(2)
-      .map(|i| {
-        u8::from_str_radix(&deserialized[i..i + 2], 16).map_err(|e| serde::de::Error::custom(format!("{:?}", e)))
-      })
+      .map(|i| u8::from_str_radix(&deserialized[i..i + 2], 16).map_err(|e| serde::de::Error::custom(format!("{e:?}"))))
       .collect();
     Ok(bytes.unwrap_or_default().as_slice().into())
   }
@@ -158,7 +156,7 @@ impl Characters {
       let mut buffer = [0u8; 100];
       let mut i = 0;
       while n > 0 {
-        buffer[i] = (n % 10) as u8 + b'0';
+        buffer[i] = (n % 10) + b'0';
         n /= 10;
         i += 1;
       }

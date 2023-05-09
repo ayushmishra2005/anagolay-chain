@@ -69,7 +69,7 @@ impl<T: Config> Pallet<T> {
       block_number,
     };
 
-    ProofByProofIdAndAccountId::<T>::insert(&proof.id, &account_id, record);
+    ProofByProofIdAndAccountId::<T>::insert(&proof.id, account_id, record);
 
     ProofTotal::<T>::put(Self::proof_total().saturating_add(1));
   }
@@ -84,7 +84,7 @@ impl<T: Config> Pallet<T> {
   ///  * hash - encoded perceptual hash to use as key
   ///  * account_id - The owner of the Proof
   pub fn do_save_phash(phash: &PhashInfo, hash: &<T as frame_system::Config>::Hash, account_id: &T::AccountId) {
-    PhashByHashAndAccountId::<T>::insert(&hash, &account_id, phash.clone());
+    PhashByHashAndAccountId::<T>::insert(hash, account_id, phash.clone());
 
     PhashTotal::<T>::put(Self::phash_total().saturating_add(1));
   }

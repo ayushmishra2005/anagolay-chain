@@ -4,7 +4,7 @@
 
 use super::*;
 use crate::types::{offchain::*, *};
-use frame_support::log::error;
+use frame_support::log;
 use frame_system::offchain::{SendUnsignedTransaction, Signer};
 
 /// Internal implementation of the verification pallet, this module is grouping the off-chain
@@ -65,12 +65,12 @@ impl<T: Config> Pallet<T> {
                 res.map_err(|_| Error::<T>::OffChainVerificationError)
               } else {
                 // The case of `None`: no account is available for sending
-                error!("No local accounts available. Consider adding one via `author_insertKey` RPC.");
+                log::error!("No local accounts available. Consider adding one via `author_insertKey` RPC.");
                 Err(Error::<T>::OffChainVerificationError)
               }
             }
             Err(err) => {
-              error!("Error in verification process for request {:?}: {:?}", request, err);
+              log::error!("Error in verification process for request {:?}: {:?}", request, err);
               Err(Error::<T>::OffChainVerificationError)
             }
           }

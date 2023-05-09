@@ -6,12 +6,11 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![feature(pattern)]
 
-//! This pallet’s responsibility is to keep records ofThis pallet’s responsibility is to keep
-//! records of the verified items and their proofs to know how to handle different types of
-//! verification processes and how to store them. There can be any number of Strategies implemented
-//! to handle several different verification scenarios. In the following description, we’ll speak of
-//! DNS verification, but the same procedure applies similarly to other verification strategies as
-//! well.
+//! This pallet’s responsibility is to keep records of the verified items and their proofs to know
+//! how to handle different types of verification processes and how to store them. There can be any
+//! number of Strategies implemented to handle several different verification scenarios. In the
+//! following description, we'll speak of DNS verification, but the same procedure applies similarly
+//! to other verification strategies as well.
 //!
 //! Having done so, due to DNS propagation, the process can halt and DoH (DNS over HTTPS) queries
 //! can be performed off-chain before the `perform_verification` extrinsic is called, because this
@@ -19,8 +18,8 @@
 //! verification strategies may be more or less immediate.
 //!
 //! Any verifier account, even different from the holder, can call `perform_verification` at any
-//! time to update the state of the request to //! `Pending`, signaling to the off-chain worker
-//! that, on its next execution, the challenge must be verified. If the verification status is
+//! time to update the state of the request to `Pending`, signaling to the off-chain worker that,
+//! on its next execution, the challenge must be verified. If the verification status is
 //! already `Failed`, however, the call to perform verification will result in an error since the
 //! verification must be requested again from the holder in order to pay the registration fee.
 //!
@@ -178,7 +177,11 @@ pub mod pallet {
           verification_data,
           signature,
         } => {
-          if !SignedPayload::<T>::verify::<T::AuthorityId>(verification_data, signature.clone()) {
+          // Check that the key is owned by one of the session validators and that its verification is
+          // successful
+          let key_owner = pallet_session::Pallet::<T>::key_owner(KEY_TYPE, &verification_data.public.encode());
+          if key_owner.is_some() && !SignedPayload::<T>::verify::<T::AuthorityId>(verification_data, signature.clone())
+          {
             InvalidTransaction::BadProof.into()
           } else {
             valid_tx(b"submit_verification_status".to_vec())
@@ -195,15 +198,16 @@ pub mod pallet {
 
   #[pallet::config]
   pub trait Config:
-    SendTransactionTypes<Call<Self>> + frame_system::offchain::SigningTypes + frame_system::Config
+    SendTransactionTypes<Call<Self>>
+    + frame_system::offchain::SigningTypes
+    + frame_system::Config
+    + pallet_session::Config<ValidatorId = <Self as frame_system::Config>::AccountId>
   {
     /// The identifier type for an offchain worker.
     type AuthorityId: AppCrypto<Self::Public, Self::Signature>;
 
     /// The overarching event type.
-    type Event: From<Event<Self>>
-      + Into<<Self as frame_system::Config>::Event>
-      + IsType<<Self as frame_system::Config>::Event>;
+    type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
     /// Weight information for extrinsics for this pallet.
     type WeightInfo: WeightInfo;

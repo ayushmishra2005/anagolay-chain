@@ -5,9 +5,10 @@ build_prod:
   needs: ["test_flow"]
   tags:
     - rust
-  # rules:
-  #   - !reference [.rules-build, rules]
-  #   - !reference [.rule-friendly-word, rules]
+  rules:
+    - !reference [.rules-build, rules]
+    - !reference [.rule-friendly-word, rules]
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
   when: manual
   before_script:
     - !reference [.with-local-cachier, before_script]

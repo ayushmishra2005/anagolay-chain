@@ -1,9 +1,6 @@
 [package]
-authors = [
-  'did:substrate:5Fn9SNUE8LihCm7Lq5dpPgBebGy5D7ZKWESDsWbdjsfV37d4',
-  'did:substrate:5EHkcDMhHgwW7V4GR4Us4dhkPkP9f2k71kdSVbzzzpNsHsYo',
-]
-repository = 'https://gitlab.com/anagolay/anagolay/'
+authors = ['Anagolay Developers']
+repository = 'https://github.com/anagolay/anagolay-chain/'
 homepage = 'https://anagolay.network/pallet/statements'
 edition = '2018'
 license-file = "./LICENSE"
@@ -20,23 +17,24 @@ codec = { package = "parity-scale-codec", version = "3.0.0", default-features = 
 scale-info = { version = "2.1.1", default-features = false, features = [
   "derive",
 ] }
-frame-support = { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
-frame-system = { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
-frame-benchmarking = { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26", optional = true }
+frame-support = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.32" }
+frame-system = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.32" }
+frame-benchmarking = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.32", optional = true }
 
 anagolay-support = { path = '../anagolay-support', default-features = false }
-poe              = { path = "../poe", default-features = false }
-workflows        = { path = "../workflows", default-features = false }
-verification     = { path = '../verification', default-features = false }
+poe = { path = "../poe", default-features = false }
+workflows = { path = "../workflows", default-features = false }
+verification = { path = '../verification', default-features = false }
 
 serde = { version = '1.0', features = ['derive'], optional = true }
-hex   = { version = '0.4.3', features = ["alloc"], default-features = false }
+hex = { version = '0.4.3', features = ["alloc"], default-features = false }
 
-sp-core    = { default-features = false, version = "6.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
-sp-runtime = { default-features = false, version = "6.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
+sp-core = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.32" }
+sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.32" }
 
 [dev-dependencies]
-sp-io = { default-features = false, version = "6.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
+sp-io = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.32" }
+pallet-session = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.32" }
 
 [features]
 default = ["std"]
@@ -53,5 +51,14 @@ std = [
 runtime-benchmarks = [
   "frame-benchmarking/runtime-benchmarks",
   "anagolay-support/runtime-benchmarks",
+  "poe/runtime-benchmarks",
+  "workflows/runtime-benchmarks",
+  "verification/runtime-benchmarks",
 ]
-try-runtime = ["frame-support/try-runtime", "anagolay-support/try-runtime"]
+try-runtime = [
+  "frame-support/try-runtime",
+  "anagolay-support/try-runtime",
+  "poe/try-runtime",
+  "workflows/try-runtime",
+  "verification/try-runtime",
+]

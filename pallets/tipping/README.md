@@ -10,7 +10,7 @@ The runtime needs to configure the tipping pallet as follows:
 
 ```rust
   impl tipping::Config for Runtime {
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type Currency = Balances;
     type TimeProvider = pallet_timestamp::Pallet<Runtime>;
     type WeightInfo = tipping::weights::AnagolayWeight<Runtime>;

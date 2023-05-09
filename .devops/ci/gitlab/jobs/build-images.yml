@@ -22,7 +22,7 @@ build-idiyanale-main-image-with-artifact:
   variables:
     IMAGE_DOCKERFILE_PATH: Dockerfile
     IMAGE_NAME: "${CI_REGISTRY}/${CI_PROJECT_PATH}/idiyanale:${CI_COMMIT_SHORT_SHA}"
-    AN_CI_LINUX_TAG: "038b630a"
+    # AN_CI_LINUX_TAG: "a42b569b"
     KANIKO_CONTEXT: "$CI_PROJECT_DIR/artifacts"
     GIT_STRATEGY: none
     GIT_LAST_REVISION: $CI_COMMIT_SHA
@@ -48,7 +48,7 @@ build-main-image-latest:
   variables:
     IMAGE_DOCKERFILE_PATH: "${CI_PROJECT_DIR}/.devops/docker/prod/anagolay.dockerfile"
     IMAGE_NAME: "${CI_REGISTRY}/${CI_PROJECT_PATH}:latest"
-    AN_CI_LINUX_TAG: "038b630a"
+    # AN_CI_LINUX_TAG: "a42b569b"
     GIT_LAST_REVISION: $CI_COMMIT_SHORT_SHA
 
   script:

@@ -2,42 +2,55 @@ test_flow:
   stage: test
   tags:
     - rust
-  needs: ["fmt"]
+  # coverage: /^\d+.\d+% coverage/ # tarpaulin
+  coverage: /\s*lines\.*:\s*([\d\.]+%)/
   rules:
     - !reference [.rule-friendly-word, rules]
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
   before_script:
     - !reference [.info-compiler, before_script]
     - !reference [.with-local-cachier, before_script]
-  # parallel: 2
-  script:
-    - echo -e "\e[0Ksection_start:`date +%s`:test\r\e[0KFull ci-flow phase"
-    # we need to format this due to the moving the /build dir and cargo chef
-    # - makers format
-    - time makers ci-flow-light
-    # - time makers test --partition count:${CI_NODE_INDEX}/${CI_NODE_TOTAL}
-    - sccache --show-stats
-    - echo -e "\e[0Ksection_end:`date +%s`:test\r\e[0K"
-  after_script:
-    - !reference [.with-local-cachier, after_script]
+    - cargo install cargo-llvm-cov
+    - curl -LsSf https://get.nexte.st/latest/linux | tar zxf - -C ${CARGO_HOME:-~/.cargo}/bin
 
-clippy:
-  stage: test
-  allow_failure: true
-  needs: ["test_flow"]
-  cache:
-    policy: pull
-  tags:
-    - rust
-  rules:
-    - !reference [.rule-friendly-word, rules]
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-  before_script:
-    - !reference [.info-compiler, before_script]
-    - !reference [.with-local-cachier, before_script]
   script:
+    - lcov --version
+    - unset SCCACHE_BUCKET
+    - unset SCCACHE_ENDPOINT
+    - unset AWS_ACCESS_KEY_ID
+    - unset AWS_SECRET_ACCESS_KEY
+
+    - echo -e "\e[0Ksection_start:`date +%s`:test\r\e[0KFormat check"
+    - makers check-format-flow
+    - echo -e "\e[0Ksection_end:`date +%s`:test\r\e[0K"
+
     - echo -e "\e[0Ksection_start:`date +%s`:test\r\e[0KFull clippy phase"
     # - makers clippy-allow-fail
-    - makers clippy-flow
-    - sccache --show-stats
     - echo -e "\e[0Ksection_end:`date +%s`:test\r\e[0K"
+
+    - echo -e "\e[0Ksection_start:`date +%s`:test\r\e[0KCode coverage phase"
+    # - time cargo llvm-cov nextest --cobertura --output-path cobertura.xml
+    - time cargo llvm-cov nextest --all-features --cobertura --output-path coverage.xml
+
+    - time cargo llvm-cov report --html
+    # - ipfsCli add target/llvm-cov/html
+
+    ### this is the part when we generate the lcov so we can get that awesome summary for gitlab
+    - time cargo llvm-cov report --lcov --output-path lcov.info
+    - lcov --summary lcov.info
+    ### this is the part when we generate the lcov so we can get that awesome summary for gitlab
+
+    - echo -e "\e[0Ksection_end:`date +%s`:test\r\e[0K"
+
+    - sccache --show-stats
+  after_script:
+    - !reference [.with-local-cachier, after_script]
+  artifacts:
+    when: on_success
+    paths:
+      - target/llvm-cov/html
+    expire_in: 2 days
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage.xml

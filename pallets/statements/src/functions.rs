@@ -67,13 +67,13 @@ impl<T: Config> Pallet<T> {
   /// # Return
   /// A unit-type `Result` if the Statement was removed, `Error` otherwise
   pub fn remove_statement(statement_id: StatementId, account_id: &T::AccountId) -> Result<(), Error<T>> {
-    match StatementByStatementIdAndAccountId::<T>::get(&statement_id, &account_id) {
+    match StatementByStatementIdAndAccountId::<T>::get(&statement_id, account_id) {
       Some(statement_info) => {
         Self::remove_statement_proof_connection(
           statement_info.record.data.claim.poe_id.clone(),
           statement_info.record.id,
         )?;
-        StatementByStatementIdAndAccountId::<T>::remove(&statement_id, &account_id);
+        StatementByStatementIdAndAccountId::<T>::remove(&statement_id, account_id);
         Self::decrease_statements_count();
         Ok(())
       }
@@ -89,7 +89,7 @@ impl<T: Config> Pallet<T> {
   ///  * record - The record of the Statement to store
   ///  * account_id - The issuer of the Statement
   pub fn insert_statement(record: &StatementRecord<T>, account_id: &T::AccountId) {
-    StatementByStatementIdAndAccountId::<T>::insert(&record.record.id, &account_id, record.clone());
+    StatementByStatementIdAndAccountId::<T>::insert(&record.record.id, account_id, record.clone());
     Self::increase_statements_count();
   }
 
@@ -125,7 +125,7 @@ impl<T: Config> Pallet<T> {
   /// A unit-type `Result` if no Proof is currently associated to the statement, `Error` otherwise
   pub fn is_proof_statement_list_empty(statement: Statement) -> Result<(), Error<T>> {
     let proof_statement_list: BoundedVec<StatementId, MaxStatementsPerProofGet<T>> =
-      StatementIdsByProofId::<T>::get(&statement.data.claim.poe_id);
+      StatementIdsByProofId::<T>::get(statement.data.claim.poe_id);
 
     if !proof_statement_list.is_empty() {
       // check here for existence of the statement given the condition where proportion is 100% or less

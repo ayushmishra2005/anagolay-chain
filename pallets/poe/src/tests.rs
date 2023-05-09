@@ -79,7 +79,7 @@ pub fn build_default_proof_data(workflow_id: WorkflowId) -> ProofData {
 fn proof_create_default() {
   new_test_ext().execute_with(|| {
     let account = mock_account("//Alice");
-    let origin = mock::Origin::signed(account);
+    let origin = mock::RuntimeOrigin::signed(account);
     let (wf, wf_ver) = mock_request();
     let wf_id = wf.data.clone().to_cid();
     Workflows::create(origin.clone(), wf.data, wf_ver.data).unwrap();
@@ -127,7 +127,7 @@ fn proof_create_for_verification_context() {
 fn proof_error_on_duplicate() {
   new_test_ext().execute_with(|| {
     let account = mock_account("//Alice");
-    let origin = mock::Origin::signed(account);
+    let origin = mock::RuntimeOrigin::signed(account);
     let (wf, wf_ver) = mock_request();
     let wf_id = wf.data.clone().to_cid();
     Workflows::create(origin.clone(), wf.data, wf_ver.data).unwrap();
@@ -149,7 +149,7 @@ fn proof_error_on_duplicate() {
 fn phash_save_phash() {
   new_test_ext().execute_with(|| {
     let account = mock_account("//Alice");
-    let origin = mock::Origin::signed(account);
+    let origin = mock::RuntimeOrigin::signed(account);
     let (wf, wf_ver) = mock_request();
     let wf_id = wf.data.clone().to_cid();
     Workflows::create(origin.clone(), wf.data, wf_ver.data).unwrap();
@@ -172,7 +172,7 @@ fn phash_save_phash() {
 fn phash_save_phash_error_on_duplicate() {
   new_test_ext().execute_with(|| {
     let account = mock_account("//Alice");
-    let origin = mock::Origin::signed(account);
+    let origin = mock::RuntimeOrigin::signed(account);
     let (wf, wf_ver) = mock_request();
     let wf_id = wf.data.clone().to_cid();
     Workflows::create(origin.clone(), wf.data, wf_ver.data).unwrap();
@@ -199,17 +199,17 @@ fn phash_save_phash_error_on_duplicate() {
 fn phash_save_phash_error_no_proof() {
   new_test_ext().execute_with(|| {
       let account = mock_account("//Alice");
-      let phash = PERCEPTUAL_HASH.to_vec();
+        let phash = PERCEPTUAL_HASH.to_vec();
 
-      let proof_id = ProofId::from("0x6261666b32627a616365616d6c6e766678726c717175743274686f6b6c6a76726b68726f7a787562696a78746f3476743566646f776c6162747733686177");
+        let proof_id = ProofId::from("0x6261666b32627a616365616d6c6e766678726c717175743274686f6b6c6a76726b68726f7a787562696a78746f3476743566646f776c6162747733686177");
 
-      let p_hash_payload = PhashInfo {
-      p_hash: phash.clone().try_into().unwrap(),
-      proof_id: proof_id.clone(),
-      };
+        let p_hash_payload = PhashInfo {
+        p_hash: phash.clone().try_into().unwrap(),
+        proof_id: proof_id.clone(),
+        };
 
-      let res = TestPoe::save_phash(mock::Origin::signed(account), p_hash_payload);
-      assert_noop!(res, Error::<Test>::NoSuchProof);
+        let res = TestPoe::save_phash(mock::RuntimeOrigin::signed(account), p_hash_payload);
+        assert_noop!(res, Error::<Test>::NoSuchProof);
     });
 }
 

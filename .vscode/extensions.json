@@ -1,0 +1,11 @@
+{
+  "recommendations": [
+    "tamasfe.even-better-toml",
+    "belfz.search-crates-io",
+    "serayuzgur.crates",
+    "vadimcn.vscode-lldb",
+    "redhat.vscode-yaml",
+    "mhutchie.git-graph",
+    "rust-lang.rust-analyzer"
+  ]
+}

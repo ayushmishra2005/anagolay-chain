@@ -12,13 +12,13 @@ use pallet_balances::AccountData;
 use sp_core::{sr25519, sr25519::Signature, H256};
 use sp_keystore::{testing::KeyStore, KeystoreExt, SyncCryptoStore};
 use sp_runtime::{
-  testing::{Header, TestXt},
+  testing::{Header, TestXt, UintAuthorityId},
   traits::{BlakeTwo256, IdentityLookup},
   RuntimeAppPublic,
 };
 use std::sync::Arc;
 
-type Extrinsic = TestXt<Call, ()>;
+type Extrinsic = TestXt<RuntimeCall, ()>;
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
 
@@ -31,6 +31,7 @@ frame_support::construct_runtime!(
     {
       System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
       Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
+      Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>},
       VerificationTest: verification::{Pallet, Call, Storage, Event<T>, ValidateUnsigned} = 18,
     }
 );
@@ -48,8 +49,8 @@ impl frame_system::Config for Test {
   type BaseCallFilter = frame_support::traits::Everything;
   type BlockWeights = ();
   type BlockLength = ();
-  type Origin = Origin;
-  type Call = Call;
+  type RuntimeOrigin = RuntimeOrigin;
+  type RuntimeCall = RuntimeCall;
   type Index = u64;
   type BlockNumber = u64;
   type Hash = H256;
@@ -57,7 +58,7 @@ impl frame_system::Config for Test {
   type AccountId = sr25519::Public;
   type Lookup = IdentityLookup<Self::AccountId>;
   type Header = Header;
-  type Event = Event;
+  type RuntimeEvent = RuntimeEvent;
   type BlockHashCount = BlockHashCount;
   type DbWeight = ();
   type Version = ();
@@ -77,15 +78,32 @@ impl pallet_balances::Config for Test {
   type ReserveIdentifier = [u8; 8];
   type Balance = u64;
   type DustRemoval = ();
-  type Event = Event;
+  type RuntimeEvent = RuntimeEvent;
   type ExistentialDeposit = ExistentialDeposit;
   type AccountStore = System;
   type WeightInfo = ();
 }
 
+parameter_types! {
+  pub const Period: u32 = 360000;
+  pub const Offset: u32 = 0;
+}
+
+impl pallet_session::Config for Test {
+  type RuntimeEvent = RuntimeEvent;
+  type ValidatorId = sr25519::Public;
+  type ValidatorIdOf = ();
+  type ShouldEndSession = pallet_session::PeriodicSessions<Period, Offset>;
+  type NextSessionRotation = pallet_session::PeriodicSessions<Period, Offset>;
+  type SessionManager = ();
+  type SessionHandler = pallet_session::TestSessionHandler;
+  type Keys = UintAuthorityId;
+  type WeightInfo = ();
+}
+
 impl Config for Test {
   type AuthorityId = crate::crypto::VerificationAuthId;
-  type Event = Event;
+  type RuntimeEvent = RuntimeEvent;
   type VerificationKeyGenerator = NaiveVerificationKeyGenerator<Self>;
   type VerificationInvalidator = NaiveVerificationInvalidator<Self>;
   type WeightInfo = ();
@@ -97,9 +115,9 @@ impl Config for Test {
 
 impl<LocalCall> frame_system::offchain::SendTransactionTypes<LocalCall> for Test
 where
-  Call: From<LocalCall>,
+  RuntimeCall: From<LocalCall>,
 {
-  type OverarchingCall = Call;
+  type OverarchingCall = RuntimeCall;
   type Extrinsic = Extrinsic;
 }
 

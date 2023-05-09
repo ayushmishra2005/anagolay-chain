@@ -25,7 +25,7 @@ use crate::{types::PoeVerificationKeyGenerator, Config};
 use frame_support::{parameter_types, traits::UnixTime};
 use sp_core::{sr25519, sr25519::Signature, H256};
 use sp_runtime::{
-  testing::{Header, TestXt},
+  testing::{Header, TestXt, UintAuthorityId},
   traits::{BlakeTwo256, IdentityLookup},
 };
 use std::{
@@ -34,7 +34,7 @@ use std::{
 };
 use verification::types::NaiveVerificationInvalidator;
 
-type Extrinsic = TestXt<Call, ()>;
+type Extrinsic = TestXt<RuntimeCall, ()>;
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
 
@@ -46,6 +46,7 @@ frame_support::construct_runtime!(
         UncheckedExtrinsic = UncheckedExtrinsic,
     {
         System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
+        Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>},
         AnagolayTest: anagolay_support::{Pallet, Call, Storage},
         Workflows: workflows::{Pallet, Call, Storage, Event<T>},
         TestPoe: poe::{Pallet, Call, Storage, Event<T>},
@@ -61,8 +62,8 @@ impl frame_system::Config for Test {
   type BaseCallFilter = frame_support::traits::Everything;
   type BlockWeights = ();
   type BlockLength = ();
-  type Origin = Origin;
-  type Call = Call;
+  type RuntimeOrigin = RuntimeOrigin;
+  type RuntimeCall = RuntimeCall;
   type Index = u64;
   type BlockNumber = u64;
   type Hash = H256;
@@ -70,7 +71,7 @@ impl frame_system::Config for Test {
   type AccountId = sr25519::Public;
   type Lookup = IdentityLookup<Self::AccountId>;
   type Header = Header;
-  type Event = ();
+  type RuntimeEvent = RuntimeEvent;
   type BlockHashCount = BlockHashCount;
   type DbWeight = ();
   type Version = ();
@@ -84,9 +85,33 @@ impl frame_system::Config for Test {
   type MaxConsumers = frame_support::traits::ConstU32<16>;
 }
 
+parameter_types! {
+  pub const Period: u32 = 360000;
+  pub const Offset: u32 = 0;
+}
+
+impl pallet_session::Config for Test {
+  type RuntimeEvent = RuntimeEvent;
+  type ValidatorId = sr25519::Public;
+  type ValidatorIdOf = ();
+  type ShouldEndSession = pallet_session::PeriodicSessions<Period, Offset>;
+  type NextSessionRotation = pallet_session::PeriodicSessions<Period, Offset>;
+  type SessionManager = ();
+  type SessionHandler = pallet_session::TestSessionHandler;
+  type Keys = UintAuthorityId;
+  type WeightInfo = ();
+}
+
+type VerificationEvent = verification::Event<Test>;
+impl From<VerificationEvent> for RuntimeEvent {
+  fn from(_: VerificationEvent) -> Self {
+    todo!()
+  }
+}
+
 impl verification::Config for Test {
   type AuthorityId = verification::crypto::VerificationAuthId;
-  type Event = ();
+  type RuntimeEvent = RuntimeEvent;
   type VerificationKeyGenerator = PoeVerificationKeyGenerator<Self>;
   type VerificationInvalidator = NaiveVerificationInvalidator<Self>;
   type WeightInfo = ();
@@ -97,7 +122,7 @@ impl verification::Config for Test {
 }
 
 type VerificationCall = verification::Call<Test>;
-impl From<VerificationCall> for Call {
+impl From<VerificationCall> for RuntimeCall {
   fn from(_: VerificationCall) -> Self {
     todo!()
   }
@@ -105,9 +130,9 @@ impl From<VerificationCall> for Call {
 
 impl<VerificationCall> frame_system::offchain::SendTransactionTypes<VerificationCall> for Test
 where
-  Call: From<VerificationCall>,
+  RuntimeCall: From<VerificationCall>,
 {
-  type OverarchingCall = Call;
+  type OverarchingCall = RuntimeCall;
   type Extrinsic = Extrinsic;
 }
 
@@ -125,14 +150,14 @@ impl UnixTime for MockTime {
 }
 
 impl Config for Test {
-  type Event = ();
+  type RuntimeEvent = RuntimeEvent;
   type WeightInfo = ();
 
   const MAX_PROOFS_PER_WORKFLOW: u32 = 1;
 }
 
 impl workflows::Config for Test {
-  type Event = ();
+  type RuntimeEvent = RuntimeEvent;
   type WeightInfo = ();
   type TimeProvider = MockTime;
   const MAX_VERSIONS_PER_WORKFLOW: u32 = 100;

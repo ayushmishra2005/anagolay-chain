@@ -47,7 +47,7 @@ pub mod offchain {
 
 /// Getter for the hard-coded constant defining Maximum length of a Bytes type.
 /// This approach has advantages over using `ConstU32` since it implements all the traits used in
-/// the datamodel
+/// the data model
 #[derive(codec::Encode, codec::Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 #[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
 pub struct MaxBytesLenGet();
@@ -82,13 +82,11 @@ impl<'de> serde::Deserialize<'de> for Bytes {
   where
     D: serde::Deserializer<'de>,
   {
-    let deserialized = String::deserialize(deserializer).map_err(|e| serde::de::Error::custom(format!("{:?}", e)))?;
+    let deserialized = String::deserialize(deserializer).map_err(|e| serde::de::Error::custom(format!("{e:?}")))?;
     let start = if deserialized.starts_with("0x") { 2 } else { 0 };
     let bytes: Result<Vec<u8>, D::Error> = (start..deserialized.len())
       .step_by(2)
-      .map(|i| {
-        u8::from_str_radix(&deserialized[i..i + 2], 16).map_err(|e| serde::de::Error::custom(format!("{:?}", e)))
-      })
+      .map(|i| u8::from_str_radix(&deserialized[i..i + 2], 16).map_err(|e| serde::de::Error::custom(format!("{e:?}"))))
       .collect();
     Ok(bytes.unwrap_or_default().into())
   }
@@ -112,7 +110,7 @@ pub enum VerificationStatus {
   Pending,
   /// The verification challenge has failed
   Failure(Bytes),
-  /// The verification challende is successful
+  /// The verification challenge is successful
   Success,
 }
 impl PartialEq for VerificationStatus {
@@ -191,7 +189,7 @@ impl<T: crate::Config> VerificationKeyGenerator<T> for NaiveVerificationKeyGener
   /// # Arguments
   /// * holder - The verification holder (unused)
   /// * context - The verification context (unused)
-  /// * identifier - The identifier to use for the hakey generationsh
+  /// * identifier - The identifier to use for the key generation
   ///
   /// # Return
   /// Result having hex encoded identifier in the form of a collection of utf8 bytes if ok, an Error
@@ -204,7 +202,7 @@ impl<T: crate::Config> VerificationKeyGenerator<T> for NaiveVerificationKeyGener
     identifier
       .into_iter()
       .reduce(|a, b| a.overflowing_sub(b).0)
-      .map(|byte| hex::encode(&[byte]).as_bytes().to_vec())
+      .map(|byte| hex::encode([byte]).as_bytes().to_vec())
       .ok_or(crate::Error::<T>::VerificationKeyGenerationError)
   }
 }

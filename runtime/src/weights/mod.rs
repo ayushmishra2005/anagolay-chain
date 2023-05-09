@@ -1,20 +1,15 @@
-// Copyright (C) 2020 Parity Technologies (UK) Ltd.
-// SPDX-License-Identifier: Apache-2.0
+// This file is part of Anagolay Network.
 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-// 	http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// Copyright (C) 2019-2023 Anagolay Network.
 
-//! A list of the different weight modules for our runtime.
+//! Expose the auto generated weight files.
 
-pub mod pallet_uniques;
-pub mod pallet_utility;
-pub mod pallet_vesting;
+pub mod block_weights;
+pub mod extrinsic_weights;
+pub mod paritydb_weights;
+pub mod rocksdb_weights;
+
+pub use block_weights::constants::BlockExecutionWeight;
+pub use extrinsic_weights::constants::ExtrinsicBaseWeight;
+pub use paritydb_weights::constants::ParityDbWeight;
+pub use rocksdb_weights::constants::RocksDbWeight;

@@ -57,7 +57,7 @@ fn mock_verification_context_for_tipping<T: Config>(
 fn update_settings_from_holder() {
   new_test_ext(Vec::new()).execute_with(|| {
     let holder = mock_account("//Alice");
-    let origin = mock::Origin::signed(holder);
+    let origin = mock::RuntimeOrigin::signed(holder);
 
     let context_1 = VerificationContext::UrlForDomain("https://anagolay.network".into(), "anagolay.network".into());
     mock_verification_context_for_tipping::<Test>(holder.clone(), context_1.clone(), VerificationStatus::Success, true);
@@ -95,7 +95,7 @@ fn update_settings_from_holder() {
 fn update_settings_from_non_holder() {
   new_test_ext(Vec::new()).execute_with(|| {
     let holder = mock_account("//Alice");
-    let origin = mock::Origin::signed(holder);
+    let origin = mock::RuntimeOrigin::signed(holder);
 
     let context = VerificationContext::UrlForDomain("https://anagolay.network".into(), "anagolay.network".into());
     mock_verification_context_for_tipping::<Test>(holder.clone(), context.clone(), VerificationStatus::Success, true);
@@ -110,7 +110,7 @@ fn update_settings_from_non_holder() {
     assert_ok!(res);
 
     let non_holder = mock_account("//Bob");
-    let origin = mock::Origin::signed(non_holder);
+    let origin = mock::RuntimeOrigin::signed(non_holder);
 
     let settings_2 = TippingSettings {
       context: context.clone(),
@@ -136,7 +136,7 @@ fn update_settings_from_non_holder() {
 fn update_settings_for_failed_request() {
   new_test_ext(Vec::new()).execute_with(|| {
     let holder = mock_account("//Alice");
-    let origin = mock::Origin::signed(holder);
+    let origin = mock::RuntimeOrigin::signed(holder);
 
     let context = VerificationContext::UrlForDomain("https://anagolay.network".into(), "anagolay.network".into());
     mock_verification_context_for_tipping::<Test>(
@@ -173,7 +173,7 @@ fn update_settings_for_failed_request() {
 fn tip_error_invalid_verification_context() {
   new_test_ext(Vec::new()).execute_with(|| {
     let tipper = mock_account("//Alice");
-    let origin = mock::Origin::signed(tipper);
+    let origin = mock::RuntimeOrigin::signed(tipper);
 
     let holder = mock_account("//Bob");
 
@@ -201,7 +201,7 @@ fn tip_error_invalid_verification_context() {
 fn tip_error_invalid_configuration() {
   new_test_ext(Vec::new()).execute_with(|| {
     let tipper = mock_account("//Alice");
-    let origin = mock::Origin::signed(tipper);
+    let origin = mock::RuntimeOrigin::signed(tipper);
 
     let holder = mock_account("//Bob");
 
@@ -217,7 +217,7 @@ fn tip_error_invalid_configuration() {
 fn tip_error_insufficient_balance() {
   new_test_ext(Vec::new()).execute_with(|| {
     let tipper = mock_account("//Alice");
-    let origin = mock::Origin::signed(tipper);
+    let origin = mock::RuntimeOrigin::signed(tipper);
 
     let holder = mock_account("//Bob");
 
@@ -233,7 +233,7 @@ fn tip_error_insufficient_balance() {
 fn tip_test() {
   let tipper = mock_account("//Alice");
   new_test_ext(vec![(tipper, 100)]).execute_with(|| {
-    let origin = mock::Origin::signed(tipper);
+    let origin = mock::RuntimeOrigin::signed(tipper);
 
     let holder = mock_account("//Bob");
 
