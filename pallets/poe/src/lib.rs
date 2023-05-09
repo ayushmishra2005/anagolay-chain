@@ -59,9 +59,7 @@ pub mod pallet {
   #[pallet::config]
   pub trait Config: frame_system::Config + workflows::Config + verification::Config {
     /// The overarching event type.
-    type Event: From<Event<Self>>
-      + Into<<Self as frame_system::Config>::Event>
-      + IsType<<Self as frame_system::Config>::Event>;
+    type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
     /// Weight information for extrinsics for this pallet.
     type WeightInfo: WeightInfo;
@@ -226,7 +224,7 @@ pub mod pallet {
       let phash_info_digest = phash_info.using_encoded(<T as frame_system::Config>::Hashing::hash);
 
       ensure!(
-        !PhashByHashAndAccountId::<T>::contains_key(&phash_info_digest, &sender),
+        !PhashByHashAndAccountId::<T>::contains_key(phash_info_digest, &sender),
         Error::<T>::PHashAndProofIdComboAlreadyExist
       );
 

@@ -1,0 +1,29 @@
+[settings]
+timeout  = 1000
+provider = "native"
+
+[relaychain]
+default_image = "paritypr/polkadot-debug:master"
+chain         = "rococo-local"
+
+[[relaychain.nodes]]
+name    = "alice"
+ws_port = "9944"
+
+[[relaychain.nodes]]
+name    = "bob"
+ws_port = "9955"
+
+[[parachains]]
+id            = 4222
+cumulus_based = true
+
+[[parachains.collators]]
+name    = "collator01"
+command = "./target/debug/anagolay"
+args    = ["--enable-offchain-indexing", "true"]
+
+[[parachains.collators]]
+name    = "collator02"
+command = "./target/debug/anagolay"
+args    = ["--enable-offchain-indexing", "true"]

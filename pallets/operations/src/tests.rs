@@ -113,7 +113,7 @@ fn operations_create_operation() {
 
     // create an operation
     assert_ok!(OperationTest::create(
-      mock::Origin::signed(1),
+      mock::RuntimeOrigin::signed(1),
       op.data.clone(),
       op_ver.data.clone()
     ));
@@ -157,7 +157,7 @@ fn operations_create_operation() {
 
     // version_approve
     assert_ok!(OperationTest::version_approve(
-      mock::Origin::signed(1),
+      mock::RuntimeOrigin::signed(1),
       op.data.to_cid()
     ));
 
@@ -170,10 +170,10 @@ fn operations_create_operation() {
 fn operations_create_operation_error_on_duplicate_operation() {
   new_test_ext(None).execute_with(|| {
     let (op, op_ver) = mock_request();
-    let res = OperationTest::create(mock::Origin::signed(1), op.data.clone(), op_ver.data.clone());
+    let res = OperationTest::create(mock::RuntimeOrigin::signed(1), op.data.clone(), op_ver.data.clone());
     assert_ok!(res);
 
-    let res = OperationTest::create(mock::Origin::signed(1), op.data.clone(), op_ver.data.clone());
+    let res = OperationTest::create(mock::RuntimeOrigin::signed(1), op.data.clone(), op_ver.data.clone());
     assert_noop!(res, Error::<Test>::OperationAlreadyExists);
   });
 }
@@ -185,7 +185,7 @@ fn operations_create_operation_error_reusing_artifact() {
 
     anagolay_support::Pallet::<Test>::store_artifacts(&op_ver.data.artifacts).unwrap();
 
-    let res = OperationTest::create(mock::Origin::signed(1), op.data.clone(), op_ver.data.clone());
+    let res = OperationTest::create(mock::RuntimeOrigin::signed(1), op.data.clone(), op_ver.data.clone());
 
     assert_noop!(res, Error::<Test>::OperationVersionPackageAlreadyExists);
   });
@@ -196,7 +196,7 @@ fn operations_create_operation_error_mixing_operations() {
   new_test_ext(None).execute_with(|| {
     let (op_a, op_a_ver) = mock_request();
 
-    let res = OperationTest::create(mock::Origin::signed(1), op_a.data.clone(), op_a_ver.data.clone());
+    let res = OperationTest::create(mock::RuntimeOrigin::signed(1), op_a.data.clone(), op_a_ver.data.clone());
     assert_ok!(res);
 
     let op_b = Operation {
@@ -216,7 +216,11 @@ fn operations_create_operation_error_mixing_operations() {
       data: op_a_ver.data.clone(),
       extra: None,
     };
-    let res = OperationTest::create(mock::Origin::signed(1), op_b.data.clone(), op_b_ver_mixed.data.clone());
+    let res = OperationTest::create(
+      mock::RuntimeOrigin::signed(1),
+      op_b.data.clone(),
+      op_b_ver_mixed.data.clone(),
+    );
     assert_noop!(res, Error::<Test>::OperationVersionPackageAlreadyExists);
   });
 }
@@ -226,11 +230,11 @@ fn operations_create_operation_error_bad_request() {
   new_test_ext(None).execute_with(|| {
     let (mut op, mut op_ver) = mock_request();
     op.data.name = "this_is_a_very_very_very_very_very_very_very_very_very_very_looooong_operation_name_that_does_not_respect_maximum_length_constraint".into();
-    let res = OperationTest::create(mock::Origin::signed(1), op.data.clone(), op_ver.data.clone());
+    let res = OperationTest::create(mock::RuntimeOrigin::signed(1), op.data.clone(), op_ver.data.clone());
     assert_noop!(res, Error::<Test>::BadRequest);
 
     op_ver.data.artifacts[0].ipfs_cid = ArtifactId::from("bafk_invalid_cid");
-    let res = OperationTest::create(mock::Origin::signed(1), op.data.clone(), op_ver.data.clone());
+    let res = OperationTest::create(mock::RuntimeOrigin::signed(1), op.data.clone(), op_ver.data.clone());
     assert_noop!(res, Error::<Test>::BadRequest);
   });
 }
@@ -246,7 +250,7 @@ fn operations_create_operation_with_config() {
         vec!["test_val0".into(), "test_val1".into()].try_into().unwrap(),
       )
       .unwrap();
-    let res = OperationTest::create(mock::Origin::signed(1), op.data.clone(), op_ver.data.clone());
+    let res = OperationTest::create(mock::RuntimeOrigin::signed(1), op.data.clone(), op_ver.data.clone());
     assert_ok!(res);
 
     let op_id = &op.data.to_cid();

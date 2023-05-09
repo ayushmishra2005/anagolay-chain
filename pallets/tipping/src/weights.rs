@@ -54,7 +54,7 @@ pub struct AnagolayWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> WeightInfo for AnagolayWeight<T> {
   // Storage: Verification AccountIdsByVerificationContext (r:1 w:0)
   fn update_settings() -> Weight {
-    (19_480_000 as Weight).saturating_add(T::DbWeight::get().reads(1 as Weight))
+    Weight::from_ref_time(19_480_000).saturating_add(T::DbWeight::get().reads(1))
   }
   // Storage: Verification AccountIdsByVerificationContext (r:1 w:0)
   // Storage: Verification VerificationRequestByAccountIdAndVerificationContext (r:1 w:0)
@@ -62,9 +62,9 @@ impl<T: frame_system::Config> WeightInfo for AnagolayWeight<T> {
   // Storage: Timestamp Now (r:1 w:0)
   // Storage: Tipping TipsByAccountIdAndVerificationContext (r:1 w:1)
   fn tip() -> Weight {
-    (64_690_000 as Weight)
-      .saturating_add(T::DbWeight::get().reads(5 as Weight))
-      .saturating_add(T::DbWeight::get().writes(1 as Weight))
+    Weight::from_ref_time(64_690_000)
+      .saturating_add(T::DbWeight::get().reads(5))
+      .saturating_add(T::DbWeight::get().writes(1))
   }
 }
 
@@ -72,7 +72,7 @@ impl<T: frame_system::Config> WeightInfo for AnagolayWeight<T> {
 impl WeightInfo for () {
   // Storage: Verification AccountIdsByVerificationContext (r:1 w:0)
   fn update_settings() -> Weight {
-    (19_480_000 as Weight).saturating_add(RocksDbWeight::get().reads(1 as Weight))
+    Weight::from_ref_time(19_480_000).saturating_add(RocksDbWeight::get().reads(1))
   }
   // Storage: Verification AccountIdsByVerificationContext (r:1 w:0)
   // Storage: Verification VerificationRequestByAccountIdAndVerificationContext (r:1 w:0)
@@ -80,8 +80,8 @@ impl WeightInfo for () {
   // Storage: Timestamp Now (r:1 w:0)
   // Storage: Tipping TipsByAccountIdAndVerificationContext (r:1 w:1)
   fn tip() -> Weight {
-    (64_690_000 as Weight)
-      .saturating_add(RocksDbWeight::get().reads(5 as Weight))
-      .saturating_add(RocksDbWeight::get().writes(1 as Weight))
+    Weight::from_ref_time(64_690_000)
+      .saturating_add(RocksDbWeight::get().reads(5))
+      .saturating_add(RocksDbWeight::get().writes(1))
   }
 }

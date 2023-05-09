@@ -61,7 +61,7 @@ pub mod pallet {
   };
   use anagolay_support::{AnagolayStructureData, Characters};
   use core::convert::TryInto;
-  use frame_support::{log::error, pallet_prelude::*, traits::UnixTime};
+  use frame_support::{log, pallet_prelude::*, traits::UnixTime};
   use frame_system::pallet_prelude::*;
 
   #[pallet::pallet]
@@ -72,7 +72,7 @@ pub mod pallet {
   #[pallet::config]
   pub trait Config: frame_system::Config + anagolay_support::Config {
     /// The overarching event type.
-    type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+    type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
     /// Weight information for extrinsics for this pallet.
     type WeightInfo: WeightInfo;
@@ -154,9 +154,10 @@ pub mod pallet {
           let version_id = ver_record.record.id.clone();
           if ver_record.record.data.entity_id.clone().unwrap_or_default() == operation_id {
             let error_fn = |err| {
-              error!(
+              log::error!(
                 "Pallet operations genesis build (operation_id={:?}): {:?}",
-                operation_id, err
+                operation_id,
+                err
               )
             };
 

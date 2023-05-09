@@ -1,7 +1,7 @@
-image: registry.gitlab.com/anagolay/docker-images/gitpod-workspace:gitpod_workspace-full_2022-05-08-14-31-53_experimental
+image: docker.io/woss/gitpod-workspace:gitpod_workspace-full_2023-01-16-03-31-28
 tasks:
   - name: Init repo
-    init: ln -sf $GITPOD_REPO_ROOT/.devops/git-hooks/pre-commit $GITPOD_REPO_ROOT/.git/hooks/pre-commit && ln -sf $GITPOD_REPO_ROOT/.devops/git-hooks/pre-push $GITPOD_REPO_ROOT/.git/hooks/pre-push
+    init: ln -sf $GITPOD_REPO_ROOT/.devops/git-hooks/pre-commit $GITPOD_REPO_ROOT/.git/hooks/pre-commit && ln -sf $GITPOD_REPO_ROOT/.devops/git-hooks/pre-push $GITPOD_REPO_ROOT/.git/hooks/pre-push && bash $GITPOD_REPO_ROOT/.devops/gitpod/start-cmd.sh && exit
   - name: Setup env
     command: bash $GITPOD_REPO_ROOT/.devops/gitpod/start-cmd.sh && exit
 
@@ -21,13 +21,19 @@ ports:
   - port: 9615
     visibility: public
     onOpen: ignore
+  - port: 9955
+    visibility: public
+    onOpen: ignore
+  - port: 9966
+    visibility: public
+    onOpen: ignore
 
 vscode:
   extensions:
-    - matklad.rust-analyzer
     - tamasfe.even-better-toml
     - belfz.search-crates-io
     - serayuzgur.crates
     - vadimcn.vscode-lldb
-    - redhat.vscode-yaml
     - mhutchie.git-graph
+    - rust-lang.rust-analyzer
+    - Catppuccin.catppuccin-vsc

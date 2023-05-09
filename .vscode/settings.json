@@ -34,6 +34,7 @@
     // "editor.wordWrapColumn": 300,
     "editor.wordWrap": "off"
   },
-  "rust-analyzer.cargo.allFeatures": true,
-  "editor.stickyScroll.enabled": true
+  "editor.stickyScroll.enabled": true,
+  "zenMode.hideTabs": false,
+  "zenMode.centerLayout": false
 }

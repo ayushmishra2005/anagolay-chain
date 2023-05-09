@@ -1,4 +1,4 @@
-image: registry.gitlab.com/anagolay/anagolay/ci-linux:038b630a
+image: registry.gitlab.com/anagolay/anagolay/ci-linux:a42b569b
 
 stages:
   - .pre
@@ -20,7 +20,7 @@ workflow:
 variables:
   CARGO_INCREMENTAL: 1
   # this CI-LINUX image tag to be used with the other images. the ci doesn't have the latest yet
-  AN_CI_LINUX_TAG: "038b630a"
+  AN_CI_LINUX_TAG: "a42b569b"
   SCCACHE_DIR: $CI_PROJECT_DIR/.sccache
   CARGO_HOME: $CI_PROJECT_DIR/.cargo
   REPO_CACHE_DIR: "/cachier-cache/$CI_PROJECT_NAMESPACE/$CI_PROJECT_NAME"

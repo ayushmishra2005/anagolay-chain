@@ -110,7 +110,7 @@ fn workflows_test_genesis() {
 fn workflows_create_workflow() {
   new_test_ext(None).execute_with(|| {
     let (wf, mut wf_ver) = mock_request();
-    let origin = mock::Origin::signed(1);
+    let origin = mock::RuntimeOrigin::signed(1);
     let res = WorkflowTest::create(origin, wf.data.clone(), wf_ver.data.clone());
 
     assert_ok!(res);
@@ -158,10 +158,10 @@ fn workflows_create_workflow() {
 fn workflows_create_workflow_error_on_duplicate_workflow() {
   new_test_ext(None).execute_with(|| {
     let (wf, wf_ver) = mock_request();
-    let res = WorkflowTest::create(mock::Origin::signed(1), wf.data.clone(), wf_ver.data.clone());
+    let res = WorkflowTest::create(mock::RuntimeOrigin::signed(1), wf.data.clone(), wf_ver.data.clone());
     assert_ok!(res);
 
-    let res = WorkflowTest::create(mock::Origin::signed(1), wf.data.clone(), wf_ver.data.clone());
+    let res = WorkflowTest::create(mock::RuntimeOrigin::signed(1), wf.data.clone(), wf_ver.data.clone());
     assert_noop!(res, Error::<Test>::WorkflowAlreadyExists);
   });
 }
@@ -173,7 +173,7 @@ fn workflows_create_workflow_error_reusing_artifact() {
 
     anagolay_support::Pallet::<Test>::store_artifacts(&wf_ver.data.artifacts).unwrap();
 
-    let res = WorkflowTest::create(mock::Origin::signed(1), wf.data.clone(), wf_ver.data.clone());
+    let res = WorkflowTest::create(mock::RuntimeOrigin::signed(1), wf.data.clone(), wf_ver.data.clone());
 
     assert_noop!(res, Error::<Test>::WorkflowVersionPackageAlreadyExists);
   });
@@ -184,7 +184,7 @@ fn workflows_create_workflow_error_mixing_workflows() {
   new_test_ext(None).execute_with(|| {
     let (wf_a, wf_a_ver) = mock_request();
 
-    let res = WorkflowTest::create(mock::Origin::signed(1), wf_a.data.clone(), wf_a_ver.data.clone());
+    let res = WorkflowTest::create(mock::RuntimeOrigin::signed(1), wf_a.data.clone(), wf_a_ver.data.clone());
     assert_ok!(res);
 
     let wf_b = Workflow {
@@ -202,7 +202,11 @@ fn workflows_create_workflow_error_mixing_workflows() {
       data: wf_a_ver.data.clone(),
       extra: None,
     };
-    let res = WorkflowTest::create(mock::Origin::signed(1), wf_b.data.clone(), wf_b_ver_mixed.data.clone());
+    let res = WorkflowTest::create(
+      mock::RuntimeOrigin::signed(1),
+      wf_b.data.clone(),
+      wf_b_ver_mixed.data.clone(),
+    );
     assert_noop!(res, Error::<Test>::WorkflowVersionPackageAlreadyExists);
   });
 }
@@ -212,11 +216,11 @@ fn workflows_create_workflow_error_bad_request() {
   new_test_ext(None).execute_with(|| {
     let (mut wf, mut wf_ver) = mock_request();
     wf.data.name = "this_is_a_very_very_very_very_very_very_very_very_very_very_loooooong_workflow_name_that_does_not_respect_maximum_length_constraint".into();
-    let res = WorkflowTest::create(mock::Origin::signed(1), wf.data.clone(), wf_ver.data.clone());
+    let res = WorkflowTest::create(mock::RuntimeOrigin::signed(1), wf.data.clone(), wf_ver.data.clone());
     assert_noop!(res, Error::<Test>::BadRequest);
 
     wf_ver.data.artifacts[0].ipfs_cid = ArtifactId::from("bafk_invalid_cid");
-    let res = WorkflowTest::create(mock::Origin::signed(1), wf.data.clone(), wf_ver.data.clone());
+    let res = WorkflowTest::create(mock::RuntimeOrigin::signed(1), wf.data.clone(), wf_ver.data.clone());
     assert_noop!(res, Error::<Test>::BadRequest);
   });
 }

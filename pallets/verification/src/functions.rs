@@ -56,7 +56,7 @@ impl<T: Config> Pallet<T> {
     let mut requests = Vec::new();
 
     // Retrieve the contexts matching the filters. If an account filter is specified filter out
-    // immediately the requerst not held by such account for better performance
+    // immediately the request not held by such account for better performance
     let request_contexts = if request_contexts.is_empty() {
       let mut contexts = Vec::new();
       VerificationRequestByAccountIdAndVerificationContext::<T>::iter_keys().for_each(|(k1, k2)| {
@@ -82,7 +82,7 @@ impl<T: Config> Pallet<T> {
         break;
       }
 
-      // A request may be attempted by several accounts altoghether. Add those that match the filter
+      // A request may be attempted by several accounts all together. Add those that match the filter
       let holders = AccountIdsByVerificationContext::<T>::get(request_context);
       for holder in holders {
         let request: Option<VerificationRequest<T::AccountId>> =

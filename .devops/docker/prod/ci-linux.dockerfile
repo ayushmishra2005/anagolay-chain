@@ -16,12 +16,6 @@ ENV SCCACHE_S3_KEY_PREFIX=$SCCACHE_S3_KEY_PREFIX
 ENV RUST_BACKTRACE=1 \
   CARGO_INCREMENTAL=1
 
-RUN wget https://github.com/mozilla/grcov/releases/download/v0.8.13/grcov-x86_64-unknown-linux-musl.tar.bz2 -O /tmp/grcov.tar.bz2 \
-&& tar xvfj /tmp/grcov.tar.bz2 \
-&& mv /tmp/grcov /usr/local/bin/grcov \
-&& chmod +x /usr/local/bin/grcov \
-&& rm -rf /tmp/grcov \
-&& grcov --version
 
 
 # Install Doppler CLI
@@ -51,7 +45,8 @@ RUN apt-get update \
   dnsutils \ 
   lcov \
   python3 \
-  python3-pip 
+  python3-pip  \
+  protobuf-compiler
 
 
 RUN pip3 install lcov_cobertura
@@ -61,6 +56,9 @@ RUN rustup default nightly-2023-02-02 \
   && rustup target add x86_64-unknown-linux-gnu --toolchain nightly-2023-02-02 \
   && rustup component  add llvm-tools-preview --toolchain nightly-2023-02-02
 
+RUN curl -L https://github.com/mozilla/grcov/releases/latest/download/grcov-x86_64-unknown-linux-musl.tar.bz2 | tar jxf - \
+&& chmod +x grcov \
+&& mv grcov /usr/local/bin
 
 # 0.3.0 with new s3 backend custom built
 RUN wget -q  https://ipfs.anagolay.network/ipfs/bafybeifxewkbkt3ympmsjheirjrqr56znhvfjlfd3vaculn2mrdmub3cwu -O /usr/local/bin/sccache \
@@ -74,12 +72,13 @@ RUN cargo install $EXTRA_ARGS \
   taplo-cli \
   cargo-nextest \
   cargo-audit 
-#   wasm-bindgen-cli \
-#   wasm-pack \
-#   cargo-chef \
-#   cargo-tarpaulin \
 
 
+RUN cargo install --force \
+  wasm-bindgen-cli \
+  wasm-pack \
+  cargo-audit  
+# cargo-tarpaulin 
 
 
 ENV AWS_ACCESS_KEY_ID=

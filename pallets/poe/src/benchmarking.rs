@@ -78,7 +78,7 @@ benchmarks! {
         let caller: T::AccountId = whitelisted_caller();
         let (wf, wf_ver) = mock_request::<T>();
         let wf_id = wf.data.clone().to_cid();
-        workflows::Pallet::<T>::create(<T as frame_system::Config>::Origin::from(RawOrigin::Signed(caller.clone())), wf.data, wf_ver.data).unwrap();
+        workflows::Pallet::<T>::create(<T as frame_system::Config>::RuntimeOrigin::from(RawOrigin::Signed(caller.clone())), wf.data, wf_ver.data).unwrap();
         let proof_data = build_default_proof_data(wf_id);
     }: _(RawOrigin::Signed(caller), proof_data)
 
@@ -86,7 +86,7 @@ benchmarks! {
         let caller: T::AccountId = whitelisted_caller();
         let (wf, wf_ver) = mock_request::<T>();
         let wf_id = wf.data.clone().to_cid();
-        workflows::Pallet::<T>::create(<T as frame_system::Config>::Origin::from(RawOrigin::Signed(caller.clone())), wf.data, wf_ver.data).unwrap();
+        workflows::Pallet::<T>::create(<T as frame_system::Config>::RuntimeOrigin::from(RawOrigin::Signed(caller.clone())), wf.data, wf_ver.data).unwrap();
         let proof_data = build_default_proof_data(wf_id);
 
         let phash = PERCEPTUAL_HASH.to_vec();

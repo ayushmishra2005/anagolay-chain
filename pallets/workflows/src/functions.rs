@@ -36,7 +36,7 @@ impl<T: Config> Pallet<T> {
       block_number: *block_number,
     };
 
-    WorkflowByWorkflowIdAndAccountId::<T>::insert(&workflow.id, &account_id, workflow_record);
+    WorkflowByWorkflowIdAndAccountId::<T>::insert(&workflow.id, account_id, workflow_record);
 
     Total::<T>::put(Self::total().saturating_add(1));
   }

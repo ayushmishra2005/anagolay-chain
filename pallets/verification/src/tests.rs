@@ -5,7 +5,7 @@
 //! Tests for the module.
 
 use super::{
-  mock::{Call, *},
+  mock::{RuntimeCall, *},
   *,
 };
 use crate::{
@@ -22,7 +22,7 @@ use sp_core::{
 };
 use sp_runtime::testing::TestXt;
 
-type Extrinsic = TestXt<Call, ()>;
+type Extrinsic = TestXt<RuntimeCall, ()>;
 
 fn mock_account(ss58: &str) -> sr25519::Public {
   let (pair, _) = sr25519::Pair::from_string_with_seed(ss58, None).unwrap();
@@ -51,7 +51,7 @@ where
 fn request_verification_error_on_context_submitted_twice() {
   new_test_ext(Vec::new()).execute_with(|| {
     let holder = mock_account("//Alice");
-    let origin = mock::Origin::signed(holder);
+    let origin = mock::RuntimeOrigin::signed(holder);
 
     let context = VerificationContext::UrlForDomain("https://anagolay.network".into(), "anagolay.network".into());
     let action = VerificationAction::DnsTxtRecord;
@@ -69,7 +69,7 @@ fn request_verification_error_on_context_submitted_twice() {
 fn request_verification_allow_resubmit_failed_request() {
   let holder = mock_account("//Alice");
   new_test_ext(vec![(holder, 100)]).execute_with(|| {
-    let origin = mock::Origin::signed(holder);
+    let origin = mock::RuntimeOrigin::signed(holder);
 
     let context = VerificationContext::UrlForDomain("https://anagolay.network".into(), "anagolay.network".into());
     let action = VerificationAction::DnsTxtRecord;
@@ -105,7 +105,7 @@ fn request_verification_allow_resubmit_failed_request() {
 fn request_verification_error_on_cannot_reserve_registration_fee() {
   new_test_ext(Vec::new()).execute_with(|| {
     let holder = mock_account("//Alice");
-    let origin = mock::Origin::signed(holder);
+    let origin = mock::RuntimeOrigin::signed(holder);
 
     let context = VerificationContext::UrlForDomain("https://anagolay.network".into(), "anagolay.network".into());
     let action = VerificationAction::DnsTxtRecord;
@@ -122,7 +122,7 @@ fn request_verification_domain_verification_requested() {
     // To emit events, we need to be past block 0
     System::set_block_number(1);
 
-    let origin = mock::Origin::signed(holder);
+    let origin = mock::RuntimeOrigin::signed(holder);
 
     let context = VerificationContext::UrlForDomain("https://anagolay.network".into(), "anagolay.network".into());
     let action = VerificationAction::DnsTxtRecord;
@@ -131,7 +131,7 @@ fn request_verification_domain_verification_requested() {
     assert_ok!(res);
 
     let event_record: frame_system::EventRecord<_, _> = System::events().pop().unwrap();
-    let generic_event: crate::mock::Event = event_record.event;
+    let generic_event: crate::mock::RuntimeEvent = event_record.event;
     let pallet_event: crate::Event<Test> = generic_event.try_into().unwrap();
 
     let (holder, request) = match pallet_event {
@@ -164,7 +164,7 @@ fn request_verification_subdomain_verification_requested() {
     // To emit events, we need to be past block 0
     System::set_block_number(1);
 
-    let origin = mock::Origin::signed(holder);
+    let origin = mock::RuntimeOrigin::signed(holder);
 
     let context = VerificationContext::UrlForDomainWithSubdomain(
       "https://sub.anagolay.network".into(),
@@ -177,7 +177,7 @@ fn request_verification_subdomain_verification_requested() {
     assert_ok!(res);
 
     let event_record: frame_system::EventRecord<_, _> = System::events().pop().unwrap();
-    let generic_event: crate::mock::Event = event_record.event;
+    let generic_event: crate::mock::RuntimeEvent = event_record.event;
     let pallet_event: crate::Event<Test> = generic_event.try_into().unwrap();
 
     let (holder, request) = match pallet_event {
@@ -207,7 +207,7 @@ fn request_verification_subdomain_verification_requested() {
 fn perform_verification_error_no_such_verification_request() {
   new_test_ext(Vec::new()).execute_with(|| {
     let holder = mock_account("//Alice");
-    let origin = mock::Origin::signed(holder);
+    let origin = mock::RuntimeOrigin::signed(holder);
 
     let context = VerificationContext::UrlForDomain("https://anagolay.network".into(), "anagolay.network".into());
     let action = VerificationAction::DnsTxtRecord;
@@ -223,7 +223,7 @@ fn perform_verification_error_no_such_verification_request() {
 fn perform_verification_error_invalid_verification_status() {
   new_test_ext(Vec::new()).execute_with(|| {
     let holder = mock_account("//Alice");
-    let origin = mock::Origin::signed(holder);
+    let origin = mock::RuntimeOrigin::signed(holder);
 
     let context = VerificationContext::UrlForDomain("https://anagolay.network".into(), "anagolay.network".into());
     let action = VerificationAction::DnsTxtRecord;
@@ -245,7 +245,7 @@ fn perform_verification_domain_verification_from_non_holder() {
     // To emit events, we need to be past block 0
     System::set_block_number(1);
 
-    let origin = mock::Origin::signed(verifier);
+    let origin = mock::RuntimeOrigin::signed(verifier);
 
     let context = VerificationContext::UrlForDomain("https://anagolay.network".into(), "anagolay.network".into());
     let action = VerificationAction::DnsTxtRecord;
@@ -260,7 +260,7 @@ fn perform_verification_domain_verification_from_non_holder() {
     assert_ok!(res);
 
     let event_record: frame_system::EventRecord<_, _> = System::events().pop().unwrap();
-    let generic_event: crate::mock::Event = event_record.event;
+    let generic_event: crate::mock::RuntimeEvent = event_record.event;
     let pallet_event: crate::Event<Test> = generic_event.try_into().unwrap();
 
     let (verifier, request) = match pallet_event {
@@ -363,7 +363,7 @@ fn perform_verification_domain_offchain_process() {
     assert!(pool_state.read().transactions.is_empty());
     let tx = Extrinsic::decode(&mut &*tx).unwrap();
     assert_eq!(tx.signature, None);
-    if let Call::VerificationTest(crate::Call::submit_verification_status {
+    if let RuntimeCall::VerificationTest(crate::Call::submit_verification_status {
       verification_data: body,
       signature,
     }) = tx.call
@@ -422,7 +422,7 @@ fn perform_submit_verification_status_failure_from_non_holder() {
     assert_ok!(res);
 
     let event_record: frame_system::EventRecord<_, _> = System::events().pop().unwrap();
-    let generic_event: crate::mock::Event = event_record.event;
+    let generic_event: crate::mock::RuntimeEvent = event_record.event;
     let pallet_event: crate::Event<Test> = generic_event.try_into().unwrap();
 
     let (verifier, holder, request) = match pallet_event {

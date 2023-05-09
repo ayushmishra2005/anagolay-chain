@@ -41,7 +41,7 @@ fn mock_account(ss58: &str) -> sr25519::Public {
 
 fn mock_verification_request<T>(proof_id: ProofId) -> VerificationRequest<T::AccountId>
 where
-  T: frame_system::Config<AccountId = sp_core::sr25519::Public, Origin = Origin, BlockNumber = u64>
+  T: frame_system::Config<AccountId = sp_core::sr25519::Public, RuntimeOrigin = RuntimeOrigin, BlockNumber = u64>
     + verification::Config
     + poe::Config,
 {
@@ -105,7 +105,7 @@ fn statements_create_ownership() {
     r.claim.claim_type = ClaimType::Ownership;
     sign_statement(&mut r);
 
-    let res = TestStatements::create_ownership(mock::Origin::signed(account), r);
+    let res = TestStatements::create_ownership(mock::RuntimeOrigin::signed(account), r);
     assert_ok!(res);
   });
 }
@@ -118,10 +118,10 @@ fn statements_create_ownership_error_on_duplicate() {
     r.claim.claim_type = ClaimType::Ownership;
     sign_statement(&mut r);
 
-    let res_first = TestStatements::create_ownership(mock::Origin::signed(account), r.clone());
+    let res_first = TestStatements::create_ownership(mock::RuntimeOrigin::signed(account), r.clone());
     assert_ok!(res_first);
 
-    let res_duplicate = TestStatements::create_ownership(mock::Origin::signed(account), r.clone());
+    let res_duplicate = TestStatements::create_ownership(mock::RuntimeOrigin::signed(account), r.clone());
     assert_noop!(res_duplicate, Error::<Test>::StatementAlreadyExists);
   });
 }
@@ -133,7 +133,7 @@ fn statements_create_ownership_wrong_claim_type() {
     let mut r = StatementData::default();
     sign_statement(&mut r);
 
-    let res = TestStatements::create_ownership(mock::Origin::signed(account), r.clone());
+    let res = TestStatements::create_ownership(mock::RuntimeOrigin::signed(account), r.clone());
 
     assert_noop!(res, Error::<Test>::WrongClaimType);
   });
@@ -146,7 +146,7 @@ fn statements_create_copyright() {
     let mut r = StatementData::default();
     sign_statement(&mut r);
 
-    let res = TestStatements::create_copyright(mock::Origin::signed(account), r.clone());
+    let res = TestStatements::create_copyright(mock::RuntimeOrigin::signed(account), r.clone());
     assert_ok!(res);
   });
 }
@@ -158,7 +158,7 @@ fn copyright_create_child() {
     r.claim.prev_id = Some(StatementId::from("my-fake-vec-id"));
     sign_statement(&mut r);
 
-    let res = TestStatements::create_copyright(mock::Origin::signed(account), r.clone());
+    let res = TestStatements::create_copyright(mock::RuntimeOrigin::signed(account), r.clone());
     assert_noop!(res, Error::<Test>::CreatingChildStatementNotSupported);
   });
 }
@@ -172,7 +172,7 @@ fn ownership_create_child() {
     r.claim.claim_type = ClaimType::Ownership;
     sign_statement(&mut r);
 
-    let res = TestStatements::create_ownership(mock::Origin::signed(account), r.clone());
+    let res = TestStatements::create_ownership(mock::RuntimeOrigin::signed(account), r.clone());
     assert_noop!(res, Error::<Test>::CreatingChildStatementNotSupported);
   });
 }
@@ -183,10 +183,10 @@ fn statements_create_copyright_error_on_duplicate() {
     let mut r = StatementData::default();
     sign_statement(&mut r);
 
-    let res_first = TestStatements::create_copyright(mock::Origin::signed(account), r.clone());
+    let res_first = TestStatements::create_copyright(mock::RuntimeOrigin::signed(account), r.clone());
     assert_ok!(res_first);
 
-    let res_duplicate = TestStatements::create_copyright(mock::Origin::signed(account), r.clone());
+    let res_duplicate = TestStatements::create_copyright(mock::RuntimeOrigin::signed(account), r.clone());
     assert_noop!(res_duplicate, Error::<Test>::StatementAlreadyExists);
   });
 }
@@ -204,7 +204,7 @@ fn statements_create_error_on_proof_has_statements() {
     };
     sign_statement(&mut r);
 
-    let res_first = TestStatements::create_copyright(mock::Origin::signed(account), r.clone());
+    let res_first = TestStatements::create_copyright(mock::RuntimeOrigin::signed(account), r.clone());
     assert_ok!(res_first);
 
     let _request = mock_verification_request::<Test>(ProofId::from("my-fake-proof-id"));
@@ -217,7 +217,7 @@ fn statements_create_error_on_proof_has_statements() {
       ..StatementData::default()
     };
 
-    let res_second = TestStatements::create_ownership(mock::Origin::signed(account), s.clone());
+    let res_second = TestStatements::create_ownership(mock::RuntimeOrigin::signed(account), s.clone());
     assert_noop!(res_second, Error::<Test>::ProofHasStatements);
   });
 }
@@ -230,7 +230,7 @@ fn statements_create_copyright_wrong_claim_type() {
     r.claim.claim_type = ClaimType::Ownership;
     sign_statement(&mut r);
 
-    let res = TestStatements::create_copyright(mock::Origin::signed(account), r.clone());
+    let res = TestStatements::create_copyright(mock::RuntimeOrigin::signed(account), r.clone());
     assert_noop!(res, Error::<Test>::WrongClaimType);
   });
 }
@@ -243,7 +243,7 @@ fn statements_create_copyright_invalid_signature() {
     sign_statement(&mut r);
     r.signatures.holder.sig_key = "urn:substrate:0xCAFEBABE".into();
 
-    let res = TestStatements::create_copyright(mock::Origin::signed(account), r.clone());
+    let res = TestStatements::create_copyright(mock::RuntimeOrigin::signed(account), r.clone());
     assert_noop!(res, Error::<Test>::InvalidSignature);
   });
 }
@@ -256,15 +256,10 @@ fn statements_revoke() {
     sign_statement(&mut s);
     let s_id = s.to_cid();
 
-    assert_ok!(TestStatements::create_copyright(
-      mock::Origin::signed(account),
-      s.clone()
-    ));
-    assert_ok!(TestStatements::revoke(mock::Origin::signed(account), s_id.clone()));
-    assert_noop!(
-      TestStatements::revoke(mock::Origin::signed(account), s_id),
-      Error::<Test>::NoSuchStatement
-    );
+    let origin = mock::RuntimeOrigin::signed(account);
+    assert_ok!(TestStatements::create_copyright(origin.clone(), s.clone()));
+    assert_ok!(TestStatements::revoke(origin.clone(), s_id.clone()));
+    assert_noop!(TestStatements::revoke(origin, s_id), Error::<Test>::NoSuchStatement);
   });
 }
 
@@ -274,7 +269,7 @@ fn statements_revoke_no_such_statements() {
     let account = mock_account("//Alice");
     let s_id = StatementId::from("my-fake-vec-id");
 
-    let res = TestStatements::revoke(mock::Origin::signed(account), s_id);
+    let res = TestStatements::revoke(mock::RuntimeOrigin::signed(account), s_id);
     assert_noop!(res, Error::<Test>::NoSuchStatement);
   });
 }
@@ -287,7 +282,7 @@ fn statements_revoke_statement_has_child_statements() {
     sign_statement(&mut r);
     let s_id = r.to_cid();
 
-    let _res1 = TestStatements::create_copyright(mock::Origin::signed(account), r.clone());
+    let _res1 = TestStatements::create_copyright(mock::RuntimeOrigin::signed(account), r.clone());
 
     // do this after the create, since it will fail because we don't accept this ATM
     r.claim.prev_id = Some(StatementId::from("child-statement-id"));
@@ -295,7 +290,7 @@ fn statements_revoke_statement_has_child_statements() {
 
     ParentStatementIdByStatementId::<Test>::insert(&s_id, &r.claim.prev_id.unwrap());
 
-    let res = TestStatements::revoke(mock::Origin::signed(account), s_id);
+    let res = TestStatements::revoke(mock::RuntimeOrigin::signed(account), s_id);
 
     assert_noop!(res, Error::<Test>::StatementHasChildStatement);
   });
@@ -311,7 +306,7 @@ fn statements_revoke_for_verification_context_invalid() {
     r.claim.claim_type = ClaimType::Ownership;
     sign_statement(&mut r);
 
-    let res = TestStatements::create_ownership(mock::Origin::signed(holder), r.clone());
+    let res = TestStatements::create_ownership(mock::RuntimeOrigin::signed(holder), r.clone());
     assert_ok!(res);
 
     let statement_ids = StatementIdsByProofId::<Test>::get(&proof_id.clone());
@@ -351,8 +346,8 @@ fn statements_signature_verification_substrate() {
         value: "100".into(),
       },
       subject_id: ProofId::from("bafkr4ifwrblquyv4hskayffmo7llmpcha4vkgcfwcgeenzt63u5m74ukz4"),
-      holder: CreatorId::from("5EHkcDMhHgwW7V4GR4Us4dhkPkP9f2k71kdSVbzzzpNsHsYo"),
-      issuer: CreatorId::from("5EHkcDMhHgwW7V4GR4Us4dhkPkP9f2k71kdSVbzzzpNsHsYo"),
+      holder: CreatorId::from("5EJA1oSrTx7xYMBerrUHLNktA3P89YHJBeTrevotTQab6gEY"),
+      issuer: CreatorId::from("5EJA1oSrTx7xYMBerrUHLNktA3P89YHJBeTrevotTQab6gEY"),
       claim_type: ClaimType::Ownership,
       valid: Validity {
         from: "1664967449137".into(),
