@@ -162,7 +162,17 @@ pub mod pallet {
     ///
     /// # Return
     /// `DispatchResultWithPostInfo` containing Unit type
+    // Primary goal of benchmarking is to keep the runtime safe. 
+    // and secondary goal is to be as accurate as possible to maximize throughput 
+    // while maintaining safety. We should always look for the most computationally heavy path,
+    // a.k.a the "worst case scenario". We have a input vector `tipping_settings`. We should pass
+    // length of this variable for calculating actual weights. 
+    // Please modify benchmarking accordingly.
     #[pallet::weight(<T as Config>::WeightInfo::update_settings())]
+    // This extrinsic is too long and difficult to follow what it happening. 
+    // I think it can be split. 
+    // I recommend to use Pallet’s methods as helpers
+    // when the name of the method describes the action.
     pub fn update_settings(
       origin: OriginFor<T>,
       tipping_settings: Vec<TippingSettings<T::AccountId>>,
@@ -196,9 +206,9 @@ pub mod pallet {
               );
 
               updated_settings.push(setting.clone());
-            }
-          }
-        }
+            } // What if, status is not `Success`? Can we send an error message?
+          } // What if, request not found? Can we send an error message?
+        } // Can we send an error message to user something like `Not Allowed`, if holder is not found?
       });
 
       // Emit an event that tells which settings have been updated
@@ -226,6 +236,10 @@ pub mod pallet {
     /// # Return
     /// `DispatchResultWithPostInfo` containing Unit type
     #[pallet::weight(<T as Config>::WeightInfo::tip())]
+    // This extrinsic is too long and difficult to follow what it happening. 
+    // I think it can be split. 
+    // I recommend to use Pallet’s methods as helpers
+    // when the name of the method describes the action.
     pub fn tip(origin: OriginFor<T>, amount: BalanceOf<T>, context: VerificationContext) -> DispatchResultWithPostInfo {
       let tipper = ensure_signed(origin)?;
 
@@ -233,6 +247,7 @@ pub mod pallet {
       let requests =
         verification::Pallet::<T>::get_requests(vec![context.clone()], Some(VerificationStatus::Success), None, 0, 1);
       ensure!(requests.len() == 1, Error::<T>::InvalidVerificationContext);
+       // `unwrap` is strictly NOT recommended. Please handle the Error.
       let tipped = requests.first().unwrap().holder.clone();
 
       // Ensure that the tipping is enabled and configured for the context
@@ -243,6 +258,7 @@ pub mod pallet {
       );
 
       // Fill in tip information
+       // `unwrap` is strictly NOT recommended. Please handle the Error.
       let receiver_account: T::AccountId = settings.account.unwrap();
       let block_number = <frame_system::Pallet<T>>::block_number();
       let tip = Tip {

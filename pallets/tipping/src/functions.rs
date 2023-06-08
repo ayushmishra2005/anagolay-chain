@@ -22,6 +22,9 @@ impl<T: Config> Pallet<T> {
   pub fn total_received(holder: T::AccountId, verification_context: VerificationContext) -> BalanceOf<T> {
     TipsByAccountIdAndVerificationContext::<T>::get(holder, verification_context)
       .iter()
+      // Review potential overflow situations where operators +, -, * and / are used.
+      // If operations are safe it is a good practice to add a comment about why.
+      // Use `checked_add`, `checked_sub`, `checked_mul`, `checked_div`, instead.
       .fold(0u32.into(), |acc, tip| acc + tip.amount)
   }
 
